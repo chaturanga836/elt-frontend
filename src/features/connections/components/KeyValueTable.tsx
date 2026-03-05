@@ -4,12 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { KeyValuePair } from '@/types/restForm';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button, Checkbox, CheckboxProps, Input } from 'antd';
+import VariableInput from './VariableInput';
 
 interface KeyValueTableProps {
   initialPairs?: KeyValuePair[];
   onChange?: (pairs: KeyValuePair[]) => void;
   keyPlaceholder?: string;
   valuePlaceholder?: string;
+  useVariableInput?: boolean;
+  globalVariables: KeyValuePair[]; // For variable highlighting in value inputs
 }
 
 const createEmptyPair = (): KeyValuePair => ({
@@ -24,8 +27,10 @@ export default function KeyValueTable({
   initialPairs = [],
   onChange,
   keyPlaceholder = "Key",
-  valuePlaceholder = "Value"
-}: KeyValueTableProps) {
+  valuePlaceholder = "Value",
+  useVariableInput = true,
+  globalVariables = []
+}: Partial<KeyValueTableProps>) {
 
   // Ensure we always have at least one empty row to start with
   const [pairs, setPairs] = useState<KeyValuePair[]>(
@@ -104,15 +109,25 @@ return (
               />
             </div>
 
-            {/* Value Input */}
-            <div className="border-l border-border/50 h-full">
-              <Input
-                variant="borderless"
-                value={pair.value ?? ""}
-                onChange={(e) => updateRow(pair.uiId, "value", e.target.value)}
-                placeholder={valuePlaceholder}
-                className="h-full w-full font-mono text-xs px-3 py-2 focus:bg-background"
-              />
+{/* Value Cell: Conditional Rendering */}
+            <div className="border-l border-border/50 h-full flex items-center min-w-0">
+              {useVariableInput ? (
+                <VariableInput
+                  value={pair.value ?? ""}
+                  variables={globalVariables}
+                  onChange={(val) => updateRow(pair.uiId, "value", val)}
+                  placeholder={valuePlaceholder}
+                  className="h-full w-full font-mono text-xs"
+                />
+              ) : (
+                <Input
+                  variant="borderless"
+                  value={pair.value ?? ""}
+                  onChange={(e) => updateRow(pair.uiId, "value", e.target.value)}
+                  placeholder={valuePlaceholder}
+                  className="h-full w-full font-mono text-xs px-3 py-2 focus:bg-background"
+                />
+              )}
             </div>
 
             {/* Delete Button - Transparent until hover */}
@@ -132,8 +147,7 @@ return (
 
       {/* 3. ADD BUTTON - Integrated into the bottom of the table */}
       <Button
-        color="primary"
-        variant="solid"
+ color="default" variant="outlined"
         onClick={addRow}
         className="w-full py-2 flex items-center justify-center gap-2 text-[11px] font-medium text-muted-foreground hover:text-primary hover:bg-secondary/40 transition-all border-t border-border/50 bg-secondary/10"
       >

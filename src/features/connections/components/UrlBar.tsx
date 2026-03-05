@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { Send, Globe } from 'lucide-react';
 import { useConnectionStore } from '@/store/useConnectionStore';
 import { HttpMethod } from '@/types/restForm';
+import VariableInput from './VariableInput';
 
 const methodColorMap: Record<HttpMethod, string> = {
   GET: "text-green-600",
@@ -18,7 +19,7 @@ const methods: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 export default function UrlBar() {
   // const [method, setMethod] = useState<HttpMethod>("GET");
   // const [url, setUrl] = useState("");
-  const { url, method, setUrl, setMethod } = useConnectionStore();
+  const { url, method, setUrl, setMethod, variables } = useConnectionStore();
   
   const activeMethod = method as HttpMethod;
   const activeColor = methodColorMap[activeMethod] || "text-foreground";
@@ -38,13 +39,15 @@ export default function UrlBar() {
         <div className="pl-3 text-muted-foreground/40">
            <Globe size={14} />
         </div>
-        <Input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://api.example.com/v1/resource"
-          variant="borderless"
-          className="w-full bg-transparent px-2 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/30 outline-none"
-        />
+<div className="flex-1">
+          <VariableInput
+            value={url}
+            onChange={setUrl}
+            variables={variables} // Passing variables from store down
+            placeholder="https://api.example.com/v1/resource"
+            className="w-full"
+          />
+        </div>
         
         {/* VARIABLE DETECTOR (Visual Hint) */}
         {url.includes('{{') && (

@@ -19,6 +19,7 @@ export default function JWTBearer() {
   // 1. Store Connection
   const jwtAuth = useConnectionStore((state) => state.jwtBearerAuth);
   const updateJWTAuth = useConnectionStore((state) => state.updateJWTAuth);
+const variables = useConnectionStore((state) => state.variables);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -123,6 +124,7 @@ export default function JWTBearer() {
                onChange={(pairs) => updateJWTAuth({ jwtHeaders: pairs })}
                keyPlaceholder="Header Key" 
                valuePlaceholder="Value" 
+               globalVariables={variables}
             />
           </div>
         </div>

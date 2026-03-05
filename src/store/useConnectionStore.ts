@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { AuthType, HttpMethod, KeyValuePair } from "@/types/restForm";
+import { AuthType, HttpMethod, KeyValuePair, SettingType } from "@/types/restForm";
 import { FormDataDefaults, GraphQLDefaults, RawBodyDefaults, RequestBodyDefaults } from "@/models/BodyDefaults";
 import { BasicAuthDefaults, BearerTokenDefaults, JWTBearerDefaults, ApiKeyDefaults, OAuth2Defaults } from "@/models/AuthDefaults";
 import {
@@ -26,13 +26,17 @@ interface ConnectionState {
     selectedAuth: null | (IBasicAuth | IBearerToken | IJWTBearer | IApiKey | IOAuth2);
     // Auth State
     authType: AuthType;
-
+    variables: KeyValuePair[];
     basicAuth: IBasicAuth;
     bearerTokenAuth: IBearerToken;
     jwtBearerAuth: IJWTBearer;
     apiKeyAuth: IApiKey;
     oauth2Auth: IOAuth2;
+
+    //settings
+    settingType: null | (SettingType) 
     // Actions
+    setSettingType: (type: SettingType) => void;
     setConnection: (name: string, description: string) => void;
     setUrl: (url: string) => void;
     setMethod: (method: HttpMethod) => void;
@@ -54,6 +58,11 @@ interface ConnectionState {
     updateQueryParams: (data: KeyValuePair[]) => void;
     addQueryParams: () => void;
     removeQueryParams: (uiId: string) => void;
+
+    updateVariables: (variables: KeyValuePair[]) => void;
+    addVariable: () => void;
+    removeVariable: (uiId: string) => void;
+
     reset: () => void;
 }
 
@@ -66,7 +75,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
     params: [],
     headers: [],
     body: new RequestBodyDefaults(),
-
+    variables: [{ uiId: crypto.randomUUID(), id: null, key: "", value: "", enabled: true }],
     authType: "none",
     basicAuth: new BasicAuthDefaults(),
     bearerTokenAuth: new BearerTokenDefaults(),
@@ -74,6 +83,9 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
     apiKeyAuth: new ApiKeyDefaults(),
     oauth2Auth: new OAuth2Defaults(),
     selectedAuth: null,
+
+    //settings
+    settingType: null,
     // --- Actions ---
     setConnection: (name, description) => set({ connectionName: name, description }),
     setUrl: (url) => set({ url }),
@@ -163,11 +175,11 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
 
     updateOAuth2Auth: (data: Partial<IOAuth2>) =>
         set((state) => {
-          const updated = { ...state.oauth2Auth, ...data };
-          return {
-            oauth2Auth: updated,
-            selectedAuth: state.authType === "oauth2" ? updated : state.selectedAuth,
-          };
+            const updated = { ...state.oauth2Auth, ...data };
+            return {
+                oauth2Auth: updated,
+                selectedAuth: state.authType === "oauth2" ? updated : state.selectedAuth,
+            };
         }),
     updateBasicAuth: (data: Partial<IBasicAuth>) =>
         set((state) => {
@@ -189,20 +201,20 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
 
     updateJWTAuth: (data: Partial<IJWTBearer>) =>
         set((state) => {
-          const updated = { ...state.jwtBearerAuth, ...data };
-          return {
-            jwtBearerAuth: updated,
-            selectedAuth: state.authType === "jwt" ? updated : state.selectedAuth,
-          };
+            const updated = { ...state.jwtBearerAuth, ...data };
+            return {
+                jwtBearerAuth: updated,
+                selectedAuth: state.authType === "jwt" ? updated : state.selectedAuth,
+            };
         }),
 
     updateApiKeyAuth: (data: Partial<IApiKey>) =>
         set((state) => {
-          const updated = { ...state.apiKeyAuth, ...data };
-          return {
-            apiKeyAuth: updated,
-            selectedAuth: state.authType === "apikey" ? updated : state.selectedAuth,
-          };
+            const updated = { ...state.apiKeyAuth, ...data };
+            return {
+                apiKeyAuth: updated,
+                selectedAuth: state.authType === "apikey" ? updated : state.selectedAuth,
+            };
         }),
     updateQueryParams(data) {
         set((state) => ({
@@ -229,8 +241,16 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
         set((state) => ({
             params: state.params.filter((p) => p.uiId !== uiId),
         })),
+    updateVariables: (variables) => set({ variables }),
+    addVariable: () =>
+        set((state) => ({
+            variables: [...state.variables, { uiId: crypto.randomUUID(), id: null, key: "", value: "", enabled: true }],
+        })),
 
-
+    removeVariable: (uiId) =>
+        set((state) => ({
+            variables: state.variables.filter((v) => v.uiId !== uiId),
+        })),
     reset: () =>
         set({
             connectionName: null,
@@ -248,4 +268,6 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
             oauth2Auth: new OAuth2Defaults(),
             selectedAuth: null,
         }),
+
+        setSettingType: (type: SettingType) => set({ settingType: type }),
 }));

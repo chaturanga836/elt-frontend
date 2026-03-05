@@ -6,12 +6,14 @@ import { Lock, Code2, ListTree, Settings2 } from 'lucide-react';
 import RestApiBody from './RestApiBody';
 import RequestAuth from './Auth';
 import { useConnectionStore } from '@/store/useConnectionStore'; // Import the store
+import FetchSettings from './Settings';
 
 const tabs = [
   { id: "Params", icon: <ListTree size={14} /> },
   { id: "Headers", icon: <Settings2 size={14} /> },
   { id: "Body", icon: <Code2 size={14} /> },
-  { id: "Auth", icon: <Lock size={14} /> }
+  { id: "Auth", icon: <Lock size={14} /> },
+  { id: "Settings", icon: <Settings2 size={14} /> }
 ] as const;
 
 type Tab = typeof tabs[number]["id"];
@@ -20,7 +22,7 @@ export default function RequestTab() {
   const [activeTab, setActiveTab] = useState<Tab>("Params");
 
   // 1. Hook into the store
-  const { params, headers, updateTable, updateQueryParams } = useConnectionStore();
+  const { params, headers, updateTable, updateQueryParams, variables } = useConnectionStore();
 
   return (
     <div className="flex flex-col w-full h-full min-h-100">
@@ -56,6 +58,7 @@ export default function RequestTab() {
             {/* 2. Connect Params to Store */}
             <KeyValueTable 
               initialPairs={params} 
+              globalVariables={variables}
               onChange={(data) => updateQueryParams(data)}
               keyPlaceholder="parameter" 
               valuePlaceholder="value" 
@@ -69,6 +72,7 @@ export default function RequestTab() {
             {/* 3. Connect Headers to Store */}
             <KeyValueTable 
               initialPairs={headers} 
+              globalVariables={variables}
               onChange={(data) => updateTable('headers', data)}
               keyPlaceholder="header" 
               valuePlaceholder="value" 
@@ -79,6 +83,8 @@ export default function RequestTab() {
         {activeTab === "Body" && <RestApiBody />}
 
         {activeTab === "Auth" && <RequestAuth />}
+
+          {activeTab === "Settings" && <FetchSettings />}
       </div>
     </div>
   );

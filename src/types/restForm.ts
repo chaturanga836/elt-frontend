@@ -17,3 +17,4 @@ export interface EnvVariable {
 
 export type RestFromTabs = "Params" | "Headers" | "Body" | "Auth";
 export type AuthType = 'none' | 'basic' | 'bearer' | 'jwt' | 'apikey' | 'oauth2';
+export type SettingType = 'cursor' | 'offset' | 'link_header' | 'page';

@@ -15,7 +15,7 @@ export default function ResApiBody() {
   const bodyData = useConnectionStore((state) => state.body.bodyData);
   const setBodyType = useConnectionStore((state) => state.setBodyType);
   const updateBodyData = useConnectionStore((state) => state.updateBodyContent);
-
+  const variables = useConnectionStore((state) => state.variables);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -41,6 +41,7 @@ export default function ResApiBody() {
               onChange={(newPairs) => updateBodyData({ pairs: newPairs })}
               keyPlaceholder="Key" 
               valuePlaceholder="Value" 
+              globalVariables={variables}
             />
           </div>
         );

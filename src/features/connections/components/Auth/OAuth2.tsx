@@ -7,14 +7,14 @@ import KeyValueTable from '../KeyValueTable';
 import { useConnectionStore } from '@/store/useConnectionStore';
 
 const { Text } = Typography;
-const { Panel } = Collapse;
 
 export default function OAuth2() {
-  const [grantType, setGrantType] = useState('authorization_code');
+
   const [authMethod, setAuthMethod] = useState('client_secret_post');
 
   const oauth2 = useConnectionStore((state) => state.oauth2Auth);
   const updateOAuth2 = useConnectionStore((state) => state.updateOAuth2Auth);
+  const variables = useConnectionStore((state) => state.variables);
   
   const advancedItems = [
     {
@@ -32,7 +32,8 @@ export default function OAuth2() {
             initialPairs={oauth2.authRequestParams} 
             onChange={(pairs) => updateOAuth2({ authRequestParams: pairs })}
             keyPlaceholder="Key" 
-            valuePlaceholder="Value" />
+            valuePlaceholder="Value" 
+             globalVariables={variables}/>
           </div>
           <div>
             <Text className="text-[10px] font-bold text-muted-foreground uppercase mb-1 block">Token Request Params</Text>
@@ -40,7 +41,8 @@ export default function OAuth2() {
             initialPairs={oauth2.tokenRequestParams} 
             onChange={(pairs) => updateOAuth2({ tokenRequestParams: pairs })}
             keyPlaceholder="Key" 
-            valuePlaceholder="Value" />
+            valuePlaceholder="Value" 
+            globalVariables={variables}/>
           </div>
           <div>
             <Text className="text-[10px] font-bold text-muted-foreground uppercase mb-1 block">Refresh Request Params</Text>
@@ -48,7 +50,8 @@ export default function OAuth2() {
             initialPairs={oauth2.refreshRequestParams} 
             onChange={(pairs) => updateOAuth2({ refreshRequestParams: pairs })}
             keyPlaceholder="Key" 
-            valuePlaceholder="Value" />
+            valuePlaceholder="Value" 
+            globalVariables={variables}/>
           </div>
         </div>
       ),

@@ -17,18 +17,21 @@ export function VariablesDrawer({ open, onClose, variables, onVariablesChange }:
 
   return (
     <>
-          <Drawer
-            title="Connection Variables"
-            open={open}
-            onClose={onClose}
-            closable={{ 'aria-label': 'Close Button' }}
-          >
-                      <KeyValueTable
-            keyPlaceholder="Variable Name"
-            valuePlaceholder="Variable Value"
-          />
-      {/* <div className="fixed inset-0 bg-background/60 z-40 animate-fade-in" onClick={onClose} /> */}
-      {/* <div className="fixed right-0 top-0 bottom-0 w-120 max-w-full bg-card border-l border-border z-50 flex flex-col animate-slide-in-right shadow-2xl"> */}
+      <Drawer
+        title="Connection Variables"
+        open={open}
+        onClose={onClose}
+        closable={{ 'aria-label': 'Close Button' }}
+      >
+        <KeyValueTable
+          initialPairs={variables}
+          keyPlaceholder="Variable Name"
+          valuePlaceholder="Variable Value"
+          onChange={onVariablesChange}
+          useVariableInput={false}
+        />
+        {/* <div className="fixed inset-0 bg-background/60 z-40 animate-fade-in" onClick={onClose} /> */}
+        {/* <div className="fixed right-0 top-0 bottom-0 w-120 max-w-full bg-card border-l border-border z-50 flex flex-col animate-slide-in-right shadow-2xl"> */}
         {/* <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
             <Variable size={18} className="text-primary" />
@@ -44,7 +47,7 @@ export function VariablesDrawer({ open, onClose, variables, onVariablesChange }:
           </p>
 
         </div> */}
-      {/* </div> */}
+        {/* </div> */}
       </Drawer>
     </>
   );
