@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import ConnectionsTable from '@/features/connections/components/ConnectionTable';
+import ProviderTable from '@/features/connections/components/dev/ProviderTable';
 
 export default function Home() {
 
   return (
     <React.Fragment>
-      <ConnectionsTable tenantId={'abcdefg'}/>
+      <ProviderTable />
     </React.Fragment>  );
 }

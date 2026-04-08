@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import ConnectionsTable from '@/features/connections/components/ConnectionTable';
+import PipelineCanvas from './components/PipelineCanvas';
 
 export default function Home() {
 
   return (
     <React.Fragment>
-      <ConnectionsTable tenantId={'abcdefg'}/>
+      <h1>Pipe Page</h1>
+      <PipelineCanvas />
     </React.Fragment>  );
 }

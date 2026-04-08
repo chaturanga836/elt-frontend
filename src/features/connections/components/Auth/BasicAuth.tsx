@@ -12,7 +12,7 @@ export default function BasicAuth() {
 
   return (
     <div className="max-w-md space-y-4 animate-in fade-in duration-300">
-      <Space direction="vertical" className="w-full" size={12}>
+      <Space orientation="vertical" className="w-full" size={12}>
         <div>
           <Text className="text-[10px] font-bold text-muted-foreground uppercase mb-1 block">
             Username

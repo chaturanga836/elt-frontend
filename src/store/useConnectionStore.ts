@@ -16,6 +16,8 @@ import {
 } from "@/types/connection";
 
 interface ConnectionState {
+    id: number | null;
+
     connectionName: string | null;
     description: string | null;
     url: string;
@@ -36,6 +38,8 @@ interface ConnectionState {
     //settings
     settingType: null | (SettingType) 
     // Actions
+    setId: (id: number | null) => void;
+
     setSettingType: (type: SettingType) => void;
     setConnection: (name: string, description: string) => void;
     setUrl: (url: string) => void;
@@ -67,6 +71,7 @@ interface ConnectionState {
 }
 
 export const useConnectionStore = create<ConnectionState>((set) => ({
+    id: null,
     // --- Initial State ---
     connectionName: null,
     description: null,
@@ -87,6 +92,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
     //settings
     settingType: null,
     // --- Actions ---
+    setId: (id) => set({ id }),
     setConnection: (name, description) => set({ connectionName: name, description }),
     setUrl: (url) => set({ url }),
     setMethod: (method) => set({ method }),
