@@ -27,21 +27,21 @@ export default function PipelineCanvas() {
       org_id: 1,
       workspace_id: 1,
       tasks: nodes.map((node) => {
-        // 1. Find the incoming edge to get the transformation code
         const incomingEdges = edges.filter((e) => e.target === node.id);
+        // We assume one primary incoming edge for the code
         const edgeData = incomingEdges[0]?.data;
 
         return {
           task_key: node.id,
-          // 2. Cast and fallback the connection_id to a number
+          task_name: (node.data?.label as string) ?? `Task ${node.id}`,
           connection_id: (node.data?.connection_id as number) ?? 1,
+          // Match the backend key 'depends_on'
           depends_on: incomingEdges.map((e) => e.source),
-          // 3. Cast and fallback the edge data to strings
           transform_code: (edgeData?.code as string) ?? "",
           func_name: (edgeData?.func_name as string) ?? "",
         };
       }),
-    };
+    };;
 
     try {
       const data = await PipelineService.savePipeline(payload);
