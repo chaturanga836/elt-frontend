@@ -1,141 +1,124 @@
 'use client';
 
-import {
-  ReactFlow,
-  applyNodeChanges,
-  applyEdgeChanges,
-  addEdge,
-  Background,
-  BackgroundVariant,
-  Controls,
-  ReactFlowProvider,
-  ConnectionLineType,
-  Connection, // Type for the drag event
-  Edge
-} from '@xyflow/react';
-import { useState, useCallback } from 'react';
-import { Button } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
-import TaskNode from './TaskNode';
+import { ReactFlowProvider } from '@xyflow/react';
+import { Button, Space, message, Input } from 'antd';
+import { PlusOutlined, SaveOutlined, EditOutlined } from '@ant-design/icons';
+import { usePipelineStore } from "@/store/usePipeStore";
+import PipelineCanvasInner from './PipelineCanvasInner';
+import { notification } from '@/lib/antd/static';
 import '@xyflow/react/dist/style.css';
-import CodeEdge from './CodeEdge';
+import { PipelinePayload, PipelineService } from '@/services/pipe.service';
+import { useState } from 'react';
 
-const nodeTypes = {
-  connection: TaskNode,
-};
+export default function PipelineCanvas() {
+  const { nodes, edges, name, setName, addNode } = usePipelineStore();
+  const [isSaving, setIsSaving] = useState(false);
 
-const edgeTypes = {
-  code: CodeEdge,
-};
+  const handleSave = async () => {
 
-const GRID_SIZE_X = 200; // Horizontal "Time" step
-const GRID_SIZE_Y = 20;  // Vertical "Lane" step
-const NODE_WIDTH = 110;
-const NODE_HEIGHT = 40;
+    if (!name?.trim()) {
+      return notification.warning({ message: 'Name required', description: 'Please name your pipeline.' });
+    }
+    setIsSaving(true);
 
-const PipelineCanvasInner = () => {
-  const [nodes, setNodes] = useState<any[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
+    const payload: PipelinePayload = {
+      pipeline_uuid: "my-unique-pipeline-id",
+      name: name ?? "Untitled Pipeline",
+      org_id: 1,
+      workspace_id: 1,
+      tasks: nodes.map((node) => {
+        // 1. Find the incoming edge to get the transformation code
+        const incomingEdges = edges.filter((e) => e.target === node.id);
+        const edgeData = incomingEdges[0]?.data;
 
-  const onNodesChange = useCallback(
-    (changes: any) => {
-      setNodes((nds) => {
-        const snappedChanges = changes.map((change: any) => {
-          if (change.type === 'position' && change.position) {
-            return {
-              ...change,
-              position: {
-                // Standard horizontal snap
-                x: (Math.round(change.position.x / GRID_SIZE_X) * GRID_SIZE_X) - (NODE_WIDTH / 2),
-                // Snap to line + Offset by half height to center the node on the line
-                y: Math.round(change.position.y / GRID_SIZE_Y) * GRID_SIZE_Y,
-              },
-            };
-          }
-          return change;
-        });
-        return applyNodeChanges(snappedChanges, nds);
-      });
-    },
-    [setNodes]
-  );;
-
-  const onEdgesChange = useCallback(
-    (changes: any) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [],
-  );
-
-  // This triggers when the user finishes dragging from one handle to another
-const onConnect = useCallback(
-    (params: Connection) => {
-      const newEdge: Edge = {
-        ...params,
-        id: `e-${params.source}-${params.target}`,
-        type: 'code', // CHANGED from 'step' to 'code'
-        animated: true,
-        style: { stroke: '#1890ff', strokeWidth: 2 }
-      };
-      setEdges((eds) => addEdge(newEdge, eds));
-    },
-    [],
-  );
-
-  const addNewNode = () => {
-    const lineX = (nodes.length + 1) * GRID_SIZE_X;
-    const id = `node_${nodes.length + 1}`;
-    const newNode = {
-      id,
-      type: 'connection',
-      position: { x: lineX - (NODE_WIDTH / 2), y: 150 },
-      data: { label: `Task ${nodes.length + 1}` },
+        return {
+          task_key: node.id,
+          // 2. Cast and fallback the connection_id to a number
+          connection_id: (node.data?.connection_id as number) ?? 1,
+          depends_on: incomingEdges.map((e) => e.source),
+          // 3. Cast and fallback the edge data to strings
+          transform_code: (edgeData?.code as string) ?? "",
+          func_name: (edgeData?.func_name as string) ?? "",
+        };
+      }),
     };
-    setNodes((nds) => nds.concat(newNode));
+
+    try {
+      const data = await PipelineService.savePipeline(payload);
+      notification.success({
+        message: 'Pipeline Saved',
+        description: `Version ${data.version} created successfully.`,
+      });
+    } catch (err) {
+      // Interceptor handles the visual error, we just stop the loading state
+      console.error(err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
-      <Button
-        type="primary"
-        icon={<PlusOutlined />}
-        onClick={addNewNode}
-        style={{ position: 'absolute', top: 20, left: 20, zIndex: 100 }}
-      >
-        Add Task
-      </Button>
-
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        edgeTypes={edgeTypes}
-        nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        // These 3 lines make the DRAGGING look professional
-        connectionLineType={ConnectionLineType.Step}
-        connectionLineStyle={{ stroke: '#1890ff', strokeWidth: 2 }}
-        snapToGrid={true}
-        snapGrid={[GRID_SIZE_X, GRID_SIZE_Y]}
-        fitView
-      >
-        <Background id="horizontal-lines" variant={BackgroundVariant.Lines} color="#333" gap={[GRID_SIZE_X, 10000]} size={1.5} />
-        <Background
-          id="vertical-steps"
-          variant={BackgroundVariant.Lines}
-          gap={[10000, GRID_SIZE_Y]} // Huge Y gap so only vertical lines show
-          color="#f0f0f0"       // Very light grey
-          size={1}
-        />
-        <Controls />
-      </ReactFlow>
-    </div>
-  );
-};
-
-export default function PipelineCanvas() {
-  return (
     <ReactFlowProvider>
-      <PipelineCanvasInner />
+      <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+
+        {/* ENHANCED TOOLBAR */}
+        <div style={{
+          padding: '10px 20px',
+          background: '#fff',
+          borderBottom: '1px solid #ddd',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          zIndex: 100
+        }}>
+          <Space size="middle">
+            <Input
+              prefix={<EditOutlined style={{ color: '#bfbfbf' }} />}
+              value={name ?? ''}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter Pipeline Name"
+              variant="borderless"
+              style={{
+                fontSize: '16px',
+                fontWeight: 600,
+                width: '300px',
+                backgroundColor: '#f5f5f5',
+                borderRadius: '4px'
+              }}
+            />
+          </Space>
+
+          <Space>
+            <Button
+              type="default"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                const id = `node_${nodes.length + 1}`;
+                addNode({
+                  id,
+                  type: 'connection',
+                  position: { x: (nodes.length + 1) * 200 - 55, y: 150 },
+                  data: { label: `Task ${nodes.length + 1}`, connection_id: 1 },
+                });
+              }}
+            >
+              Task Node
+            </Button>
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              onClick={handleSave}
+              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+            >
+              Save Pipeline
+            </Button>
+          </Space>
+        </div>
+
+        <div style={{ flexGrow: 1 }}>
+          <PipelineCanvasInner />
+        </div>
+      </div>
     </ReactFlowProvider>
   );
 }

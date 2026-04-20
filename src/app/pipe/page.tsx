@@ -7,7 +7,6 @@ export default function Home() {
 
   return (
     <React.Fragment>
-      <h1>Pipe Page</h1>
       <PipelineCanvas />
     </React.Fragment>  );
 }
