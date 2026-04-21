@@ -48,7 +48,7 @@ export default function PipelineListPage() {
       dataIndex: 'name',
       key: 'name',
       render: (text: string, record: any) => (
-        <Link href={`/pipeline/${record.pipeline_uuid}`}>
+        <Link href={`/pipe/${record.pipeline_uuid}`}>
           <span style={{ color: '#1890ff', fontWeight: 600 }}>{text}</span>
         </Link>
       ),
@@ -71,7 +71,7 @@ export default function PipelineListPage() {
       render: (_:any, record: any) => (
         <Space>
           <Button icon={<PlayCircleOutlined />} size="small">Run</Button>
-          <Link href={`/pipeline/${record.pipeline_uuid}`}>
+          <Link href={`/pipe/${record.pipeline_uuid}`}>
             <Button icon={<EditOutlined />} size="small" type="primary" ghost>Edit</Button>
           </Link>
         </Space>
