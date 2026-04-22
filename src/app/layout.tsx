@@ -6,6 +6,7 @@ import { ConfigProvider, App } from 'antd'; // Added App here
 import theme from '@/lib/antd/themeConfig';
 import "./globals.css";
 import StaticHandler from '@/lib/antd/static';
+import SideWrapper from "@/components/ui/SideWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,7 +27,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             */}
             <App> 
               <StaticHandler />
-              {children}
+              <SideWrapper>
+                {children}
+              </SideWrapper>
+              
             </App>
           </ConfigProvider>
         </AntdRegistry>

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import PipelineListPage from '../components/PipelineListPage';
 
 
 export default function Home() {
@@ -9,6 +8,6 @@ export default function Home() {
   return (
     <React.Fragment>
        
-        <PipelineListPage />
+        <h1>   Settings Page</h1>
     </React.Fragment>  );
 }
