@@ -11,8 +11,8 @@ task_key: string;
 }
 
 export interface PipelineFilterParams {
-  org_id: number;
-  workspace_id: number;
+  org_id?: number;
+  workspace_id?: number;
   page?: number;
   size?: number;
   name?: string;

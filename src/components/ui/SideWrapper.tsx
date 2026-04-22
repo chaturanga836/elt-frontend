@@ -23,12 +23,12 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
 
   const menuItems = [
     {
-      key: '/pipe',
+      key: '/pipe/list',
       icon: <ProjectOutlined />,
       label: 'Pipelines',
     },
     {
-      key: '/pipeline/new',
+      key: '/pipe',
       icon: <PlusCircleOutlined />,
       label: 'New Pipeline',
     },

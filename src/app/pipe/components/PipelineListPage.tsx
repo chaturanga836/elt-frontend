@@ -17,11 +17,11 @@ export default function PipelineListPage() {
       setLoading(true);
       // Passing search and pagination params to the service
       const response = await PipelineService.getPipelines({
-        org_id: 1,
-        workspace_id: 1,
+        // org_id: 1,
+        // workspace_id: 1,
         page: pagination.page,
         size: pagination.size,
-        name: searchText
+        // name: searchText
       });
       setData(response);
     } catch (err) {

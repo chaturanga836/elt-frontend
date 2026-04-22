@@ -1,5 +1,5 @@
 'use client';
-
+import { v4 as uuidv4 } from 'uuid';
 import { ReactFlowProvider } from '@xyflow/react';
 import { Button, Space, message, Input } from 'antd';
 import { PlusOutlined, SaveOutlined, EditOutlined } from '@ant-design/icons';
@@ -9,17 +9,21 @@ import { notification } from '@/lib/antd/static';
 import '@xyflow/react/dist/style.css';
 import { PipelinePayload, PipelineService } from '@/services/pipe.service';
 import { useState } from 'react';
+import { useParams } from 'next/navigation';
 
 export default function PipelineCanvas() {
+  const params = useParams();
   const { nodes, edges, name, setName, addNode } = usePipelineStore();
   const [isSaving, setIsSaving] = useState(false);
-
+const [currentUuid, setCurrentUuid] = useState<string | null>(params?.uuid as string || null);
   const handleSave = async () => {
 
     if (!name?.trim()) {
       return notification.warning({ message: 'Name required', description: 'Please name your pipeline.' });
     }
     setIsSaving(true);
+
+    const targetUuid = currentUuid || uuidv4();
 
     const payload: PipelinePayload = {
       pipeline_uuid: "my-unique-pipeline-id",
@@ -41,12 +45,12 @@ export default function PipelineCanvas() {
           func_name: (edgeData?.func_name as string) ?? "",
         };
       }),
-    };;
+    };
 
     try {
       const data = await PipelineService.savePipeline(payload);
       notification.success({
-        message: 'Pipeline Saved',
+        title: 'Pipeline Saved',
         description: `Version ${data.version} created successfully.`,
       });
     } catch (err) {
