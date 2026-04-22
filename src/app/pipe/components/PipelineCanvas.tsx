@@ -26,7 +26,7 @@ const [currentUuid, setCurrentUuid] = useState<string | null>(params?.uuid as st
     const targetUuid = currentUuid || uuidv4();
 
     const payload: PipelinePayload = {
-      pipeline_uuid: "my-unique-pipeline-id",
+      pipeline_uuid: targetUuid,
       name: name ?? "Untitled Pipeline",
       org_id: 1,
       workspace_id: 1,
