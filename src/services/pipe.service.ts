@@ -44,4 +44,10 @@ getPipelines: async (params: PipelineFilterParams) => {
     });
     return response.data; // Returns { items, total, page, size, pages }
   },
+
+runPipe: async (uuid: string) => {
+    // Note: No trailing slash after 'run' to match backend @router.post("/run/{pipeline_uuid}")
+    const response = await api.post(`/sync/run/${uuid}`);
+    return response.data;
+  },
 };

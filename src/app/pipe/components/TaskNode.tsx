@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Card, Button, Modal, Input, Avatar, Typography, Flex, Empty } from 'antd';
 import { 
@@ -24,6 +24,12 @@ const TaskNode = ({ id, data }: any) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selected, setSelected] = useState<any>(data.config || null);
 
+  useEffect(() => {
+    if (data.config) {
+      setSelected(data.config);
+    }
+  }, [data.config]);
+  
   const filteredConnections = CONNECTIONS_DATA.filter(c => 
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );

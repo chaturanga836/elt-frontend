@@ -42,6 +42,19 @@ export default function PipelineListPage() {
     });
   };
 
+
+  const handleRunPipeline = async (pipeline_uuid: string) => {
+    console.log(`Run pipeline ${pipeline_uuid}`);
+    try{
+      console.log("here we are");
+      const res = await PipelineService.runPipe(pipeline_uuid);
+      console.info(res);
+    }catch(e){
+      console.error(e);
+    }
+    
+  }
+
   const columns = [
     {
       title: 'Pipeline Name',
@@ -70,7 +83,9 @@ export default function PipelineListPage() {
       key: 'action',
       render: (_:any, record: any) => (
         <Space>
-          <Button icon={<PlayCircleOutlined />} size="small">Run</Button>
+          <Button icon={<PlayCircleOutlined />} size="small" onClick={() => handleRunPipeline(record.pipeline_uuid)}>
+            Run
+          </Button>
           <Link href={`/pipe/${record.pipeline_uuid}`}>
             <Button icon={<EditOutlined />} size="small" type="primary" ghost>Edit</Button>
           </Link>

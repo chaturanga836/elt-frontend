@@ -27,6 +27,9 @@ interface PipelineState {
   addNode: (node: Node) => void;
   updateEdgeData: (edgeId: string, data: any) => void;
   setName: (name: string | null) => void;
+  // Add this line
+  setPipeline: (nodes: Node[], edges: Edge[], name: string | null) => void;
+  updateNodeData: (nodeId: string, newData: any) => void;
 }
 
 export const usePipelineStore = create<PipelineState>((set, get) => ({
@@ -96,6 +99,24 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
     set({
       edges: get().edges.map((edge) => 
         edge.id === edgeId ? { ...edge, data: { ...edge.data, ...data } } : edge
+      ),
+    });
+  },
+
+  // set pipeline
+setPipeline: (nodes: Node[], edges: Edge[], name: string | null) => { // Updated here
+    set({
+      nodes,
+      edges,
+      name,
+    });
+  },
+  updateNodeData: (nodeId, newData) => {
+    set({
+      nodes: get().nodes.map((node) =>
+        node.id === nodeId 
+          ? { ...node, data: { ...node.data, ...newData } } 
+          : node
       ),
     });
   },

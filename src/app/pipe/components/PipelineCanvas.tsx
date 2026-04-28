@@ -6,7 +6,7 @@ import { PlusOutlined, SaveOutlined, EditOutlined } from '@ant-design/icons';
 import { usePipelineStore } from "@/store/usePipeStore";
 import PipelineCanvasInner from './PipelineCanvasInner';
 import { notification } from '@/lib/antd/static';
-import '@xyflow/react/dist/style.css';
+// import '@xyflow/react/dist/style.css';
 import { PipelinePayload, PipelineService } from '@/services/pipe.service';
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
