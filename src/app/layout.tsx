@@ -8,6 +8,7 @@ import "./globals.css";
 import StaticHandler from '@/lib/antd/static';
 import SideWrapper from "@/components/ui/SideWrapper";
 
+import { notification } from 'antd';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -16,6 +17,9 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+
+  const [api, contextHolder] = notification.useNotification();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
@@ -26,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               and Axios interceptors.
             */}
             <App> 
+              {contextHolder}
               <StaticHandler />
               <SideWrapper>
                 {children}

@@ -6,7 +6,7 @@ import { PlusOutlined, SaveOutlined, EditOutlined } from '@ant-design/icons';
 import { usePipelineStore } from "@/store/usePipeStore";
 import PipelineCanvasInner from './PipelineCanvasInner';
 import { notification } from '@/lib/antd/static';
-// import '@xyflow/react/dist/style.css';
+import '@xyflow/react/dist/style.css';
 import { PipelinePayload, PipelineService } from '@/services/pipe.service';
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -15,7 +15,7 @@ export default function PipelineCanvas() {
   const params = useParams();
   const { nodes, edges, name, setName, addNode } = usePipelineStore();
   const [isSaving, setIsSaving] = useState(false);
-const [currentUuid, setCurrentUuid] = useState<string | null>(params?.uuid as string || null);
+  const [currentUuid, setCurrentUuid] = useState<string | null>(params?.uuid as string || null);
   const handleSave = async () => {
 
     if (!name?.trim()) {
@@ -38,8 +38,10 @@ const [currentUuid, setCurrentUuid] = useState<string | null>(params?.uuid as st
         return {
           task_key: node.id,
           task_name: (node.data?.label as string) ?? `Task ${node.id}`,
-          connection_id: (node.data?.connection_id as number) ?? 1,
-          // Match the backend key 'depends_on'
+
+          // FIX: Check both common keys used in your app
+          connection_id: (node.data?.connectionId || node.data?.connection_id || 1),
+
           depends_on: incomingEdges.map((e) => e.source),
           transform_code: (edgeData?.code as string) ?? "",
           func_name: (edgeData?.func_name as string) ?? "",
@@ -100,9 +102,19 @@ const [currentUuid, setCurrentUuid] = useState<string | null>(params?.uuid as st
                 const id = `node_${nodes.length + 1}`;
                 addNode({
                   id,
-                  type: 'connection',
+                  type: 'task', // Ensure this matches your registered node type name
                   position: { x: (nodes.length + 1) * 200 - 55, y: 150 },
-                  data: { label: `Task ${nodes.length + 1}`, connection_id: 1 },
+                  data: {
+                    label: `Task ${nodes.length + 1}`,
+                    connectionId: 1, // Use camelCase to match TaskNode state logic
+                    // IMPORTANT: Pass the store's update function so the node can save choices
+                    onConfigChange: (nodeId: string, newItem: any) => {
+                      usePipelineStore.getState().updateNodeData(nodeId, {
+                        connectionId: newItem.id,
+                        config: newItem
+                      });
+                    }
+                  },
                 });
               }}
             >

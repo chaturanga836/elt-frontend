@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import PipelineCanvas from './components/PipelineCanvas';
+import PipelineCanvas from '../components/PipelineCanvas';
 
 export default function Home() {
 

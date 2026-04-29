@@ -97,7 +97,7 @@ export default function PipelineListPage() {
   return (
     <div style={{ padding: '24px' }}>
       <Card title="Data Pipelines" extra={
-        <Link href="/pipeline/new">
+        <Link href="/pipe/new">
           <Button type="primary" icon={<PlusOutlined />}>Create Pipeline</Button>
         </Link>
       }>
