@@ -9,17 +9,22 @@ import * as Icons from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
-export default function () {
+export default function CategorySelector() {
   const [categories, setCategories] = useState<ConnectionCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const setCategory = useConnectionStore((state) => state.setCategory);
 
-  useEffect(() => {
+useEffect(() => {
     const loadCategories = async () => {
       try {
         setLoading(true);
+        
+        // Destructure the 'data' property from the returned object
         const { data } = await connectionService.getCategories();
-        setCategories(data);
+        
+        // Now 'data' is the array [ {id: "1", ...} ]
+        setCategories(data); 
+        
       } catch (err) {
         console.error("API Error:", err);
         message.error("Failed to load connection categories from server.");

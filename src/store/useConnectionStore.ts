@@ -68,6 +68,7 @@ interface ConnectionState {
     removeVariable: (uiId: string) => void;
 
     reset: () => void;
+    setCategory: (data:any) => void;
 }
 
 export const useConnectionStore = create<ConnectionState>((set) => ({
@@ -276,4 +277,5 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
         }),
 
         setSettingType: (type: SettingType) => set({ settingType: type }),
+        setCategory: (data:any) =>{}
 }));

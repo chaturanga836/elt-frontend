@@ -1,3 +1,5 @@
+import { ConnectionCategory } from "@/types/connection";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 // Helper to ensure we always have the correct base path
 const getBaseUrl = () => (API_BASE.endsWith("/api/v1") ? API_BASE : `${API_BASE}/api/v1`);
@@ -116,8 +118,8 @@ export const connectionService = {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
-        
-        if (!response.ok) throw new Error('Failed to fetch connections');
+
+        if (!response.ok) throw new Error("Failed to fetch connections");
         return response.json();
     },
 
@@ -126,5 +128,34 @@ export const connectionService = {
         const response = await fetch(url);
         if (!response.ok) throw new Error("Failed to fetch connections");
         return response.json();
+    },
+
+    // to remove
+    getCategories: async (): Promise<{ data: ConnectionCategory[] }> => {
+        const mockData: ConnectionCategory[] = [
+            {
+                id: "1",
+                name: "Databases",
+                description: "Connect to PostgreSQL, MySQL, or MongoDB",
+                icon: "database",
+            },
+            {
+                id: "2",
+                name: "APIs",
+                description: "Connect to REST or GraphQL endpoints",
+                icon: "api",
+            },
+            {
+                id: "3",
+                name: "Cloud Storage",
+                description: "S3, Google Cloud Storage, or Azure Blobs",
+                icon: "cloud",
+            },
+        ];
+
+        // Return as a single object wrapper
+        return Promise.resolve({
+            data: mockData,
+        });
     },
 };
