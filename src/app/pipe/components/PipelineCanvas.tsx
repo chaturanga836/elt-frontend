@@ -30,23 +30,23 @@ export default function PipelineCanvas() {
       name: name ?? "Untitled Pipeline",
       org_id: 1,
       workspace_id: 1,
-      tasks: nodes.map((node) => {
-        const incomingEdges = edges.filter((e) => e.target === node.id);
-        // We assume one primary incoming edge for the code
-        const edgeData = incomingEdges[0]?.data;
+tasks: nodes.map((node) => {
+  const incomingEdges = edges.filter((e) => e.target === node.id);
+  const edgeData = incomingEdges[0]?.data;
 
-        return {
-          task_key: node.id,
-          task_name: (node.data?.label as string) ?? `Task ${node.id}`,
+  return {
+    task_key: node.id,
+    task_name: (node.data?.label as string) ?? `Task ${node.id}`,
 
-          // FIX: Check both common keys used in your app
-          connection_id: (node.data?.connectionId || node.data?.connection_id || 1),
+    // 1. Force conversion to Number
+    // 2. Use a specific numeric fallback
+    connection_id: Number(node.data?.connectionId ?? node.data?.connection_id ?? 1),
 
-          depends_on: incomingEdges.map((e) => e.source),
-          transform_code: (edgeData?.code as string) ?? "",
-          func_name: (edgeData?.func_name as string) ?? "",
-        };
-      }),
+    depends_on: incomingEdges.map((e) => e.source),
+    transform_code: (edgeData?.code as string) ?? "",
+    func_name: (edgeData?.func_name as string) ?? "",
+  };
+}),
     };
 
     try {
