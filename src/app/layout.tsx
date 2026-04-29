@@ -18,7 +18,6 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 
-  const [api, contextHolder] = notification.useNotification();
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -30,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               and Axios interceptors.
             */}
             <App> 
-              {contextHolder}
+              
               <StaticHandler />
               <SideWrapper>
                 {children}
