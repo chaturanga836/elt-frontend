@@ -8,7 +8,7 @@ export default function EditRestPage() {
   
   return (
     <div className="p-8">
-      <RestApiForm sourceId="rest-api" id={params.id as string} />
+      <RestApiForm />
     </div>
   );
 }
