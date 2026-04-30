@@ -40,6 +40,10 @@ const TaskNode = ({ id, data }: any) => {
     if (data.onConfigChange) data.onConfigChange(id, item);
   };
 
+  const openModel = () =>{
+    console.info("open model");
+    setIsModalOpen(true)
+  }
   return (
     <div className="custom-node">
 <Handle type="target" position={Position.Left} style={{ background: '#1890ff' }} />
@@ -57,7 +61,7 @@ const TaskNode = ({ id, data }: any) => {
           overflow: 'hidden'
         }}
         styles={{ body: { padding: '4px 8px', width: '100%' } }}
-        onClick={() => !selected && setIsModalOpen(true)}
+        onClick={() => openModel()}
       >
         {!selected ? (
           <Text style={{ fontSize: '10px', color: '#605858' }}>+ Select</Text>

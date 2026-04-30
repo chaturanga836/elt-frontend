@@ -15,7 +15,7 @@ import CodeEdge from './CodeEdge';
 const GRID_SIZE_X = 200;
 const GRID_SIZE_Y = 20;
 
-const nodeTypes = { connection: TaskNode };
+const nodeTypes = { task: TaskNode };
 const edgeTypes = { code: CodeEdge };
 
 const PipelineCanvasInner = () => {

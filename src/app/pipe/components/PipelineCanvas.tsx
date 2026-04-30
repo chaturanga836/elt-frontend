@@ -13,7 +13,7 @@ import { useParams } from 'next/navigation';
 
 export default function PipelineCanvas() {
   const params = useParams();
-  const { nodes, edges, name, setName, addNode } = usePipelineStore();
+  const { nodes, edges, name, setName, addNode, setUuid, setId} = usePipelineStore();
   const [isSaving, setIsSaving] = useState(false);
   const [currentUuid, setCurrentUuid] = useState<string | null>(params?.uuid as string || null);
   const handleSave = async () => {
@@ -26,27 +26,28 @@ export default function PipelineCanvas() {
     const targetUuid = currentUuid || uuidv4();
 
     const payload: PipelinePayload = {
+      id: null,
       pipeline_uuid: targetUuid,
       name: name ?? "Untitled Pipeline",
       org_id: 1,
       workspace_id: 1,
-tasks: nodes.map((node) => {
-  const incomingEdges = edges.filter((e) => e.target === node.id);
-  const edgeData = incomingEdges[0]?.data;
+      tasks: nodes.map((node) => {
+        const incomingEdges = edges.filter((e) => e.target === node.id);
+        const edgeData = incomingEdges[0]?.data;
 
-  return {
-    task_key: node.id,
-    task_name: (node.data?.label as string) ?? `Task ${node.id}`,
+        return {
+          task_key: node.id,
+          task_name: (node.data?.label as string) ?? `Task ${node.id}`,
 
-    // 1. Force conversion to Number
-    // 2. Use a specific numeric fallback
-    connection_id: Number(node.data?.connectionId ?? node.data?.connection_id ?? 1),
+          // 1. Force conversion to Number
+          // 2. Use a specific numeric fallback
+          connection_id: Number(node.data?.connectionId ?? node.data?.connection_id ?? 1),
 
-    depends_on: incomingEdges.map((e) => e.source),
-    transform_code: (edgeData?.code as string) ?? "",
-    func_name: (edgeData?.func_name as string) ?? "",
-  };
-}),
+          depends_on: incomingEdges.map((e) => e.source),
+          transform_code: (edgeData?.code as string) ?? "",
+          func_name: (edgeData?.func_name as string) ?? "",
+        };
+      }),
     };
 
     try {
@@ -55,6 +56,9 @@ tasks: nodes.map((node) => {
         title: 'Pipeline Saved',
         description: `Version ${data.version} created successfully.`,
       });
+
+      setUuid(currentUuid);
+      setCurrentUuid(data.pipeline_uuid);
     } catch (err) {
       // Interceptor handles the visual error, we just stop the loading state
       console.error(err);

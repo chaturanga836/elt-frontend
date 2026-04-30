@@ -21,6 +21,9 @@ interface PipelineState {
   name: string | null;
   id: number | null;
   uuid: string | null;
+  getCurrentUuid: () => string | null;
+  setUuid: (uuid:string | null) => void;
+  setId: (id: number | null) => void;
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
@@ -69,6 +72,21 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
     });
   },
 
+  getCurrentUuid: ()=>{
+    return get().uuid;
+  },
+
+  setUuid: (uuid)=>{
+    set({
+      uuid 
+    })
+  },
+
+  setId: (id) => {
+    set({
+      id
+    })
+  },
   onConnect: (connection) => {
     // Check if edge already exists to prevent duplicates
     const edges = get().edges;

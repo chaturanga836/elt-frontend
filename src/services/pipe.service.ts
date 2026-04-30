@@ -18,6 +18,7 @@ export interface PipelineFilterParams {
   name?: string;
 }
 export interface PipelinePayload {
+  id: number | null;
   pipeline_uuid: string;
   name: string;
   org_id: number;
