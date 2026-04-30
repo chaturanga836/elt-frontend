@@ -110,9 +110,10 @@ export default function Home() {
             });
           }
         });
-
+        const pipe_id = pipeline.id;
+        const uuid = pipeline.pipeline_uuid
         // 3. Update Store
-        setPipeline(initialNodes, initialEdges, pipeline.name);
+        setPipeline(pipe_id, uuid,initialNodes, initialEdges, pipeline.name);
 
       } catch (error) {
         console.error("Hydration Error:", error);

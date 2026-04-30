@@ -19,6 +19,8 @@ interface PipelineState {
   nodes: Node[];
   edges: Edge[];
   name: string | null;
+  id: number | null;
+  uuid: string | null;
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
@@ -28,7 +30,7 @@ interface PipelineState {
   updateEdgeData: (edgeId: string, data: any) => void;
   setName: (name: string | null) => void;
   // Add this line
-  setPipeline: (nodes: Node[], edges: Edge[], name: string | null) => void;
+  setPipeline: (id: number | null, uuid : string | null, nodes: Node[], edges: Edge[], name: string | null) => void;
   updateNodeData: (nodeId: string, newData: any) => void;
 }
 
@@ -36,6 +38,8 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
   nodes: [],
   edges: [],
   name: null,
+  uuid : null,
+  id: null,
   setName: (name) => set({ name }),
   // SNAP-TO-GRID LOGIC MOVED HERE
   onNodesChange: (changes) => {
@@ -104,8 +108,10 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
   },
 
   // set pipeline
-setPipeline: (nodes: Node[], edges: Edge[], name: string | null) => { // Updated here
+setPipeline: (id, uuid, nodes: Node[], edges: Edge[], name: string | null) => { // Updated here
     set({
+      id,
+      uuid,
       nodes,
       edges,
       name,
