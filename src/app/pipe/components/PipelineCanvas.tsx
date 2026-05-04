@@ -41,7 +41,7 @@ export default function PipelineCanvas() {
 
           // 1. Force conversion to Number
           // 2. Use a specific numeric fallback
-          connection_id: Number(node.data?.connectionId ?? node.data?.connection_id ?? 1),
+          connection_id: Number(node.data?.connection_id || 0),
 
           depends_on: incomingEdges.map((e) => e.source),
           transform_code: (edgeData?.code as string) ?? "",
