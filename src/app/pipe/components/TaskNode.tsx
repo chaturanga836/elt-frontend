@@ -9,6 +9,7 @@ import {
   SwapOutlined,
   CheckCircleFilled 
 } from '@ant-design/icons';
+import { usePipelineStore } from '@/store/usePipeStore';
 
 const { Text } = Typography;
 
@@ -23,6 +24,7 @@ const TaskNode = ({ id, data }: any) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selected, setSelected] = useState<any>(data.config || null);
+const updateNodeData = usePipelineStore((state) => state.updateNodeData);
 
   useEffect(() => {
     if (data.config) {
@@ -37,7 +39,10 @@ const TaskNode = ({ id, data }: any) => {
   const onSelect = (item: any) => {
     setSelected(item);
     setIsModalOpen(false);
-    if (data.onConfigChange) data.onConfigChange(id, item);
+    updateNodeData(id, { 
+      config: item, 
+      connection_id: item.id // Ensure this matches your backend's expected integer/string
+    })
   };
 
   const openModel = () =>{
