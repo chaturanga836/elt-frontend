@@ -14,10 +14,10 @@ import { usePipelineStore } from '@/store/usePipeStore';
 const { Text } = Typography;
 
 const CONNECTIONS_DATA = [
-  { id: 'weather', name: 'Weather API', desc: 'Fetch rain data for Sri Lanka', color: '#1890ff' },
-  { id: 'crypto', name: 'Binance', desc: 'Get latest BTC/LKR rates', color: '#fadb14' },
-  { id: 'postgres', name: 'Postgres DB', desc: 'Read/Write to local database', color: '#3e63dd' },
-  { id: 'trino', name: 'Trino/Hudi', desc: 'Query data lakehouse', color: '#e67e22' },
+  { id: 1, name: 'Weather API', desc: 'Fetch rain data for Sri Lanka', color: '#1890ff' },
+  { id: 2, name: 'Binance', desc: 'Get latest BTC/LKR rates', color: '#fadb14' },
+  { id: 3, name: 'Postgres DB', desc: 'Read/Write to local database', color: '#3e63dd' },
+  { id: 4, name: 'Trino/Hudi', desc: 'Query data lakehouse', color: '#e67e22' },
 ];
 
 const TaskNode = ({ id, data }: any) => {
