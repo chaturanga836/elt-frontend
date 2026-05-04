@@ -33,6 +33,12 @@ export const PipelineService = {
     return response.data;
   },
 
+    UpdatePipeline: async (id: number, payload: PipelinePayload) => {
+    // The interceptor in api.ts handles tokens and global error alerts
+    const response = await api.put(`/pipelines/${id}`, payload);
+    return response.data;
+  },
+
   // You can add more methods here later
   getPipeline: async (uuid: string) => {
     const response = await api.get(`/pipelines/${uuid}`);

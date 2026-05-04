@@ -13,7 +13,7 @@ import { useParams } from 'next/navigation';
 
 export default function PipelineCanvas() {
   const params = useParams();
-  const { nodes, edges, name, setName, addNode, setUuid, setId} = usePipelineStore();
+  const { nodes, edges, name, setName, addNode, setUuid, setId, getId} = usePipelineStore();
   const [isSaving, setIsSaving] = useState(false);
   const [currentUuid, setCurrentUuid] = useState<string | null>(params?.uuid as string || null);
   const handleSave = async () => {
@@ -51,7 +51,15 @@ export default function PipelineCanvas() {
     };
 
     try {
-      const data = await PipelineService.savePipeline(payload);
+      const id = getId();
+      let data;
+      if(id){
+        data = await PipelineService.UpdatePipeline(id, payload);
+        setId(data.pipeline_id); // Update the store with the returned ID (in case it was a new pipeline)
+      } else {
+        data = await PipelineService.savePipeline(payload);
+         setId(data.pipeline_id); 
+      }
       notification.success({
         title: 'Pipeline Saved',
         description: `Version ${data.version} created successfully.`,
