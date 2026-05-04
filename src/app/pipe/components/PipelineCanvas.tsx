@@ -13,7 +13,7 @@ import { useParams } from 'next/navigation';
 
 export default function PipelineCanvas() {
   const params = useParams();
-  const { nodes, edges, name, setName, addNode, setUuid, setId, getId} = usePipelineStore();
+  const { nodes, edges, name, setName, addNode, setUuid, setId, getId } = usePipelineStore();
   const [isSaving, setIsSaving] = useState(false);
   const [currentUuid, setCurrentUuid] = useState<string | null>(params?.uuid as string || null);
   const handleSave = async () => {
@@ -24,6 +24,8 @@ export default function PipelineCanvas() {
     setIsSaving(true);
 
     const targetUuid = currentUuid || uuidv4();
+    const currentNodes = usePipelineStore.getState().nodes;
+    const currentEdges = usePipelineStore.getState().edges;
 
     const payload: PipelinePayload = {
       id: null,
@@ -31,8 +33,8 @@ export default function PipelineCanvas() {
       name: name ?? "Untitled Pipeline",
       org_id: 1,
       workspace_id: 1,
-      tasks: nodes.map((node) => {
-        const incomingEdges = edges.filter((e) => e.target === node.id);
+      tasks: currentNodes.map((node) => {
+        const incomingEdges = currentEdges.filter((e) => e.target === node.id);
         const edgeData = incomingEdges[0]?.data;
 
         return {
@@ -53,12 +55,12 @@ export default function PipelineCanvas() {
     try {
       const id = getId();
       let data;
-      if(id){
+      if (id) {
         data = await PipelineService.UpdatePipeline(id, payload);
         setId(data.pipeline_id); // Update the store with the returned ID (in case it was a new pipeline)
       } else {
         data = await PipelineService.savePipeline(payload);
-         setId(data.pipeline_id); 
+        setId(data.pipeline_id);
       }
       notification.success({
         title: 'Pipeline Saved',
