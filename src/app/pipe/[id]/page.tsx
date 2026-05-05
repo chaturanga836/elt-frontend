@@ -22,6 +22,7 @@ export default function Home() {
   const { setPipeline, setId } = usePipelineStore();
 
   const calculateLayout = (tasks: any[]) => {
+    console.info("Calculating layout for tasks:", tasks);
     const nodePositions: Record<string, { x: number, y: number }> = {};
     const SPACING_X = 250;
     const SPACING_Y = 100;
@@ -67,8 +68,9 @@ export default function Home() {
       try {
         const response = await PipelineService.getPipeline(id as string);
         const { pipeline, tasks } = response;
-
+        console.info("Fetched pipeline tasks:", tasks);
         const tasksWithLayout = calculateLayout(tasks);
+        console.info("Tasks after layout calculation:", tasksWithLayout);
         // 1. Reconstruct Nodes
         const initialNodes = tasksWithLayout.map((task: any) => {
           // Find the visual config based on the connection_id from the DB
