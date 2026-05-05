@@ -114,6 +114,8 @@ export default function Home() {
         });
         const pipe_id = pipeline.id;
         const uuid = pipeline.pipeline_uuid
+        console.info("Hydrated Nodes:", initialNodes);
+        console.info("Hydrated Edges:", initialEdges);
         // 3. Update Store
         setPipeline(pipe_id, uuid,initialNodes, initialEdges, pipeline.name);
         setId(pipe_id);
