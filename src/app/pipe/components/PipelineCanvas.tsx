@@ -51,7 +51,7 @@ export default function PipelineCanvas() {
         };
       }),
     };
-
+    console.info("Saving Pipeline with payload:", payload);
     try {
       
       let data;
