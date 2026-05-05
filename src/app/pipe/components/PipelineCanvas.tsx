@@ -57,7 +57,7 @@ export default function PipelineCanvas() {
       let data;
       if (id) {
         data = await PipelineService.UpdatePipeline(id, payload);
-        setId(data.pipeline.pipeline_id); // Update the store with the returned ID (in case it was a new pipeline)
+        setId(data.id); // Update the store with the returned ID (in case it was a new pipeline)
       } else {
         data = await PipelineService.savePipeline(payload);
         setId(data.pipeline.pipeline_id);
