@@ -19,7 +19,7 @@ export default function Home() {
 
   const params = useParams();
   const id = params.id;
-  const { setPipeline } = usePipelineStore();
+  const { setPipeline, setId } = usePipelineStore();
 
   const calculateLayout = (tasks: any[]) => {
     const nodePositions: Record<string, { x: number, y: number }> = {};
@@ -114,6 +114,7 @@ export default function Home() {
         const uuid = pipeline.pipeline_uuid
         // 3. Update Store
         setPipeline(pipe_id, uuid,initialNodes, initialEdges, pipeline.name);
+        setId(pipe_id);
 
       } catch (error) {
         console.error("Hydration Error:", error);

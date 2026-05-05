@@ -26,9 +26,9 @@ export default function PipelineCanvas() {
     const targetUuid = currentUuid || uuidv4();
     const currentNodes = usePipelineStore.getState().nodes;
     const currentEdges = usePipelineStore.getState().edges;
-
+    const id = getId();
     const payload: PipelinePayload = {
-      id: null,
+      id: id,
       pipeline_uuid: targetUuid,
       name: name ?? "Untitled Pipeline",
       org_id: 1,
@@ -53,14 +53,14 @@ export default function PipelineCanvas() {
     };
 
     try {
-      const id = getId();
+      
       let data;
       if (id) {
         data = await PipelineService.UpdatePipeline(id, payload);
-        setId(data.pipeline_id); // Update the store with the returned ID (in case it was a new pipeline)
+        setId(data.pipeline.pipeline_id); // Update the store with the returned ID (in case it was a new pipeline)
       } else {
         data = await PipelineService.savePipeline(payload);
-        setId(data.pipeline_id);
+        setId(data.pipeline.pipeline_id);
       }
       notification.success({
         title: 'Pipeline Saved',
