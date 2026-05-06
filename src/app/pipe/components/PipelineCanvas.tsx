@@ -36,7 +36,7 @@ export default function PipelineCanvas() {
       tasks: currentNodes.map((node) => {
         const incomingEdges = currentEdges.filter((e) => e.target === node.id);
         const edgeData = incomingEdges[0]?.data;
-
+        console.info('saving node details',node)
         return {
           task_key: node.id,
           task_name: (node.data?.label as string) ?? `Task ${node.id}`,
