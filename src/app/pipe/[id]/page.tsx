@@ -82,14 +82,14 @@ export default function Home() {
             position: { x: task.x, y: task.y },
             data: {
               label: task.task_key,
-              connectionId: task.connection_id,
+              connection_id: task.connection_id,
               config: visualConfig, // This feeds the 'selected' state in TaskNode
               code: task.logic?.transform_code || "# Write your logic here",
               // Pass the store's update function so the node can save changes
               onConfigChange: (nodeId: string, newItem: any) => {
                 // This should call your Zustand updateNodeData method
                 usePipelineStore.getState().updateNodeData(nodeId, {
-                  connectionId: newItem.id,
+                  connection_id: newItem.id,
                   config: newItem
                 });
               }
