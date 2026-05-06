@@ -68,9 +68,9 @@ export default function Home() {
       try {
         const response = await PipelineService.getPipeline(id as string);
         const { pipeline, tasks } = response;
-        console.info("Fetched pipeline tasks:", tasks);
+
         const tasksWithLayout = calculateLayout(tasks);
-        console.info("Tasks after layout calculation:", tasksWithLayout);
+
         // 1. Reconstruct Nodes
         const initialNodes = tasksWithLayout.map((task: any) => {
           // Find the visual config based on the connection_id from the DB
@@ -114,8 +114,7 @@ export default function Home() {
         });
         const pipe_id = pipeline.id;
         const uuid = pipeline.pipeline_uuid
-        console.info("Hydrated Nodes:", initialNodes);
-        console.info("Hydrated Edges:", initialEdges);
+
         // 3. Update Store
         setPipeline(pipe_id, uuid,initialNodes, initialEdges, pipeline.name);
         setId(pipe_id);

@@ -37,8 +37,7 @@ const updateNodeData = usePipelineStore((state) => state.updateNodeData);
   );
 
   const onSelect = (item: any) => {
-    console.info("Selected Connection:", item);
-    console.info("Updating node data for node ID:", id);
+
     setSelected(item);
     setIsModalOpen(false);
     updateNodeData(id, { 
