@@ -92,24 +92,7 @@ export default function PipelineCanvas() {
           zIndex: 100
         }}>
           <Space size="middle">
-            <Input
-              prefix={<EditOutlined style={{ color: '#bfbfbf' }} />}
-              value={name ?? ''}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter Pipeline Name"
-              variant="borderless"
-              style={{
-                fontSize: '16px',
-                fontWeight: 600,
-                width: '300px',
-                backgroundColor: '#f5f5f5',
-                borderRadius: '4px'
-              }}
-            />
-          </Space>
-
-          <Space>
-            <Button
+                    <Button
               type="default"
               icon={<PlusOutlined />}
               onClick={() => {
@@ -142,6 +125,24 @@ export default function PipelineCanvas() {
             >
               Save Pipeline
             </Button>
+            <Input
+              prefix={<EditOutlined style={{ color: '#bfbfbf' }} />}
+              value={name ?? ''}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter Pipeline Name"
+              variant="borderless"
+              style={{
+                fontSize: '16px',
+                fontWeight: 600,
+                width: '300px',
+                backgroundColor: '#f5f5f5',
+                borderRadius: '4px'
+              }}
+            />
+          </Space>
+
+          <Space>
+  
           </Space>
         </div>
 
