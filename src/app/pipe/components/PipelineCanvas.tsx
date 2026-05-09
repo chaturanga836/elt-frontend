@@ -77,6 +77,25 @@ export default function PipelineCanvas() {
     }
   };
 
+  const clickAddNode = async () =>{
+                const id = `node_${nodes.length + 1}`;
+                addNode({
+                  id,
+                  type: 'task', // Ensure this matches your registered node type name
+                  position: { x: (nodes.length + 1) * 200 - 55, y: 150 },
+                  data: {
+                    label: `Task ${nodes.length + 1}`,
+                    connectionId: 1, // Use camelCase to match TaskNode state logic
+                    // IMPORTANT: Pass the store's update function so the node can save choices
+                    onConfigChange: (nodeId: string, newItem: any) => {
+                      usePipelineStore.getState().updateNodeData(nodeId, {
+                        connectionId: newItem.id,
+                        config: newItem
+                      });
+                    }
+                  },
+                });
+  }
   return (
     <ReactFlowProvider>
       <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -95,25 +114,7 @@ export default function PipelineCanvas() {
                     <Button
               type="default"
               icon={<PlusOutlined />}
-              onClick={() => {
-                const id = `node_${nodes.length + 1}`;
-                addNode({
-                  id,
-                  type: 'task', // Ensure this matches your registered node type name
-                  position: { x: (nodes.length + 1) * 200 - 55, y: 150 },
-                  data: {
-                    label: `Task ${nodes.length + 1}`,
-                    connectionId: 1, // Use camelCase to match TaskNode state logic
-                    // IMPORTANT: Pass the store's update function so the node can save choices
-                    onConfigChange: (nodeId: string, newItem: any) => {
-                      usePipelineStore.getState().updateNodeData(nodeId, {
-                        connectionId: newItem.id,
-                        config: newItem
-                      });
-                    }
-                  },
-                });
-              }}
+              onClick={() => clickAddNode()}
             >
               Task Node
             </Button>
