@@ -1,10 +1,13 @@
 #!/bin/bash
 
-# 1. Pull latest code
-git pull origin master
+# 1. Pull latest code and FORCE reset to match GitHub exactly
+# This prevents local file changes on the server from breaking the build
+git fetch origin master
+git reset --hard origin/master
 
-# 2. Build and restart (This will cause ~10 seconds of downtime)
-docker-compose up -d --build
+# 2. Build and restart 
+# Use --force-recreate to ensure a fresh container state
+docker-compose up -d --build --force-recreate
 
-# 3. CRITICAL: Remove old, dangling images to save disk space
+# 3. Cleanup
 docker image prune -f
