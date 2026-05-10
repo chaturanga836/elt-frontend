@@ -1,3 +1,4 @@
+import { PipelineCreatePayload } from '@/types/pipetypes';
 import api from './api';
 
 export interface PipelineTask {
@@ -17,23 +18,23 @@ export interface PipelineFilterParams {
   size?: number;
   name?: string;
 }
-export interface PipelinePayload {
-  id: number | null;
-  pipeline_uuid: string;
-  name: string;
-  org_id: number;
-  workspace_id: number;
-  tasks: PipelineTask[];
-}
+// export interface PipelinePayload {
+//   id: number | null;
+//   pipeline_uuid: string;
+//   name: string;
+//   org_id: number;
+//   workspace_id: number;
+//   tasks: PipelineTask[];
+// }
 
 export const PipelineService = {
-  savePipeline: async (payload: PipelinePayload) => {
+  savePipeline: async (payload: PipelineCreatePayload) => {
     // The interceptor in api.ts handles tokens and global error alerts
     const response = await api.post('/pipelines/', payload);
     return response.data;
   },
 
-    UpdatePipeline: async (id: number, payload: PipelinePayload) => {
+    UpdatePipeline: async (id: number, payload: PipelineCreatePayload) => {
     // The interceptor in api.ts handles tokens and global error alerts
     const response = await api.put(`/pipelines/${id}`, payload);
     return response.data;

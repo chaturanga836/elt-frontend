@@ -1,21 +1,24 @@
 'use client';
 import { v4 as uuidv4 } from 'uuid';
-import { ReactFlowProvider } from '@xyflow/react';
+import { ReactFlowProvider, useReactFlow } from '@xyflow/react';
 import { Button, Space, message, Input } from 'antd';
 import { PlusOutlined, SaveOutlined, EditOutlined } from '@ant-design/icons';
 import { usePipelineStore } from "@/store/usePipeStore";
 import PipelineCanvasInner from './PipelineCanvasInner';
 import { notification } from '@/lib/antd/static';
 import '@xyflow/react/dist/style.css';
-import { PipelinePayload, PipelineService } from '@/services/pipe.service';
+import { PipelineService } from '@/services/pipe.service';
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
+import { InputMapping, PipelineCreatePayload, TaskType } from '@/types/pipetypes';
 
 export default function PipelineCanvas() {
   const params = useParams();
   const { nodes, edges, name, setName, addNode, setUuid, setId, getId } = usePipelineStore();
   const [isSaving, setIsSaving] = useState(false);
   const [currentUuid, setCurrentUuid] = useState<string | null>(params?.uuid as string || null);
+  const { getViewport } = useReactFlow();
+
   const handleSave = async () => {
 
     if (!name?.trim()) {
@@ -24,36 +27,36 @@ export default function PipelineCanvas() {
     setIsSaving(true);
 
     const targetUuid = currentUuid || uuidv4();
-    const currentNodes = usePipelineStore.getState().nodes;
-    const currentEdges = usePipelineStore.getState().edges;
+
     const id = getId();
-    const payload: PipelinePayload = {
-      id: id,
+
+    const payload: PipelineCreatePayload = {
+      // Only include ID if we are updating an existing record
+      ...(id && { id }),
+
       pipeline_uuid: targetUuid,
       name: name ?? "Untitled Pipeline",
       org_id: 1,
       workspace_id: 1,
-      tasks: currentNodes.map((node) => {
-        const incomingEdges = currentEdges.filter((e) => e.target === node.id);
-        const edgeData = incomingEdges[0]?.data;
-        console.info('saving node details',node)
-        return {
-          task_key: node.id,
-          task_name: (node.data?.label as string) ?? `Task ${node.id}`,
-
-          // 1. Force conversion to Number
-          // 2. Use a specific numeric fallback
-          connection_id: Number(node.data?.connection_id || 0),
-
-          depends_on: incomingEdges.map((e) => e.source),
-          transform_code: (edgeData?.code as string) ?? "",
-          func_name: (edgeData?.func_name as string) ?? "",
-        };
-      }),
+      canvas_structure: {
+        nodes: nodes,
+        edges: edges,
+        viewport: getViewport()
+      },
+      tasks: nodes.map((node) => ({
+        task_key: node.id,
+        task_type: (node.type as TaskType) || 'task',
+        is_start_node: edges.filter((e) => e.target === node.id).length === 0,
+        connection_id: Number(node.data?.connectionId || 0),
+        depends_on: edges.filter((e) => e.target === node.id).map((e) => e.source),
+        transform_code: (node.data?.transformCode as string) ?? "",
+        func_name: (node.data?.func_name as string) ?? `func_${node.id}`,
+        input_mapping: (node.data?.inputMapping as InputMapping) || ({} as InputMapping)
+      })),
     };
     console.info("Saving Pipeline with payload:", payload);
     try {
-      
+
       let data;
       if (id) {
         data = await PipelineService.UpdatePipeline(id, payload);
@@ -77,25 +80,27 @@ export default function PipelineCanvas() {
     }
   };
 
-  const clickAddNode = async () =>{
-                const id = `node_${nodes.length + 1}`;
-                addNode({
-                  id,
-                  type: 'task', // Ensure this matches your registered node type name
-                  position: { x: (nodes.length + 1) * 200 - 55, y: 150 },
-                  data: {
-                    label: `Task ${nodes.length + 1}`,
-                    connectionId: 1, // Use camelCase to match TaskNode state logic
-                    // IMPORTANT: Pass the store's update function so the node can save choices
-                    onConfigChange: (nodeId: string, newItem: any) => {
-                      usePipelineStore.getState().updateNodeData(nodeId, {
-                        connectionId: newItem.id,
-                        config: newItem
-                      });
-                    }
-                  },
-                });
-  }
+  const clickAddNode = async () => {
+    const id = `node_${nodes.length + 1}`;
+    addNode({
+      id,
+      type: 'task',
+      position: { x: nodes.length * 250, y: 150 },
+      data: {
+        label: `Task ${nodes.length + 1}`,
+        connectionId: null, // Start empty
+        transformCode: "",  // Keep logic inside the node data
+        funcName: `func_${id}`,
+        onConfigChange: (nodeId: string, newItem: any) => {
+          usePipelineStore.getState().updateNodeData(nodeId, {
+            connectionId: newItem.id,
+            // If the user edits code in a drawer, update transformCode here
+          });
+        }
+      },
+    });
+  };
+
   return (
     <ReactFlowProvider>
       <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -111,7 +116,7 @@ export default function PipelineCanvas() {
           zIndex: 100
         }}>
           <Space size="middle">
-                    <Button
+            <Button
               type="default"
               icon={<PlusOutlined />}
               onClick={() => clickAddNode()}
@@ -143,7 +148,7 @@ export default function PipelineCanvas() {
           </Space>
 
           <Space>
-  
+
           </Space>
         </div>
 

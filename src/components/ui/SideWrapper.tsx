@@ -37,6 +37,11 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
       icon: <AppstoreOutlined />,
       label: 'Connections',
     },
+        {
+      key: '/task',
+      icon: <AppstoreOutlined />,
+      label: 'Tasks',
+    },
     {
       key: '/settings',
       icon: <SettingOutlined />,
