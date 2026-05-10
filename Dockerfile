@@ -1,44 +1,48 @@
-# --- Stage 1: Build ---
-FROM node:20-alpine AS builder
+# 1. Use a specific LTS version to satisfy EBADENGINE requirements
+FROM node:22.13.1-alpine AS base
+
+# 2. Install dependencies only when needed
+FROM base AS deps
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-RUN npm install -g npm@11.14.1
+# Copy lockfile and package.json
 COPY package.json package-lock.json ./
+
+# Use 'npm ci' for a clean, fast, and synced install based on your lockfile
 RUN npm ci
 
-# 1. ARGs must be declared before the command that needs them
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_TELEMETRY_DISABLED 1
-
-# 2. COPY SOURCE CODE FIRST
+# 3. Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# 3. NOW RUN BUILD (Next.js will bake the ENV into the JS here)
+# Next.js collects completely anonymous telemetry data about general usage.
+ENV NEXT_TELEMETRY_DISABLED=1
+
 RUN npm run build
 
-# --- Stage 2: Run ---
-FROM node:20-alpine AS runner
+# 4. Production image, copy all the files and run next
+FROM base AS runner
 WORKDIR /app
 
-# Re-declare for runtime
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy artifacts from builder
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
 USER nextjs
+
 EXPOSE 3000
-ENV PORT 3000
+
+ENV PORT=3000
 
 CMD ["npm", "start"]
