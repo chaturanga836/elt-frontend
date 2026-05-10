@@ -8,8 +8,7 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 COPY package.json package-lock.json ./
 # Use BuildKit cache for npm to speed up downloads
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --legacy-peer-deps
+RUN npm ci --legacy-peer-deps
 
 # 3. Builder - Optimized for Next.js caching
 FROM base AS builder
@@ -27,8 +26,7 @@ ENV NEXT_PUBLIC_BUILD_ID=$NEXT_PUBLIC_BUILD_ID
 
 # Use BuildKit cache for the .next/cache directory. 
 # This is the single biggest time-saver for Next.js builds.
-RUN --mount=type=cache,target=/app/.next/cache \
-    npm run build
+RUN npm ci --legacy-peer-deps
 
 # 4. Runner - Minimal footprint
 FROM base AS runner
