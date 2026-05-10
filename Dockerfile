@@ -11,7 +11,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Use 'npm ci' for a clean, fast, and synced install based on your lockfile
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # 3. Rebuild the source code only when needed
 FROM base AS builder
