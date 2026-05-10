@@ -4,7 +4,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # 1. Update NPM inside the container first
-RUN npm install -g npm@10.8.2
+RUN npm install -g npm@11.14.1
 
 # 2. Copy the files
 COPY package.json package-lock.json ./

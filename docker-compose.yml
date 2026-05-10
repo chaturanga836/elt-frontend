@@ -7,4 +7,11 @@ services:
         - NEXT_PUBLIC_BUILD_ID=${BUILD_ID:-development}
         - NEXT_PUBLIC_API_URL=http://13.200.160.10:8000/api/v1
     ports:
-      - "3000:3000" # Change this line
+      - "3000:3000"
+    volumes:
+      # Persistent cache for Next.js build artifacts
+      - next_build_cache:/app/.next/cache
+    restart: unless-stopped
+
+volumes:
+  next_build_cache:

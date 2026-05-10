@@ -3,3 +3,6 @@ node_modules
 out
 .git
 .env.local
+.vscode
+Dockerfile
+docker-compose.yml
