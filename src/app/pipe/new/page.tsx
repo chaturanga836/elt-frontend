@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import PipelineCanvas from '../components/PipelineCanvas';
 import { usePipelineStore } from '@/store/usePipeStore';
+import { ReactFlowProvider } from '@xyflow/react';
 
 export default function Home() {
 
@@ -13,7 +14,7 @@ export default function Home() {
     }, [])
     
   return (
-    <React.Fragment>
+    <ReactFlowProvider>
       <PipelineCanvas />
-    </React.Fragment>  );
+    </ReactFlowProvider>  );
 }
