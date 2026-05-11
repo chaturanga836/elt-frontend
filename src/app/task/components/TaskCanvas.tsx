@@ -18,21 +18,21 @@ export default function TaskCanvas() {
   });
 
   const handleSave = async () => {
-    // if (!taskData.name) {
-    //   return notification.error({ message: 'Task name is required' });
-    // }
+    if (!taskData.name) {
+      return notification.error({ message: 'Task name is required' });
+    }
 
-    // try {
-    //   setLoading(true);
-    //   await TaskService.createTask(taskData);
-    //   notification.success({ message: 'Task created successfully' });
-    //   router.push('/task'); // Go back to list
-    // } catch (err) {
-    //   console.error(err);
-    //   notification.error({ message: 'Failed to create task' });
-    // } finally {
-    //   setLoading(false);
-    // }
+    try {
+      setLoading(true);
+      await TaskService.createTask(taskData);
+      notification.success({ message: 'Task created successfully' });
+      router.push('/task'); // Go back to list
+    } catch (err) {
+      console.error(err);
+      notification.error({ message: 'Failed to create task' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
