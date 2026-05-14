@@ -1,143 +1,150 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Card, Button, Modal, Input, Avatar, Typography, Flex, Empty } from 'antd';
-import { 
-  PlusOutlined, 
-  SearchOutlined, 
-  SettingOutlined, 
-  SwapOutlined,
-  CheckCircleFilled 
-} from '@ant-design/icons';
+import { Card, Modal, Input, Avatar, Typography, Flex, Empty, Spin } from 'antd';
+import { SearchOutlined, SettingOutlined, CheckCircleFilled, PlusOutlined } from '@ant-design/icons';
 import { usePipelineStore } from '@/store/usePipeStore';
+import { TaskService, TaskResponse } from '@/services/task.service';
+import { useDebouncedFetch } from '@/features/connections/hooks/useDebouncedFetch';
 
 const { Text } = Typography;
-
-const CONNECTIONS_DATA = [
-  { id: 1, name: 'Weather API', desc: 'Fetch rain data for Sri Lanka', color: '#1890ff' },
-  { id: 2, name: 'Binance', desc: 'Get latest BTC/LKR rates', color: '#fadb14' },
-  { id: 3, name: 'Postgres DB', desc: 'Read/Write to local database', color: '#3e63dd' },
-  { id: 4, name: 'Trino/Hudi', desc: 'Query data lakehouse', color: '#e67e22' },
-];
 
 const TaskNode = ({ id, data }: any) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selected, setSelected] = useState<any>(data.config || null);
-const updateNodeData = usePipelineStore((state) => state.updateNodeData);
-
-  useEffect(() => {
-    if (data.config) {
-      setSelected(data.config);
-    }
-  }, [data.config]);
   
-  const filteredConnections = CONNECTIONS_DATA.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const updateNodeData = usePipelineStore((state) => state.updateNodeData);
+  const selected = data.config || null;
 
-  const onSelect = (item: any) => {
+  const { 
+    data: taskResponse, 
+    searching, 
+    performFetch 
+  } = useDebouncedFetch(TaskService.getTaskList);
 
-    setSelected(item);
-    setIsModalOpen(false);
-    updateNodeData(id, { 
-      config: item, 
-      connection_id: item.id // Ensure this matches your backend's expected integer/string
-    })
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    performFetch({
+      query: value,
+      limit: 15,
+      sort_by: 'updated_at',
+      sort_order: 'desc'
+    });
   };
 
-  const openModel = () =>{
-    console.info("open model");
-    setIsModalOpen(true)
-  }
+  useEffect(() => {
+    if (isModalOpen) {
+      performFetch({
+        query: '',
+        limit: 15,
+        sort_by: 'updated_at',
+        sort_order: 'desc'
+      });
+    }
+  }, [isModalOpen, performFetch]);
+
+  const onSelect = (item: TaskResponse) => {
+    updateNodeData(id, { 
+      config: item, 
+      task_id: item.id 
+    });
+    setIsModalOpen(false);
+  };
+
+  const tasks = taskResponse?.items || [];
+
   return (
     <div className="custom-node">
-<Handle type="target" position={Position.Left} style={{ background: '#1890ff' }} />
+      {/* Left Handle (Input) */}
+      <Handle type="target" position={Position.Left} style={{ background: '#1890ff' }} />
       
       <Card 
         size="small" 
+        hoverable
         style={{ 
-          width: 110,  // Half width
-          height: 40,  // Half height
-          borderRadius: '4px', 
-          display: 'flex',
+          width: 120, 
+          height: 45, 
+          borderRadius: '6px', 
+          display: 'flex', 
           alignItems: 'center',
-          justifyContent: 'center',
-          border: selected ? `1px solid ${selected.color}` : '1px dashed #605858',
-          overflow: 'hidden'
+          border: selected ? `1px solid #1890ff` : '1px dashed #d9d9d9',
+          cursor: 'pointer'
         }}
         styles={{ body: { padding: '4px 8px', width: '100%' } }}
-        onClick={() => openModel()}
+        onClick={() => setIsModalOpen(true)}
       >
         {!selected ? (
-          <Text style={{ fontSize: '10px', color: '#605858' }}>+ Select</Text>
+          <Flex align="center" gap={4} justify="center" style={{ width: '100%' }}>
+            <PlusOutlined style={{ fontSize: '10px', color: '#8c8c8c' }}/>
+            <Text style={{ fontSize: '10px', color: '#8c8c8c' }}>Select Task</Text>
+          </Flex>
         ) : (
-          <Flex align="center" gap={4} style={{ width: '100%' }}>
+          <Flex align="center" gap={6} style={{ width: '100%' }}>
             <Avatar 
-              size={18} 
+              size={20} 
               shape="square" 
-              style={{ backgroundColor: selected.color, flexShrink: 0 }} 
-              icon={<SettingOutlined style={{ fontSize: '10px' }} />} 
+              icon={<SettingOutlined />} 
+              style={{ backgroundColor: '#1890ff', flexShrink: 0 }} 
             />
-            <Text strong style={{ fontSize: '10px', flexGrow: 1 }} ellipsis>
+            <Text strong style={{ fontSize: '10px' }} ellipsis>
               {selected.name}
             </Text>
-            {/* Small hidden swap button or just click card to change */}
           </Flex>
         )}
       </Card>
 
+      {/* Right Handle (Output) */}
       <Handle type="source" position={Position.Right} style={{ background: '#1890ff' }} />
 
       <Modal
-        title="Choose a Connection"
+        title="Select Pipeline Task"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={null}
         centered
+        width={400}
       >
         <Input 
           prefix={<SearchOutlined />} 
-          placeholder="Search (e.g. Postgres, Weather...)" 
+          placeholder="Search tasks..." 
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ marginBottom: '20px' }}
+          onChange={handleSearchChange}
+          style={{ marginBottom: '16px' }}
           allowClear
         />
 
-        <Flex vertical gap="small" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-          {filteredConnections.length > 0 ? (
-            filteredConnections.map((item) => (
+        <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+          {searching ? (
+            <Flex justify="center" style={{ padding: '20px' }}><Spin /></Flex>
+          ) : tasks.length > 0 ? (
+            tasks.map((task: TaskResponse) => (
               <div
-                key={item.id}
-                onClick={() => onSelect(item)}
+                key={task.id}
+                onClick={() => onSelect(task)}
                 style={{
-                  padding: '12px',
-                  borderRadius: '8px',
+                  padding: '10px',
+                  marginBottom: '8px',
+                  borderRadius: '6px',
                   border: '1px solid #f0f0f0',
                   cursor: 'pointer',
-                  transition: 'background 0.2s',
-                  background: selected?.id === item.id ? '#e6f7ff' : '#fff',
+                  background: selected?.id === task.id ? '#e6f7ff' : '#fff',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#fafafa')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = selected?.id === item.id ? '#e6f7ff' : '#fff')}
               >
                 <Flex align="center" justify="space-between">
-                  <Flex gap="middle" align="center">
-                    <Avatar shape="square" style={{ backgroundColor: item.color }} icon={<SettingOutlined />} />
-                    <div>
-                      <Text strong style={{ display: 'block' }}>{item.name}</Text>
-                      <Text type="secondary" style={{ fontSize: '12px' }}>{item.desc}</Text>
-                    </div>
+                  <Flex vertical>
+                    <Text strong style={{ fontSize: '12px' }}>{task.name}</Text>
+                    <Text type="secondary" style={{ fontSize: '10px' }}>ID: {task.id}</Text>
                   </Flex>
-                  {selected?.id === item.id && <CheckCircleFilled style={{ color: '#52c41a' }} />}
+                  {selected?.id === task.id && <CheckCircleFilled style={{ color: '#52c41a' }} />}
                 </Flex>
               </div>
             ))
           ) : (
-            <Empty description="No connections found" />
+            <Empty description="No tasks found" />
           )}
-        </Flex>
+        </div>
       </Modal>
     </div>
   );

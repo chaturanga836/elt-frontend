@@ -28,8 +28,12 @@ export const TaskService = {
         return response.data;
     },
 
-    getTaskList: async(payload: getTaskListParams) => {
-        const response = await api.get('/tasks/', { params: payload });
+    getTaskList: async(payload: getTaskListParams & { signal?: AbortSignal }) => {
+        const { signal, ...params } = payload;
+        const response = await api.get('/tasks/', { 
+            params, 
+            signal // Axios handles the abort signal automatically
+        });
         return response.data;
     }
 }

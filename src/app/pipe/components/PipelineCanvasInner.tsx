@@ -9,18 +9,33 @@ import {
   BackgroundVariant 
 } from "@xyflow/react";
 import TaskNode from './TaskNode';
+ // Import these
 import CodeEdge from './CodeEdge';
+import StartNode from "./StartNode";
+import EndNode from "./EndNode";
 
-// Constants to ensure visual sync with the store's snapping logic
 const GRID_SIZE_X = 200;
 const GRID_SIZE_Y = 20;
 
-const nodeTypes = { task: TaskNode };
+// Update nodeTypes to include the new permanent nodes
+const nodeTypes = { 
+  taskNode: TaskNode,
+  startNode: StartNode,
+  endNode: EndNode 
+};
+
 const edgeTypes = { code: CodeEdge };
 
 const PipelineCanvasInner = () => {
-  // We only pull what the canvas needs to render and interact with the graph
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect } = usePipelineStore();
+  // Pull deleteNodes from the store
+  const { 
+    nodes, 
+    edges, 
+    onNodesChange, 
+    onEdgesChange, 
+    onConnect, 
+    deleteNodes 
+  } = usePipelineStore();
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -30,16 +45,18 @@ const PipelineCanvasInner = () => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        // Add this line to handle the 'Delete' or 'Backspace' keys
+        onNodesDelete={deleteNodes} 
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        // Interaction & Grid Config
         snapToGrid={true}
         snapGrid={[GRID_SIZE_X, GRID_SIZE_Y]}
         connectionLineType={ConnectionLineType.Step}
         connectionLineStyle={{ stroke: '#1890ff', strokeWidth: 2 }}
         fitView
+        // Accessibility: ensure users know they can delete tasks but not boundaries
+        deleteKeyCode={["Backspace", "Delete"]}
       >
-        {/* Stages (Vertical Lines) */}
         <Background 
           id="stages" 
           variant={BackgroundVariant.Lines} 
@@ -47,7 +64,6 @@ const PipelineCanvasInner = () => {
           color="#ccc" 
           size={1.5}
         />
-        {/* Lanes (Horizontal Lines) */}
         <Background 
           id="lanes" 
           variant={BackgroundVariant.Lines} 

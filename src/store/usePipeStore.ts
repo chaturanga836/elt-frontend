@@ -1,19 +1,18 @@
 import { create } from 'zustand';
-import {
-  addEdge,
-  applyNodeChanges,
-  applyEdgeChanges,
-  Node,
-  Edge,
-  OnNodesChange,
-  OnEdgesChange,
-  OnConnect,
+import { 
+  Connection, 
+  Edge, 
+  Node, 
+  OnNodesChange, 
+  OnEdgesChange, 
+  OnConnect, 
+  applyNodeChanges, 
+  applyEdgeChanges, 
+  addEdge 
 } from '@xyflow/react';
 
-// Configuration for snapping - matches your Canvas setup
+// Configuration
 const GRID_SIZE_X = 200;
-const GRID_SIZE_Y = 20;
-const NODE_WIDTH = 110;
 
 interface PipelineState {
   nodes: Node[];
@@ -21,106 +20,156 @@ interface PipelineState {
   name: string | null;
   id: number | null;
   uuid: string | null;
+  // Getters & Setters
   getCurrentUuid: () => string | null;
-  setUuid: (uuid:string | null) => void;
+  setUuid: (uuid: string | null) => void;
   setId: (id: number | null) => void;
   getId: () => number | null;
+  setName: (name: string | null) => void;
+  // React Flow Handlers
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
+  // Actions
   setNodes: (nodes: Node[]) => void;
   setEdges: (edges: Edge[]) => void;
-  addNode: (node: Node) => void;
-  updateEdgeData: (edgeId: string, data: any) => void;
-  setName: (name: string | null) => void;
-  // Add this line
-  setPipeline: (id: number | null, uuid : string | null, nodes: Node[], edges: Edge[], name: string | null) => void;
+  addNodeBetween: (type?: string) => void; 
   updateNodeData: (nodeId: string, newData: any) => void;
+  updateEdgeData: (edgeId: string, data: any) => void;
+  setPipeline: (id: number | null, uuid: string | null, nodes: Node[], edges: Edge[], name: string | null) => void;
+  getNodes: () => Node[];
+  getEdges: () => Edge[];
+  addNode: (newNode: Node) => void;
+  deleteNodes: (nodesToDelete: Node[]) => void;
+  updateNodePosition: (nodeId: string, position: { x: number, y: number }) => void;
 }
 
-export const usePipelineStore = create<PipelineState>((set, get) => ({
-  nodes: [],
-  edges: [],
-  name: null,
-  uuid : null,
-  id: null,
-  setName: (name) => set({ name }),
-  // SNAP-TO-GRID LOGIC MOVED HERE
-  onNodesChange: (changes) => {
-    const snappedChanges = changes.map((change) => {
-      if (change.type === 'position' && change.position) {
-        return {
-          ...change,
-          position: {
-            // Horizontal snap (Stages)
-            x: Math.round(change.position.x / GRID_SIZE_X) * GRID_SIZE_X - (NODE_WIDTH / 2),
-            // Vertical snap (Lanes)
-            y: Math.round(change.position.y / GRID_SIZE_Y) * GRID_SIZE_Y,
-          },
-        };
-      }
-      return change;
-    });
+// 1. Define the Fixed Boundary Nodes
+const initialNodes: Node[] = [
+  { 
+    id: 'node-start', 
+    type: 'startNode', 
+    position: { x: 0, y: 200 }, 
+    data: { label: 'Start' },
+    draggable: false, 
+    deletable: false,
+  },
+  { 
+    id: 'node-end', 
+    type: 'endNode', 
+    position: { x: GRID_SIZE_X * 2, y: 200 }, 
+    data: { label: 'End' },
+    draggable: false,
+    deletable: false,
+  }
+];
 
-    set({
-      nodes: applyNodeChanges(snappedChanges, get().nodes),
-    });
+const initialEdges: Edge[] = [
+  { 
+    id: 'e-start-end', 
+    source: 'node-start', 
+    target: 'node-end', 
+    animated: true,
+    type: 'code',
+    data: { code: '', func_name: 'fn_init' }
+  }
+];
+
+export const usePipelineStore = create<PipelineState>((set, get) => ({
+  // --- Initial State ---
+  nodes: initialNodes,
+  edges: initialEdges,
+  name: null,
+  uuid: null,
+  id: null,
+
+  // --- Getters & Setters ---
+  getCurrentUuid: () => get().uuid,
+  setUuid: (uuid) => set({ uuid }),
+  setId: (id) => set({ id }),
+  getId: () => get().id,
+  setName: (name) => set({ name }),
+
+  // Logic to add a single node
+  addNode: (newNode) => set((state) => ({ 
+    nodes: [...state.nodes, newNode] 
+  })),
+  // --- React Flow Handlers ---
+  onNodesChange: (changes) => {
+    set({ nodes: applyNodeChanges(changes, get().nodes) });
   },
 
   onEdgesChange: (changes) => {
-    set({
-      edges: applyEdgeChanges(changes, get().edges),
-    });
+    set({ edges: applyEdgeChanges(changes, get().edges) });
   },
 
-  getCurrentUuid: ()=>{
-    return get().uuid;
-  },
-
-  setUuid: (uuid)=>{
-    set({
-      uuid 
-    })
-  },
-
-  setId: (id) => {
-    set({
-      id
-    })
-  },
-
-  getId: () => {
-    return get().id;
-  },
   onConnect: (connection) => {
-    // Check if edge already exists to prevent duplicates
     const edges = get().edges;
-    const isDuplicate = edges.some(
-      (e) => e.source === connection.source && e.target === connection.target
-    );
-
-    if (isDuplicate) return;
-
     const newEdge: Edge = {
       ...connection,
       id: `e-${connection.source}-${connection.target}`,
       type: 'code',
       animated: true,
-      data: { 
-        code: '', 
-        func_name: `fn_${Math.random().toString(36).slice(2, 7)}` 
-      }
+      data: { code: '', func_name: `fn_${Math.random().toString(36).slice(2, 7)}` }
     };
-    
-    set({
-      edges: addEdge(newEdge, edges),
-    });
+    set({ edges: addEdge(newEdge, edges) });
   },
 
+  // --- Actions ---
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
-  
-  addNode: (node) => set({ nodes: [...get().nodes, node] }),
+  getNodes: () => get().nodes,
+  getEdges: () => get().edges,
+
+  addNodeBetween: (type = 'taskNode') => {
+    const { nodes, edges } = get();
+    const endNode = nodes.find(n => n.id === 'node-end');
+    if (!endNode) return;
+
+    const currentEndX = endNode.position.x;
+    const newNodeId = `task-${Math.random().toString(36).slice(2, 7)}`;
+
+    const newNode: Node = {
+      id: newNodeId,
+      type: type,
+      position: { x: currentEndX, y: 200 }, // Places it exactly where End was
+      data: { label: 'New Task', config: null },
+    };
+
+    // Shift End Node to the right and add the new node
+    const updatedNodes = nodes.map(n => 
+      n.id === 'node-end' 
+        ? { ...n, position: { x: n.position.x + GRID_SIZE_X, y: 200 } } 
+        : n
+    ).concat(newNode);
+
+    // Rewire Edges: Find the edge pointing to 'node-end' and redirect it to the new node
+    const updatedEdges = edges.map(edge => 
+      edge.target === 'node-end' 
+        ? { ...edge, target: newNodeId, id: `e-${edge.source}-${newNodeId}` } 
+        : edge
+    );
+
+    // Create the final bridge from the New Node to the End Node
+    updatedEdges.push({
+      id: `e-${newNodeId}-node-end`,
+      source: newNodeId,
+      target: 'node-end',
+      animated: true,
+      type: 'code',
+      data: { code: '', func_name: `fn_${Math.random().toString(36).slice(2, 7)}` }
+    });
+
+    set({ nodes: updatedNodes, edges: updatedEdges });
+  },
+
+  updateNodeData: (nodeId, newData) => {
+    set({
+      nodes: get().nodes.map((node) =>
+        node.id === nodeId ? { ...node, data: { ...node.data, ...newData } } : node
+      ),
+    });
+  },
 
   updateEdgeData: (edgeId, data) => {
     set({
@@ -130,23 +179,36 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
     });
   },
 
-  // set pipeline
-setPipeline: (id, uuid, nodes: Node[], edges: Edge[], name: string | null) => { // Updated here
-    set({
-      id,
-      uuid,
-      nodes,
-      edges,
-      name,
-    });
+  setPipeline: (id, uuid, nodes, edges, name) => {
+    set({ id, uuid, nodes, edges, name });
   },
-  updateNodeData: (nodeId, newData) => {
-    set({
-      nodes: get().nodes.map((node) =>
-        node.id === nodeId 
-          ? { ...node, data: { ...node.data, ...newData } } 
-          : node
-      ),
-    });
-  },
+
+  // Inside your usePipelineStore...
+deleteNodes: (nodesToDelete: Node[]) => {
+  set((state) => ({
+    nodes: state.nodes.filter((node) => {
+      // Prevent deletion of Start and End nodes
+      const isProtected = node.type === 'startNode' || node.type === 'endNode';
+      // Only keep the node if it's protected OR not in the delete list
+      return isProtected || !nodesToDelete.some((n) => n.id === node.id);
+    }),
+    // Also cleanup edges connected to deleted nodes
+    edges: state.edges.filter(
+      (edge) =>
+        !nodesToDelete.some((n) => n.id === edge.source || n.id === edge.target)
+    ),
+  }));
+},
+
+// Inside PipelineState interface
+
+
+// Inside create<PipelineState> implementation
+updateNodePosition: (nodeId, position) => {
+  set((state) => ({
+    nodes: state.nodes.map((node) =>
+      node.id === nodeId ? { ...node, position } : node
+    ),
+  }));
+},
 }));
