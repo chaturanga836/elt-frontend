@@ -38,7 +38,7 @@ export default function TaskCanvas() {
   return (
     <div style={{ padding: '24px', height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Space direction="vertical">
+        <Space orientation="vertical" size={0}>
           <Breadcrumb items={[{ title: <Link href="/task">Tasks</Link> }, { title: 'New Task' }]} />
           <h2 style={{ margin: 0 }}>Create Independent Task</h2>
         </Space>
@@ -58,7 +58,7 @@ export default function TaskCanvas() {
       <div style={{ display: 'flex', gap: '20px', flex: 1, minHeight: 0 }}>
         {/* Left Side: Metadata */}
         <Card style={{ width: '350px' }} title="Task Details">
-          <Space direction="vertical" style={{ width: '100%' }} size="large">
+          <Space orientation="vertical" style={{ width: '100%' }} size="large">
             <div>
               <label style={{ fontWeight: 'bold', display: 'block', marginBottom: 8 }}>Task Name</label>
               <Input 
@@ -83,7 +83,7 @@ export default function TaskCanvas() {
         <Card 
           style={{ flex: 1, display: 'flex', flexDirection: 'column' }} 
           title={<Space><CodeOutlined /> Python Script</Space>}
-          bodyStyle={{ flex: 1, padding: 0, overflow: 'hidden' }}
+          styles={{ body: { flex: 1, padding: 0, overflow: 'hidden' } }}
         >
           <Editor
             height="100%"

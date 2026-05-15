@@ -42,47 +42,53 @@ interface PipelineState {
   addNode: (newNode: Node) => void;
   deleteNodes: (nodesToDelete: Node[]) => void;
   updateNodePosition: (nodeId: string, position: { x: number, y: number }) => void;
+  resetPipeline: () => void;
 }
 
 // 1. Define the Fixed Boundary Nodes
-const initialNodes: Node[] = [
+const DEFAULT_NODES: Node[] = [
   { 
-    id: 'node-start', 
+    id: 'start', // Changed from node-start for simplicity
     type: 'startNode', 
     position: { x: 0, y: 200 }, 
-    data: { label: 'Start' },
-    draggable: false, 
     deletable: false,
+    data: { label: 'Start' } 
   },
   { 
-    id: 'node-end', 
+    id: 'end',   // Use 'end' consistently
     type: 'endNode', 
-    position: { x: GRID_SIZE_X * 2, y: 200 }, 
-    data: { label: 'End' },
-    draggable: false,
-    deletable: false,
+    position: { x: 600, y: 200 }, 
+    deletable: false, 
+    data: { label: 'End' } 
   }
 ];
 
 const initialEdges: Edge[] = [
   { 
     id: 'e-start-end', 
-    source: 'node-start', 
-    target: 'node-end', 
+    source: 'start', // Must match DEFAULT_NODES id
+    target: 'end',   // Must match DEFAULT_NODES id
     animated: true,
-    type: 'code',
+    type: 'code',    // Ensure this matches your edgeTypes in CanvasInner
     data: { code: '', func_name: 'fn_init' }
   }
 ];
 
 export const usePipelineStore = create<PipelineState>((set, get) => ({
   // --- Initial State ---
-  nodes: initialNodes,
+  nodes: DEFAULT_NODES,
   edges: initialEdges,
   name: null,
   uuid: null,
   id: null,
 
+resetPipeline: () => set({ 
+    nodes: DEFAULT_NODES, 
+    edges: initialEdges, // CRITICAL: Reset must include the edge
+    name: 'Untitled Pipeline',
+    id: null,
+    uuid: null
+  }),
   // --- Getters & Setters ---
   getCurrentUuid: () => get().uuid,
   setUuid: (uuid) => set({ uuid }),

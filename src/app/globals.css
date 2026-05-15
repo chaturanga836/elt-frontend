@@ -24,3 +24,56 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Force the interceptor modal to be visible and on top */
+/* .fullscreen-modal {
+  display: block !important;
+  opacity: 1 !important;
+  z-index: 10000 !important;
+}
+
+.ant-modal-wrap {
+  display: flex !important; 
+  z-index: 10000 !important;
+} */
+
+/* Ensure the background blur doesn't hide the content */
+/* .ant-modal-mask {
+  z-index: 9999 !important;
+} */
+
+/* --- FULLSCREEN INTERCEPTOR STYLES --- */
+
+/* 1. Force the wrapper visibility ONLY for this specific modal type */
+.fullscreen-modal-container.ant-modal-wrap {
+    display: flex !important;
+    z-index: 10000 !important;
+    visibility: visible !important;
+}
+
+/* 2. Scoped mask: This prevents your other modals from becoming too dark */
+.fullscreen-modal-container .ant-modal-mask {
+    z-index: 9999 !important;
+    backdrop-filter: blur(4px) !important;
+    background: rgba(0, 0, 0, 0.45) !important;
+}
+
+/* 3. Force content visibility and remove default spacing */
+.fullscreen-modal-container .fullscreen-modal {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    top: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* 4. Ensure the actual modal cards hit the screen edges */
+.fullscreen-modal-container .ant-modal-content,
+.fullscreen-modal-container .ant-modal-body {
+    padding: 0 !important;
+    border-radius: 0 !important;
+    height: 100vh !important;
+    width: 100vw !important;
+    box-shadow: none !important; /* Optional: cleaner look for fullscreen */
+}
