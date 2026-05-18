@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { v4 as uuidv4 } from 'uuid';
 import { 
   Connection, 
   Edge, 
@@ -11,7 +12,6 @@ import {
   addEdge 
 } from '@xyflow/react';
 
-// Configuration
 const GRID_SIZE_X = 200;
 
 interface PipelineState {
@@ -45,50 +45,54 @@ interface PipelineState {
   resetPipeline: () => void;
 }
 
-// 1. Define the Fixed Boundary Nodes
+// Fixed core boundaries with custom uuid tracking injected
+const startNodeId = `start_${uuidv4().substring(0, 8)}`;
+const endNodeId = `end_${uuidv4().substring(0, 8)}`;
+
 const DEFAULT_NODES: Node[] = [
   { 
-    id: 'start', // Changed from node-start for simplicity
-    type: 'startNode', 
+    id: startNodeId, 
+    type: 'startNode', // 0 = startNode
     position: { x: 0, y: 200 }, 
     deletable: false,
-    data: { label: 'Start' } 
+    data: { label: 'Start', id: undefined, node_uuid: 'start', config: null, } 
   },
   { 
-    id: 'end',   // Use 'end' consistently
-    type: 'endNode', 
+    id: endNodeId, 
+    type: 'endNode', // 2 = endNode
     position: { x: 600, y: 200 }, 
     deletable: false, 
-    data: { label: 'End' } 
+    data: { label: 'End', id: undefined, node_uuid: 'end', config: null } 
   }
 ];
 
-const initialEdges: Edge[] = [
+// Reverted to clean, non-custom visual connections
+const INITIAL_EDGES: Edge[] = [
   { 
     id: 'e-start-end', 
-    source: 'start', // Must match DEFAULT_NODES id
-    target: 'end',   // Must match DEFAULT_NODES id
+    source: startNodeId, 
+    target: endNodeId, 
     animated: true,
-    type: 'code',    // Ensure this matches your edgeTypes in CanvasInner
-    data: { code: '', func_name: 'fn_init' }
+    style: { strokeWidth: 2 }
   }
 ];
 
 export const usePipelineStore = create<PipelineState>((set, get) => ({
   // --- Initial State ---
   nodes: DEFAULT_NODES,
-  edges: initialEdges,
-  name: null,
+  edges: INITIAL_EDGES,
+  name: 'Untitled Pipeline',
   uuid: null,
   id: null,
 
-resetPipeline: () => set({ 
+  resetPipeline: () => set({ 
     nodes: DEFAULT_NODES, 
-    edges: initialEdges, // CRITICAL: Reset must include the edge
+    edges: INITIAL_EDGES, 
     name: 'Untitled Pipeline',
     id: null,
     uuid: null
   }),
+
   // --- Getters & Setters ---
   getCurrentUuid: () => get().uuid,
   setUuid: (uuid) => set({ uuid }),
@@ -96,10 +100,20 @@ resetPipeline: () => set({
   getId: () => get().id,
   setName: (name) => set({ name }),
 
-  // Logic to add a single node
-  addNode: (newNode) => set((state) => ({ 
-    nodes: [...state.nodes, newNode] 
-  })),
+  // Logic to add a single node via drop/drag
+  addNode: (newNode) => set((state) => {
+    // Intercept node to guarantee a fresh uuid is attached to its metadata payload
+    const uuid = uuidv4();
+    const preparedNode = {
+      ...newNode,
+      data: {
+        ...newNode.data,
+        node_uuid: newNode.data?.node_uuid || `task_${uuid}`
+      }
+    };
+    return { nodes: [...state.nodes, preparedNode] };
+  }),
+
   // --- React Flow Handlers ---
   onNodesChange: (changes) => {
     set({ nodes: applyNodeChanges(changes, get().nodes) });
@@ -114,56 +128,65 @@ resetPipeline: () => set({
     const newEdge: Edge = {
       ...connection,
       id: `e-${connection.source}-${connection.target}`,
-      type: 'code',
       animated: true,
-      data: { code: '', func_name: `fn_${Math.random().toString(36).slice(2, 7)}` }
+      style: { strokeWidth: 2 }
     };
     set({ edges: addEdge(newEdge, edges) });
   },
 
-  // --- Actions ---
+  // --- Core API Data Synchronization Setters ---
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
   getNodes: () => get().nodes,
   getEdges: () => get().edges,
 
-  addNodeBetween: (type = 'taskNode') => {
+  // Programmatic Node Appender Hook
+  addNodeBetween: (type = '1') => {
     const { nodes, edges } = get();
-    const endNode = nodes.find(n => n.id === 'node-end');
+    // FIXED: Corrected reference from 'node-end' to 'end' to align with initialization
+    const endNode = nodes.find(n => n.id === 'end');
     if (!endNode) return;
 
     const currentEndX = endNode.position.x;
-    const newNodeId = `task-${Math.random().toString(36).slice(2, 7)}`;
+    const trackingUuid = uuidv4();
+    const newNodeId = `task_${trackingUuid}`;
 
     const newNode: Node = {
       id: newNodeId,
-      type: type,
-      position: { x: currentEndX, y: 200 }, // Places it exactly where End was
-      data: { label: 'New Task', config: null },
+      type: type, // Default fallback points to type '1' (execution task)
+      position: { x: currentEndX, y: 200 }, 
+      data: { 
+        label: 'New Task', 
+        node_uuid: newNodeId,
+        config: {
+          name: 'New Task',
+          script: '# Write your python logic here\n\ndef main(input_data):\n    return input_data',
+          status: 1
+        }
+      },
     };
 
-    // Shift End Node to the right and add the new node
+    // Shift End Node position to accommodate the layout growth
     const updatedNodes = nodes.map(n => 
-      n.id === 'node-end' 
+      n.id === 'end' 
         ? { ...n, position: { x: n.position.x + GRID_SIZE_X, y: 200 } } 
         : n
     ).concat(newNode);
 
-    // Rewire Edges: Find the edge pointing to 'node-end' and redirect it to the new node
+    // Redirect existing pipeline endpoint markers towards our new task block
     const updatedEdges = edges.map(edge => 
-      edge.target === 'node-end' 
+      edge.target === 'end' 
         ? { ...edge, target: newNodeId, id: `e-${edge.source}-${newNodeId}` } 
         : edge
     );
 
-    // Create the final bridge from the New Node to the End Node
+    // Add final link to close the chain
     updatedEdges.push({
-      id: `e-${newNodeId}-node-end`,
+      id: `e-${newNodeId}-end`,
       source: newNodeId,
-      target: 'node-end',
+      target: 'end',
       animated: true,
-      type: 'code',
-      data: { code: '', func_name: `fn_${Math.random().toString(36).slice(2, 7)}` }
+      style: { strokeWidth: 2 }
     });
 
     set({ nodes: updatedNodes, edges: updatedEdges });
@@ -189,32 +212,25 @@ resetPipeline: () => set({
     set({ id, uuid, nodes, edges, name });
   },
 
-  // Inside your usePipelineStore...
-deleteNodes: (nodesToDelete: Node[]) => {
-  set((state) => ({
-    nodes: state.nodes.filter((node) => {
-      // Prevent deletion of Start and End nodes
-      const isProtected = node.type === 'startNode' || node.type === 'endNode';
-      // Only keep the node if it's protected OR not in the delete list
-      return isProtected || !nodesToDelete.some((n) => n.id === node.id);
-    }),
-    // Also cleanup edges connected to deleted nodes
-    edges: state.edges.filter(
-      (edge) =>
-        !nodesToDelete.some((n) => n.id === edge.source || n.id === edge.target)
-    ),
-  }));
-},
+  deleteNodes: (nodesToDelete: Node[]) => {
+    set((state) => ({
+      nodes: state.nodes.filter((node) => {
+        // FIXED: Enforce type matches on string variants '0' and '2'
+        const isProtected = node.type === '0' || node.type === '2' || node.id === 'start' || node.id === 'end';
+        return isProtected || !nodesToDelete.some((n) => n.id === node.id);
+      }),
+      edges: state.edges.filter(
+        (edge) =>
+          !nodesToDelete.some((n) => n.id === edge.source || n.id === edge.target)
+      ),
+    }));
+  },
 
-// Inside PipelineState interface
-
-
-// Inside create<PipelineState> implementation
-updateNodePosition: (nodeId, position) => {
-  set((state) => ({
-    nodes: state.nodes.map((node) =>
-      node.id === nodeId ? { ...node, position } : node
-    ),
-  }));
-},
+  updateNodePosition: (nodeId, position) => {
+    set((state) => ({
+      nodes: state.nodes.map((node) =>
+        node.id === nodeId ? { ...node, position } : node
+      ),
+    }));
+  },
 }));

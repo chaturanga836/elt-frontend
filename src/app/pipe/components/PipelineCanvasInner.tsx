@@ -24,7 +24,8 @@ const nodeTypes = {
   endNode: EndNode 
 };
 
-const edgeTypes = { code: CodeEdge };
+const edgeTypes = { //code: CodeEdge 
+};
 
 const PipelineCanvasInner = () => {
   // Pull deleteNodes from the store

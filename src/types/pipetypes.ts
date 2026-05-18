@@ -1,6 +1,6 @@
 import { Node, Edge, Viewport } from '@xyflow/react';
 
-export type TaskType = 'start' | 'task' | 'logic_gate' | 'sink';
+export type TaskType = 0 | 1 | 2 ;
 
 export interface PipelineLogic {
   id?: number;
@@ -14,15 +14,17 @@ export interface InputMapping {
 }
 
 export interface PipelineTask {
-  id?: number;
-  task_key: string;      // The unique ID in React Flow (n1, n3, etc.)
-  task_type: TaskType;
-  is_start_node: boolean;
-  connection_id?: number | null;
-  depends_on: string[];  // Array of task_keys
-  logic_id?: number | null;
-  logic?: PipelineLogic | null; // Hydrated from the backend
-  input_mapping?: InputMapping | null;
+  id?: number | undefined;
+  pipeline_id? : number;
+  task_id: number | unknown;      // The unique ID in React Flow (n1, n3, etc.)
+  node_type: TaskType;
+  node_uuid: string;       // The UUID for this node, used for frontend references
+  left_depend ?: string | null;
+  right_depend?: string | null;
+  // depends_on: string[];  // Array of task_keys
+  // logic_id?: number | null;
+  // logic?: PipelineLogic | null; // Hydrated from the backend
+  // input_mapping?: InputMapping | null;
 }
 
 export interface CanvasStructure {
@@ -35,8 +37,8 @@ export interface PipelineCreatePayload {
   id?: number;              // Optional: Only present during a PUT (update)
   pipeline_uuid: string;
   name: string;
-  org_id: number;
-  workspace_id: number;
+  org_id?: number;
+  workspace_id?: number;
   canvas_structure: CanvasStructure;
   tasks: PipelineTask[]; 
 }
