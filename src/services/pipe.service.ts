@@ -2,8 +2,8 @@ import { PipelineCreatePayload } from '@/types/pipetypes';
 import api from './api';
 
 export interface PipelineTask {
-task_key: string;
-  task_name: string; // Add this field
+  task_key: string;
+  task_name: string; 
   connection_id: number;
   depends_on: string[];
   transform_code: string;
@@ -18,44 +18,50 @@ export interface PipelineFilterParams {
   size?: number;
   name?: string;
 }
-// export interface PipelinePayload {
-//   id: number | null;
-//   pipeline_uuid: string;
-//   name: string;
-//   org_id: number;
-//   workspace_id: number;
-//   tasks: PipelineTask[];
-// }
+
+// 1. Explicitly structure incoming log details matching your FastAPI backend
+export interface PipelineRunHistoryParams {
+  pipeline_uuid?: string;
+  status?: number;
+  start_date?: string; // ISO String format
+  end_date?: string;   // ISO String format
+  page?: number;
+  limit?: number;
+}
 
 export const PipelineService = {
   savePipeline: async (payload: PipelineCreatePayload) => {
-    // The interceptor in api.ts handles tokens and global error alerts
     const response = await api.post('/pipelines/', payload);
     return response.data;
   },
 
-    UpdatePipeline: async (id: number, payload: PipelineCreatePayload) => {
-    // The interceptor in api.ts handles tokens and global error alerts
+  UpdatePipeline: async (id: number, payload: PipelineCreatePayload) => {
     const response = await api.put(`/pipelines/${id}`, payload);
     return response.data;
   },
 
-  // You can add more methods here later
   getPipeline: async (uuid: string) => {
     const response = await api.get(`/pipelines/${uuid}`);
     return response.data;
   },
 
-getPipelines: async (params: PipelineFilterParams) => {
+  getPipelines: async (params: PipelineFilterParams) => {
     const response = await api.get('/pipelines/', { 
       params: params 
     });
-    return response.data; // Returns { items, total, page, size, pages }
+    return response.data; 
   },
 
-runPipe: async (uuid: string) => {
-    // Note: No trailing slash after 'run' to match backend @router.post("/run/{pipeline_uuid}")
+  runPipe: async (uuid: string) => {
     const response = await api.post(`/sync/run/${uuid}`);
     return response.data;
+  },
+
+  // 2. Add the dynamic log retrieval method hooked to your /api/v1/sync/runs endpoint
+  getPipelineRuns: async (params: PipelineRunHistoryParams) => {
+    const response = await api.get('/sync/runs', {
+      params: params
+    });
+    return response.data; // Returns { meta: { total_records, page, limit, total_pages }, results: [...] }
   },
 };

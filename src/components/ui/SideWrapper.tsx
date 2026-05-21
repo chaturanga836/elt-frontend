@@ -7,6 +7,8 @@ import {
   PlusCircleOutlined,
   AppstoreOutlined,
   SettingOutlined,
+  HistoryOutlined,
+  UnorderedListOutlined,
 } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -21,11 +23,24 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
     token: { colorBgContainer },
   } = theme.useToken();
 
+  // Nested grouping structures inside AntD require unique parenting keys
   const menuItems = [
     {
-      key: '/pipe/list',
+      key: 'pipelines-group',
       icon: <ProjectOutlined />,
       label: 'Pipelines',
+      children: [
+        {
+          key: '/pipe/list',
+          icon: <UnorderedListOutlined />,
+          label: 'All Pipelines',
+        },
+        {
+          key: '/pipe/history',
+          icon: <HistoryOutlined />,
+          label: 'Run History',
+        },
+      ],
     },
     {
       key: '/pipe',
@@ -37,7 +52,7 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
       icon: <AppstoreOutlined />,
       label: 'Connections',
     },
-        {
+    {
       key: '/task',
       icon: <AppstoreOutlined />,
       label: 'Tasks',
@@ -48,6 +63,14 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
       label: 'Settings',
     },
   ];
+
+  // Logic to determine which parent submenus should stay open automatically based on pathname
+  const getSelectedParentKeys = () => {
+    if (pathname.startsWith('/pipe/list') || pathname.startsWith('/pipe/history')) {
+      return ['pipelines-group'];
+    }
+    return [];
+  };
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -86,8 +109,14 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
           theme="dark"
           mode="inline"
           selectedKeys={[pathname]}
+          defaultOpenKeys={getSelectedParentKeys()}
           items={menuItems}
-          onClick={({ key }) => router.push(key)}
+          onClick={({ key }) => {
+            // Only route if clicking actionable items with path keys, not group container headers
+            if (key !== 'pipelines-group') {
+              router.push(key);
+            }
+          }}
         />
       </Sider>
 
