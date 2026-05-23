@@ -1,7 +1,6 @@
 import { ConnectionCategory } from "@/types/connection";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-// Helper to ensure we always have the correct base path
 const getBaseUrl = () => (API_BASE.endsWith("/api/v1") ? API_BASE : `${API_BASE}/api/v1`);
 
 const METHOD_MAP: Record<string, number> = {
@@ -29,6 +28,8 @@ const BODY_METHOD_MAP: Record<string, number> = {
     graphql: 5,
 };
 
+const DEFAULT_TENANT = "trial_user_001";
+
 export const connectionService = {
     preparePayload: (store: any) => {
         const getAuthConfig = () => {
@@ -36,7 +37,7 @@ export const connectionService = {
                 case "basic":
                     return store.basicAuth;
                 case "bearer":
-                    return { token: store.bearerTokenAuth?.token }; // Simplified for testable format
+                    return { token: store.bearerTokenAuth?.token };
                 case "apikey":
                     return store.apiKeyAuth;
                 case "oauth2":
@@ -64,21 +65,17 @@ export const connectionService = {
         };
     },
 
-    // --- NEW TEST CONNECTION ROUTE ---
     testConnection: async (storeData: any) => {
         const url = `${getBaseUrl()}/rest-api-connections/test-connection`;
-
         const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(connectionService.preparePayload(storeData)),
         });
-
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.detail || "Test request failed");
         }
-
         return response.json();
     },
 
@@ -99,7 +96,6 @@ export const connectionService = {
             const error = await response.json();
             throw new Error(error.detail || "Failed to save connection");
         }
-
         return response.json();
     },
 
@@ -110,7 +106,102 @@ export const connectionService = {
         return response.json();
     },
 
-    // dev
+    getUnifiedConnections: async (tenantId: string = DEFAULT_TENANT) => {
+        const url = `${getBaseUrl()}/connections/unified/list?tenant_id=${tenantId}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch connections");
+        return response.json();
+    },
+
+    getCategories: async (): Promise<{ data: ConnectionCategory[] }> => {
+        const url = `${getBaseUrl()}/connection-types/categories`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch categories");
+        const data = await response.json();
+        return {
+            data: data.map((c: any) => ({
+                id: String(c.id),
+                name: c.name,
+                description: c.description,
+                icon: c.icon,
+            })),
+        };
+    },
+
+    getPrototypes: async (categoryId: number) => {
+        const url = `${getBaseUrl()}/connection-types/categories/${categoryId}/prototypes`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch prototypes");
+        return response.json();
+    },
+
+    getPrototypeSchema: async (categoryId: number, prototypeId: string) => {
+        const url = `${getBaseUrl()}/connection-types/categories/${categoryId}/prototypes/${prototypeId}/schema`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch schema");
+        return response.json();
+    },
+
+    createGenericConnection: async (payload: any, tenantId: string = DEFAULT_TENANT) => {
+        const url = `${getBaseUrl()}/connections/create?tenant_id=${tenantId}`;
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || "Failed to create connection");
+        }
+        return response.json();
+    },
+
+    updateGenericConnection: async (
+        connectionId: number,
+        payload: any,
+        tenantId: string = DEFAULT_TENANT,
+    ) => {
+        const url = `${getBaseUrl()}/connections/update/${connectionId}?tenant_id=${tenantId}`;
+        const response = await fetch(url, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || "Failed to update connection");
+        }
+        return response.json();
+    },
+
+    getGenericConnection: async (connectionId: number, tenantId: string = DEFAULT_TENANT) => {
+        const url = `${getBaseUrl()}/connections/${connectionId}?tenant_id=${tenantId}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to load connection");
+        return response.json();
+    },
+
+    deleteGenericConnection: async (connectionId: number, tenantId: string = DEFAULT_TENANT) => {
+        const url = `${getBaseUrl()}/connections/${connectionId}?tenant_id=${tenantId}`;
+        const response = await fetch(url, { method: "DELETE" });
+        if (!response.ok) throw new Error("Failed to delete connection");
+        return response.json();
+    },
+
+    testGenericConnection: async (payload: any) => {
+        const url = `${getBaseUrl()}/connections/test`;
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || "Test failed");
+        }
+        return response.json();
+    },
+
     registerConnection: async (payload: any) => {
         const url = `${getBaseUrl()}/dev/register`;
         const response = await fetch(url, {
@@ -118,44 +209,14 @@ export const connectionService = {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
-
-        if (!response.ok) throw new Error("Failed to fetch connections");
+        if (!response.ok) throw new Error("Failed to register provider");
         return response.json();
     },
 
     getProviders: async () => {
         const url = `${getBaseUrl()}/dev/providers`;
         const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch connections");
+        if (!response.ok) throw new Error("Failed to fetch providers");
         return response.json();
-    },
-
-    // to remove
-    getCategories: async (): Promise<{ data: ConnectionCategory[] }> => {
-        const mockData: ConnectionCategory[] = [
-            {
-                id: "1",
-                name: "Databases",
-                description: "Connect to PostgreSQL, MySQL, or MongoDB",
-                icon: "database",
-            },
-            {
-                id: "2",
-                name: "APIs",
-                description: "Connect to REST or GraphQL endpoints",
-                icon: "api",
-            },
-            {
-                id: "3",
-                name: "Cloud Storage",
-                description: "S3, Google Cloud Storage, or Azure Blobs",
-                icon: "cloud",
-            },
-        ];
-
-        // Return as a single object wrapper
-        return Promise.resolve({
-            data: mockData,
-        });
     },
 };
