@@ -31,7 +31,7 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
       label: 'Pipelines',
       children: [
         {
-          key: '/pipe/list',
+          key: '/pipe',
           icon: <UnorderedListOutlined />,
           label: 'All Pipelines',
         },
@@ -43,7 +43,7 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
       ],
     },
     {
-      key: '/pipe',
+      key: '/pipe/new',
       icon: <PlusCircleOutlined />,
       label: 'New Pipeline',
     },
@@ -66,7 +66,7 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
 
   // Logic to determine which parent submenus should stay open automatically based on pathname
   const getSelectedParentKeys = () => {
-    if (pathname.startsWith('/pipe/list') || pathname.startsWith('/pipe/history')) {
+    if (pathname === '/pipe' || pathname.startsWith('/pipe/history')) {
       return ['pipelines-group'];
     }
     return [];
