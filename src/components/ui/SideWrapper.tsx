@@ -64,6 +64,13 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
     },
   ];
 
+  const getSelectedMenuKey = () => {
+    if (pathname.startsWith('/pipe/history')) {
+      return '/pipe/history';
+    }
+    return pathname;
+  };
+
   // Logic to determine which parent submenus should stay open automatically based on pathname
   const getSelectedParentKeys = () => {
     if (pathname === '/pipe' || pathname.startsWith('/pipe/history')) {
@@ -108,7 +115,7 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
         <Menu
           theme="dark"
           mode="inline"
-          selectedKeys={[pathname]}
+          selectedKeys={[getSelectedMenuKey()]}
           defaultOpenKeys={getSelectedParentKeys()}
           items={menuItems}
           onClick={({ key }) => {
