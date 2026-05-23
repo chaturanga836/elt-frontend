@@ -33,9 +33,11 @@ const ProviderTable = () => {
     }, []);
 
     // Filter logic for the search bar
-    const filteredData = dataSource.filter(
-        (item) => item.name.toLowerCase().includes(searchText.toLowerCase()) || item.handler_dag_id.toLowerCase().includes(searchText.toLowerCase()),
-    );
+    const filteredData = dataSource.filter((item) => {
+        const nameMatch = item.name?.toLowerCase().includes(searchText.toLowerCase());
+        const handlerMatch = item.handler_dag_id?.toLowerCase().includes(searchText.toLowerCase());
+        return nameMatch || handlerMatch;
+    });
 
 
     const columns = [
@@ -46,10 +48,10 @@ const ProviderTable = () => {
             render: (text) => <span style={{ fontWeight: 600 }}>{text}</span>,
         },
         {
-            title: "Airflow DAG ID",
+            title: "Handler ID",
             dataIndex: "handler_dag_id",
             key: "handler_dag_id",
-            render: (dag) => <Tag color="blue">{dag}</Tag>,
+            render: (handler) => handler ? <Tag color="blue">{handler}</Tag> : <Tag>—</Tag>,
         },
         {
             title: "Status",

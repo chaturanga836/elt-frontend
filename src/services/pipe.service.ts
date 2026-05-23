@@ -29,6 +29,36 @@ export interface PipelineRunHistoryParams {
   limit?: number;
 }
 
+export interface PipelineNodeLog {
+  id: number;
+  node_uuid: string;
+  node_name: string;
+  step_index: number;
+  status: number;
+  input_data: Record<string, unknown> | null;
+  output_data: Record<string, unknown> | null;
+  stdout_logs: string | null;
+  error_traceback: string | null;
+  execution_time_ms: number | null;
+  executed_at: string;
+}
+
+export interface PipelineRunDetail {
+  run: {
+    id: number;
+    pipeline_uuid: string;
+    pipeline_id: number;
+    org_id: number;
+    workspace_id: number;
+    status: number;
+    error_summary: string | null;
+    canvas_snapshot: unknown;
+    started_at: string;
+    finished_at: string | null;
+  };
+  node_logs: PipelineNodeLog[];
+}
+
 export const PipelineService = {
   savePipeline: async (payload: PipelineCreatePayload) => {
     const response = await api.post('/pipelines/', payload);
@@ -63,5 +93,10 @@ export const PipelineService = {
       params: params
     });
     return response.data; // Returns { meta: { total_records, page, limit, total_pages }, results: [...] }
+  },
+
+  getPipelineRunDetail: async (runId: number): Promise<PipelineRunDetail> => {
+    const response = await api.get(`/sync/runs/${runId}`);
+    return response.data;
   },
 };

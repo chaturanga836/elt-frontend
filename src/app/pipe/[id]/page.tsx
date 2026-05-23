@@ -12,7 +12,6 @@ const CONNECTIONS_DATA = [
   { id: 1, name: 'Weather API', desc: 'Fetch rain data', color: '#1890ff', key: 'weather' },
   { id: 2, name: 'Binance', desc: 'Get BTC rates', color: '#fadb14', key: 'crypto' },
   { id: 3, name: 'Postgres DB', desc: 'Local database', color: '#3e63dd', key: 'postgres' },
-  { id: 4, name: 'Trino/Hudi', desc: 'Data lakehouse', color: '#e67e22', key: 'trino' },
 ];
 
 export default function Home() {
