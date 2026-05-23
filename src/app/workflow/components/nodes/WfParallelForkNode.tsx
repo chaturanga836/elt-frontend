@@ -36,7 +36,7 @@ export default function WfParallelForkNode({
         <option value="">Select join node...</option>
         {joinCandidates.map((n) => (
           <option key={n.id} value={n.id}>
-            {n.data?.label || n.id}
+            {String((n.data?.label as string) ?? n.id)}
           </option>
         ))}
       </select>
