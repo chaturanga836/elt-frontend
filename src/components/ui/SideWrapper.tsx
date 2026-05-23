@@ -9,6 +9,7 @@ import {
   SettingOutlined,
   HistoryOutlined,
   UnorderedListOutlined,
+  NodeIndexOutlined,
 } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -48,6 +49,23 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
       label: 'New Pipeline',
     },
     {
+      key: 'workflows-group',
+      icon: <NodeIndexOutlined />,
+      label: 'Workflows',
+      children: [
+        {
+          key: '/workflow',
+          icon: <UnorderedListOutlined />,
+          label: 'All Workflows',
+        },
+        {
+          key: '/workflow/new',
+          icon: <PlusCircleOutlined />,
+          label: 'New Workflow',
+        },
+      ],
+    },
+    {
       key: '/connections',
       icon: <AppstoreOutlined />,
       label: 'Connections',
@@ -68,15 +86,24 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
     if (pathname.startsWith('/pipe/history')) {
       return '/pipe/history';
     }
+    if (pathname.startsWith('/workflow/new')) {
+      return '/workflow/new';
+    }
+    if (pathname.startsWith('/workflow')) {
+      return '/workflow';
+    }
     return pathname;
   };
 
-  // Logic to determine which parent submenus should stay open automatically based on pathname
   const getSelectedParentKeys = () => {
+    const keys: string[] = [];
     if (pathname === '/pipe' || pathname.startsWith('/pipe/history')) {
-      return ['pipelines-group'];
+      keys.push('pipelines-group');
     }
-    return [];
+    if (pathname.startsWith('/workflow')) {
+      keys.push('workflows-group');
+    }
+    return keys;
   };
 
   return (
@@ -120,7 +147,7 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
           items={menuItems}
           onClick={({ key }) => {
             // Only route if clicking actionable items with path keys, not group container headers
-            if (key !== 'pipelines-group') {
+            if (key !== 'pipelines-group' && key !== 'workflows-group') {
               router.push(key);
             }
           }}
