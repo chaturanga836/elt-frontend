@@ -4,6 +4,8 @@ export interface BoundaryHookConfig {
   hook_task_id?: number | null;
   hook_when?: HookWhen;
   label?: string;
+  /** Task-node sync settings — see types/syncConfig.ts */
+  sync?: import('./syncConfig').NodeSyncConfig;
 }
 
 export const HOOK_WHEN_OPTIONS: { label: string; value: HookWhen }[] = [
