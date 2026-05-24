@@ -62,6 +62,7 @@ function editPath(record: ConnectionRecord): string {
 
 function createPath(sourceId: string): string {
   if (sourceId === 'rest-api') return '/connections/rest-api';
+  if (sourceId === 'rest-api-groups') return '/connections/rest-api/groups';
   if (sourceId === 'db') return '/connections/database';
   if (sourceId === 'file') return '/connections/storage';
   return '/connections';
@@ -165,10 +166,16 @@ export default function ConnectionsTable({ tenantId }: { tenantId: string }) {
 
   const sourceTypes = [
     {
-      id: 'rest-api',
-      name: 'REST API',
+      id: 'rest-api-groups',
+      name: 'REST API Groups',
       icon: <ApiOutlined />,
-      desc: 'Postman-style HTTP client',
+      desc: 'Binance-style shared credentials + endpoints',
+    },
+    {
+      id: 'rest-api',
+      name: 'Standalone REST',
+      icon: <ApiOutlined />,
+      desc: 'Single Postman-style request',
     },
     {
       id: 'db',
@@ -223,7 +230,7 @@ export default function ConnectionsTable({ tenantId }: { tenantId: string }) {
         width={700}
         centered
       >
-        <div className="grid grid-cols-3 gap-4 py-4">
+        <div className="grid grid-cols-2 gap-4 py-4">
           {sourceTypes.map((source) => (
             <Card
               hoverable

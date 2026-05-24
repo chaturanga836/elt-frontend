@@ -6,7 +6,7 @@ import UrlBar from './UrlBar';
 import RequestTab from './RequestTab';
 import { VariablesDrawer } from './VariablesDrawer';
 import { useConnectionStore } from '@/store/useConnectionStore';
-import { Button, Input, message } from 'antd';
+import { Alert, Button, Input, message } from 'antd';
 import { useApiStore } from '@/store/useApiStore';
 
 export default function RestApiForm() {
@@ -19,6 +19,8 @@ export default function RestApiForm() {
   const connectionName = useConnectionStore((state) => state.connectionName);
   const setConnection = useConnectionStore((state) => state.setConnection);
   const description = useConnectionStore((state) => state.description);
+  const groupId = useConnectionStore((state) => state.groupId);
+  const groupName = useConnectionStore((state) => state.groupName);
   
   const handleSave = async () => {
     try {
@@ -64,8 +66,16 @@ export default function RestApiForm() {
         </header>
 
         <main className="flex-1 p-4 mx-auto w-full space-y-4">
+          {groupId && (
+            <Alert
+              type="info"
+              showIcon
+              message={`Endpoint in group: ${groupName || groupId}`}
+              description="Base URL and authentication are inherited from the group. Edit path and params below."
+            />
+          )}
           <UrlBar />
-          <RequestTab />
+          <RequestTab hideAuth={!!groupId} />
 
                 <Button
               type="primary"

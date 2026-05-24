@@ -18,6 +18,9 @@ import { generateId } from "@/lib/generateId";
 
 interface ConnectionState {
     id: number | null;
+    groupId: number | null;
+    groupName: string | null;
+    path: string;
 
     connectionName: string | null;
     description: string | null;
@@ -44,7 +47,10 @@ interface ConnectionState {
     setSettingType: (type: SettingType) => void;
     setConnection: (name: string, description: string) => void;
     setUrl: (url: string) => void;
+    setPath: (path: string) => void;
     setMethod: (method: HttpMethod) => void;
+    setGroupContext: (groupId: number | null, groupName?: string | null) => void;
+    loadFromEndpoint: (data: Record<string, unknown>) => void;
     updateTable: (field: "params" | "headers", updatedPairs: KeyValuePair[]) => void;
     setBodyType: (type: BodyType) => void;
 
@@ -74,7 +80,9 @@ interface ConnectionState {
 
 export const useConnectionStore = create<ConnectionState>((set) => ({
     id: null,
-    // --- Initial State ---
+    groupId: null,
+    groupName: null,
+    path: "",
     connectionName: null,
     description: null,
     url: "",
@@ -97,7 +105,73 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
     setId: (id) => set({ id }),
     setConnection: (name, description) => set({ connectionName: name, description }),
     setUrl: (url) => set({ url }),
+    setPath: (path) => set({ path, url: path }),
     setMethod: (method) => set({ method }),
+    setGroupContext: (groupId, groupName = null) => set({ groupId, groupName }),
+    loadFromEndpoint: (data) => {
+        const authNum = (data.auth_type as number) ?? 0;
+        const authTypeMap: Record<number, AuthType> = {
+            0: "none",
+            1: "basic",
+            2: "bearer",
+            3: "jwt",
+            4: "apikey",
+            5: "oauth2",
+        };
+        const authType = authTypeMap[authNum] || "none";
+        const authConfig = (data.auth_config as Record<string, unknown>) || {};
+        const bodyMethod = (data.body_method as number) ?? 1;
+        const bodyTypeMap: Record<number, BodyType> = {
+            1: "none",
+            2: "form-data",
+            3: "json",
+            4: "xml",
+            5: "graphQL",
+        };
+        const bodyType = bodyTypeMap[bodyMethod] || "none";
+        const path = (data.path as string) || "";
+        const url = path || (data.url as string) || "";
+        const groupId = (data.group_id as number) ?? null;
+
+        set({
+            id: (data.id as number) ?? null,
+            groupId,
+            groupName: (data.group_name as string) || null,
+            connectionName: (data.name as string) || null,
+            path,
+            url,
+            method:
+                ({ 1: "GET", 2: "POST", 3: "PUT", 4: "DELETE", 5: "PATCH" } as Record<number, HttpMethod>)[
+                    data.method as number
+                ] || "GET",
+            params: (data.params as KeyValuePair[]) || [],
+            headers: (data.headers as KeyValuePair[]) || [],
+            variables: (data.variables as KeyValuePair[])?.length
+                ? (data.variables as KeyValuePair[])
+                : [{ uiId: generateId(), id: null, key: "", value: "", enabled: true }],
+            authType: groupId ? "none" : authType,
+            basicAuth: authType === "basic" ? { ...new BasicAuthDefaults(), ...authConfig } : new BasicAuthDefaults(),
+            bearerTokenAuth:
+                authType === "bearer"
+                    ? { ...new BearerTokenDefaults(), ...(authConfig as Partial<IBearerToken>) }
+                    : new BearerTokenDefaults(),
+            apiKeyAuth:
+                authType === "apikey" ? { ...new ApiKeyDefaults(), ...(authConfig as Partial<IApiKey>) } : new ApiKeyDefaults(),
+            jwtBearerAuth:
+                authType === "jwt" ? { ...new JWTBearerDefaults(), ...(authConfig as Partial<IJWTBearer>) } : new JWTBearerDefaults(),
+            oauth2Auth:
+                authType === "oauth2" ? { ...new OAuth2Defaults(), ...(authConfig as Partial<IOAuth2>) } : new OAuth2Defaults(),
+        });
+
+        const store = useConnectionStore.getState();
+        if (bodyType !== "none") {
+            store.setBodyType(bodyType);
+            const bodyPayload = data.body as Record<string, unknown> | undefined;
+            if (bodyPayload && Object.keys(bodyPayload).length) {
+                store.updateBodyContent(bodyPayload as Partial<IFormData & IRawBody & IGraphQL>);
+            }
+        }
+    },
 
     updateTable: (field, updatedPairs) =>
         set((state) => ({
@@ -261,6 +335,10 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
         })),
     reset: () =>
         set({
+            id: null,
+            groupId: null,
+            groupName: null,
+            path: "",
             connectionName: null,
             description: null,
             url: "",

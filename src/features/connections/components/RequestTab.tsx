@@ -18,17 +18,16 @@ const tabs = [
 
 type Tab = typeof tabs[number]["id"];
 
-export default function RequestTab() {
+export default function RequestTab({ hideAuth = false }: { hideAuth?: boolean }) {
   const [activeTab, setActiveTab] = useState<Tab>("Params");
+  const visibleTabs = hideAuth ? tabs.filter((t) => t.id !== "Auth") : tabs;
 
-  // 1. Hook into the store
   const { params, headers, updateTable, updateQueryParams, variables } = useConnectionStore();
 
   return (
     <div className="flex flex-col w-full h-full min-h-100">
-      {/* TAB NAVIGATION */}
       <div className="flex border-b border-border bg-card/50 px-1">
-        {tabs.map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}

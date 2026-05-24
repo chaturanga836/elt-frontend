@@ -19,14 +19,16 @@ const methods: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 
 export default function UrlBar() {
   const store = useConnectionStore();
-  const { url, method, setUrl, setMethod, variables } = store;
+  const { url, path, method, setUrl, setPath, setMethod, variables, groupId } = store;
+  const displayUrl = groupId ? path || url : url;
+  const onUrlChange = groupId ? setPath : setUrl;
   const [testing, setTesting] = useState(false);
 
   const activeMethod = method as HttpMethod;
   const activeColor = methodColorMap[activeMethod] || "text-foreground";
 
   const handleTest = async () => {
-    if (!url) return message.warning("Please enter a URL first");
+    if (!displayUrl) return message.warning(groupId ? "Please enter a path first" : "Please enter a URL first");
     
     setTesting(true);
     try {
@@ -65,15 +67,15 @@ export default function UrlBar() {
         </div>
         <div className="flex-1">
           <VariableInput
-            value={url}
-            onChange={setUrl}
+            value={displayUrl}
+            onChange={onUrlChange}
             variables={variables}
-            placeholder="https://api.example.com/v1/resource"
+            placeholder={groupId ? "/api/v3/account" : "https://api.example.com/v1/resource"}
             className="w-full"
           />
         </div>
         
-        {url.includes('{{') && (
+        {displayUrl.includes('{{') && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <Tooltip title="Contains environment variables">
                 <Badge dot status="processing" color="blue" />

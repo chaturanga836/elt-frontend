@@ -49,9 +49,9 @@ export const connectionService = {
             }
         };
 
-        return {
+        const payload: Record<string, unknown> = {
             name: store.connectionName || "Untitled Connection",
-            url: store.url,
+            url: store.groupId ? store.path || store.url : store.url,
             method: METHOD_MAP[store.method?.toUpperCase()] || 1,
             auth_type: AUTH_MAP[store.authType?.toLowerCase()] || 0,
             body_method: BODY_METHOD_MAP[store.body?.activeType?.toLowerCase()] || 1,
@@ -63,10 +63,20 @@ export const connectionService = {
             auth_config: getAuthConfig(),
             fetch_settings: store.fetchSettings || { retries: 3, timeout: 30 },
         };
+
+        if (store.groupId) {
+            payload.group_id = store.groupId;
+            payload.path = store.path || store.url;
+            payload.auth_type = 0;
+            payload.auth_config = {};
+            payload.variables = [];
+        }
+
+        return payload;
     },
 
-    testConnection: async (storeData: any) => {
-        const url = `${getBaseUrl()}/rest-api-connections/test-connection`;
+    testConnection: async (storeData: any, tenantId: string = DEFAULT_TENANT) => {
+        const url = `${getBaseUrl()}/rest-api-connections/test-connection?tenant_id=${tenantId}`;
         const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -103,6 +113,13 @@ export const connectionService = {
         const url = `${getBaseUrl()}/rest-api-connections/list?tenant_id=${tenantId}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error("Failed to fetch connections");
+        return response.json();
+    },
+
+    getRestConnection: async (connectionId: number, tenantId: string = DEFAULT_TENANT) => {
+        const url = `${getBaseUrl()}/rest-api-connections/connection/${connectionId}?tenant_id=${tenantId}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to load connection");
         return response.json();
     },
 
@@ -217,6 +234,55 @@ export const connectionService = {
         const url = `${getBaseUrl()}/dev/providers`;
         const response = await fetch(url);
         if (!response.ok) throw new Error("Failed to fetch providers");
+        return response.json();
+    },
+
+    getIntegrationProviders: async () => {
+        const url = `${getBaseUrl()}/rest-api-connections/integration-catalog/providers`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to load integration catalog");
+        return response.json();
+    },
+
+    getIntegrationTemplates: async (providerKey: string) => {
+        const url = `${getBaseUrl()}/rest-api-connections/integration-catalog/providers/${providerKey}/templates`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to load templates");
+        return response.json();
+    },
+
+    listRestGroups: async (tenantId: string = DEFAULT_TENANT) => {
+        const url = `${getBaseUrl()}/rest-api-connections/groups?tenant_id=${tenantId}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to list groups");
+        return response.json();
+    },
+
+    getRestGroup: async (groupId: number, tenantId: string = DEFAULT_TENANT) => {
+        const url = `${getBaseUrl()}/rest-api-connections/groups/${groupId}?tenant_id=${tenantId}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to load group");
+        return response.json();
+    },
+
+    createRestGroup: async (payload: Record<string, unknown>, tenantId: string = DEFAULT_TENANT) => {
+        const url = `${getBaseUrl()}/rest-api-connections/groups?tenant_id=${tenantId}`;
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || "Failed to create group");
+        }
+        return response.json();
+    },
+
+    deleteRestGroup: async (groupId: number, tenantId: string = DEFAULT_TENANT) => {
+        const url = `${getBaseUrl()}/rest-api-connections/groups/${groupId}?tenant_id=${tenantId}`;
+        const response = await fetch(url, { method: "DELETE" });
+        if (!response.ok) throw new Error("Failed to delete group");
         return response.json();
     },
 };
