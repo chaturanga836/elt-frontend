@@ -53,14 +53,14 @@ const DEFAULT_NODES: Node[] = [
     type: 'startNode',
     position: { x: 80, y: 220 },
     deletable: false,
-    data: { label: 'Start', node_config: {} },
+    data: { label: 'Start', node_config: {}, config: null },
   },
   {
     id: endId,
     type: 'endNode',
     position: { x: 900, y: 220 },
     deletable: false,
-    data: { label: 'End', node_config: {} },
+    data: { label: 'End', node_config: { hook_when: 'success' }, config: null },
   },
 ];
 

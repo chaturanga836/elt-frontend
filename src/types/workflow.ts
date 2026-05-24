@@ -1,4 +1,5 @@
 import { Edge, Node, Viewport } from '@xyflow/react';
+import { BoundaryHookConfig } from './boundaryHooks';
 
 export type WorkflowNodeType =
   | 'startNode'
@@ -15,7 +16,7 @@ export interface WorkflowNodePayload {
   node_uuid: string;
   node_type: WorkflowNodeTypeInt;
   task_id?: number | null;
-  node_config?: Record<string, unknown>;
+  node_config?: BoundaryHookConfig;
 }
 
 export interface WorkflowCanvasStructure {

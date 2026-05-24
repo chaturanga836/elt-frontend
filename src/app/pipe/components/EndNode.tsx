@@ -1,66 +1,48 @@
 'use client';
 
-import { useDebouncedFetch } from "@/features/connections/hooks/useDebouncedFetch";
-import { TaskResponse, TaskService } from "@/services/task.service";
-import { usePipelineStore } from "@/store/usePipeStore";
-import { CheckCircleFilled } from "@ant-design/icons";
-import { Handle, Position } from "@xyflow/react";
-import { Avatar, Card, Flex, Modal, Typography } from "antd";
-import { useState } from "react";
-import { TaskSelectionModal } from "./TaskSelectionModal";
-
-// ... same imports as above
+import { usePipelineStore } from '@/store/usePipeStore';
+import { CheckCircleFilled } from '@ant-design/icons';
+import { Handle, Position } from '@xyflow/react';
+import { Avatar, Card, Flex, Typography } from 'antd';
+import BoundaryHookPanel from '@/features/orchestration/BoundaryHookPanel';
 
 const { Text } = Typography;
 
-const EndNode = ({ id, data }: any) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+const EndNode = ({ id, data }: { id: string; data: Record<string, unknown> }) => {
   const updateNodeData = usePipelineStore((state) => state.updateNodeData);
-  const selected = data.config || null;
-  const { data: taskResponse, searching, performFetch } = useDebouncedFetch(TaskService.getTaskList);
+  const selected = data.config as { name?: string } | null;
 
-
-  
-    const onSelect = (item: TaskResponse) => {
-      updateNodeData(id, { config: item, task_id: item.id });
-      setIsModalOpen(false);
-    };
-    
   return (
     <div className="end-node">
       <Handle type="target" position={Position.Left} style={{ background: '#f5222d' }} />
-      <Card 
-        size="small" 
-        hoverable
-        style={{ 
-          width: 120, 
-          height: 45, 
-          background: '#fff1f0', 
+      <Card
+        size="small"
+        style={{
+          width: 200,
+          background: '#fff1f0',
           border: selected ? '1px solid #f5222d' : '1px dashed #ffa39e',
-          cursor: 'pointer' 
         }}
-        styles={{ body: { padding: '4px 8px' } }}
-        onClick={() => setIsModalOpen(true)}
+        styles={{ body: { padding: '8px' } }}
       >
-        <Flex align="center" gap={6}>
-          <Avatar 
-            size={20} 
-            shape="square" 
-            icon={<CheckCircleFilled />} 
-            style={{ backgroundColor: '#f5222d' }} 
+        <Flex align="center" gap={6} className="mb-2">
+          <Avatar
+            size={20}
+            shape="square"
+            icon={<CheckCircleFilled />}
+            style={{ backgroundColor: '#f5222d' }}
           />
-          <Text strong style={{ fontSize: '10px' }} ellipsis>
-            {selected ? selected.name : 'End Logic'}
+          <Text strong style={{ fontSize: 11 }}>
+            End
           </Text>
         </Flex>
+        <BoundaryHookPanel
+          variant="end"
+          nodeId={id}
+          data={data as Parameters<typeof BoundaryHookPanel>[0]['data']}
+          onUpdate={updateNodeData}
+          compact
+        />
       </Card>
-<TaskSelectionModal 
-        title="Assign Start Logic"
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        selectedId={data.config?.id}
-        onSelect={(task) => onSelect(task)}
-      />
     </div>
   );
 };

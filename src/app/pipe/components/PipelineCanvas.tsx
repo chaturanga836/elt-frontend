@@ -10,7 +10,8 @@ import '@xyflow/react/dist/style.css';
 import { PipelineService } from '@/services/pipe.service';
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { InputMapping, PipelineCreatePayload, TaskType } from '@/types/pipetypes';
+import { PipelineCreatePayload } from '@/types/pipetypes';
+import { buildBoundaryNodeConfig } from '@/types/boundaryHooks';
 
 export default function PipelineCanvas() {
   const params = useParams();
@@ -121,13 +122,23 @@ const payload: PipelineCreatePayload = {
       const leftParentId = nodes[index -1]?.id || null;
       const rightParentId = nodes[index + 1]?.id || null;
 
+      const nodeType = mapNodeTypeToInt(node.type);
+      const isBoundary = nodeType === 0 || nodeType === 2;
+      const nodeConfig = buildBoundaryNodeConfig(
+        node.data as Record<string, unknown>,
+        nodeType === 2,
+      );
+
       return {
-        node_uuid: node.id, // Frontend reference
+        node_uuid: node.id,
         id: node.data?.id ? Number(node.data.id) : undefined,
-        task_id: node.data.task_id, // String identifier safe ('start', 'task_04845de5')
-        node_type: mapNodeTypeToInt(node.type),
-        left_depend: leftParentId,  
-        right_depend: rightParentId
+        node_type: nodeType,
+        task_id: isBoundary
+          ? (nodeConfig.hook_task_id ?? null)
+          : (node.data?.task_id as number) ?? null,
+        node_config: nodeConfig,
+        left_depend: leftParentId,
+        right_depend: rightParentId,
       };
     }),
   };

@@ -23,7 +23,7 @@ export default function WorkflowNodeShell({
   return (
     <div
       style={{
-        minWidth: 180,
+        minWidth: 220,
         borderRadius: 8,
         border: `2px solid ${color}`,
         background: '#fff',

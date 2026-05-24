@@ -1,75 +1,48 @@
 'use client';
-import { useEffect, useState } from 'react';
+
 import { Handle, Position } from '@xyflow/react';
-import { Card, Modal, Input, Avatar, Typography, Flex, Empty, Spin } from 'antd';
-import { SearchOutlined, RocketFilled, CheckCircleFilled, PlusOutlined } from '@ant-design/icons';
+import { Card, Avatar, Typography, Flex } from 'antd';
+import { RocketFilled } from '@ant-design/icons';
 import { usePipelineStore } from '@/store/usePipeStore';
-import { TaskService, TaskResponse } from '@/services/task.service';
-import { useDebouncedFetch } from '@/features/connections/hooks/useDebouncedFetch';
-import { TaskSelectionModal } from './TaskSelectionModal';
-import { set } from 'lodash';
+import BoundaryHookPanel from '@/features/orchestration/BoundaryHookPanel';
 
 const { Text } = Typography;
 
-const StartNode = ({ id, data }: any) => {
-  const [open, setOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+const StartNode = ({ id, data }: { id: string; data: Record<string, unknown> }) => {
   const updateNodeData = usePipelineStore((state) => state.updateNodeData);
-  const selected = data.config || null;
-
-  const { data: taskResponse, searching, performFetch } = useDebouncedFetch(TaskService.getTaskList);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    performFetch({ query: value, limit: 15 });
-  };
-
-  // useEffect(() => {
-  //   if (isModalOpen) performFetch({ query: '', limit: 15 });
-  // }, [isModalOpen, performFetch]);
-
-  const onSelect = (item: TaskResponse) => {
-    updateNodeData(id, { config: item, task_id: item.id });
-    setOpen(false);
-  };
+  const selected = data.config as { name?: string } | null;
 
   return (
     <div className="start-node">
-      <Card 
-        size="small" 
-        hoverable
-        style={{ 
-          width: 120, 
-          height: 45, 
-          background: '#f6ffed', 
+      <Card
+        size="small"
+        style={{
+          width: 200,
+          background: '#f6ffed',
           border: selected ? '1px solid #52c41a' : '1px dashed #b7eb8f',
-          cursor: 'pointer' 
         }}
-        styles={{ body: { padding: '4px 8px' } }}
-        onClick={() => setOpen(true)}
+        styles={{ body: { padding: '8px' } }}
       >
-        <Flex align="center" gap={6}>
-          <Avatar 
-            size={20} 
-            shape="square" 
-            icon={<RocketFilled />} 
-            style={{ backgroundColor: '#52c41a' }} 
+        <Flex align="center" gap={6} className="mb-2">
+          <Avatar
+            size={20}
+            shape="square"
+            icon={<RocketFilled />}
+            style={{ backgroundColor: '#52c41a' }}
           />
-          <Text strong style={{ fontSize: '10px' }} ellipsis>
-            {selected ? selected.name : 'Start Logic'}
+          <Text strong style={{ fontSize: 11 }}>
+            Start
           </Text>
         </Flex>
+        <BoundaryHookPanel
+          variant="start"
+          nodeId={id}
+          data={data as Parameters<typeof BoundaryHookPanel>[0]['data']}
+          onUpdate={updateNodeData}
+          compact
+        />
       </Card>
       <Handle type="source" position={Position.Right} style={{ background: '#52c41a' }} />
-
-<TaskSelectionModal 
-        title="Assign Start Logic"
-        open={open}
-        onClose={() => setOpen(false)}
-        selectedId={data.config?.id}
-        onSelect={(task) => onSelect(task)}
-      />
     </div>
   );
 };

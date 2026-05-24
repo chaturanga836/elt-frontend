@@ -20,6 +20,7 @@ import {
   WorkflowCreatePayload,
   WorkflowNodeTypeInt,
 } from '@/types/workflow';
+import { buildBoundaryNodeConfig } from '@/types/boundaryHooks';
 
 function mapNodeType(type?: string): WorkflowNodeTypeInt {
   const map: Record<string, WorkflowNodeTypeInt> = {
@@ -68,15 +69,22 @@ function WorkflowCanvasContent() {
         edges,
         viewport: getViewport(),
       },
-      nodes: nodes.map((node) => ({
-        node_uuid: node.id,
-        node_type: mapNodeType(node.type),
-        task_id: (node.data?.task_id as number) || null,
-        node_config: {
-          label: node.data?.label,
-          ...(node.data?.node_config as object),
-        },
-      })),
+      nodes: nodes.map((node) => {
+        const nodeType = mapNodeType(node.type);
+        const isBoundary = nodeType === 0 || nodeType === 2;
+        const nodeConfig = buildBoundaryNodeConfig(
+          node.data as Record<string, unknown>,
+          nodeType === 2,
+        );
+        return {
+          node_uuid: node.id,
+          node_type: nodeType,
+          task_id: isBoundary
+            ? (nodeConfig.hook_task_id ?? null)
+            : ((node.data?.task_id as number) || null),
+          node_config: nodeConfig,
+        };
+      }),
     };
   };
 

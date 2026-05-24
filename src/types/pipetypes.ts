@@ -1,4 +1,5 @@
 import { Node, Edge, Viewport } from '@xyflow/react';
+import { BoundaryHookConfig } from './boundaryHooks';
 
 export type TaskType = 0 | 1 | 2 ;
 
@@ -16,9 +17,10 @@ export interface InputMapping {
 export interface PipelineTask {
   id?: number | undefined;
   pipeline_id? : number;
-  task_id: number | unknown;      // The unique ID in React Flow (n1, n3, etc.)
+  task_id?: number | null;
   node_type: TaskType;
-  node_uuid: string;       // The UUID for this node, used for frontend references
+  node_uuid: string;
+  node_config?: BoundaryHookConfig | Record<string, unknown>;
   left_depend ?: string | null;
   right_depend?: string | null;
   // depends_on: string[];  // Array of task_keys
