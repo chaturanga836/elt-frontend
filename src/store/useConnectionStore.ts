@@ -14,6 +14,7 @@ import {
     IRawBody,
     IRequestBodyState,
 } from "@/types/connection";
+import { generateId } from "@/lib/generateId";
 
 interface ConnectionState {
     id: number | null;
@@ -81,7 +82,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
     params: [],
     headers: [],
     body: new RequestBodyDefaults(),
-    variables: [{ uiId: crypto.randomUUID(), id: null, key: "", value: "", enabled: true }],
+    variables: [{ uiId: generateId(), id: null, key: "", value: "", enabled: true }],
     authType: "none",
     basicAuth: new BasicAuthDefaults(),
     bearerTokenAuth: new BearerTokenDefaults(),
@@ -235,7 +236,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
             params: [
                 ...state.params,
                 {
-                    uiId: crypto.randomUUID(),
+                    uiId: generateId(),
                     id: null, // <--- Add this!
                     key: "",
                     value: "",
@@ -251,7 +252,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
     updateVariables: (variables) => set({ variables }),
     addVariable: () =>
         set((state) => ({
-            variables: [...state.variables, { uiId: crypto.randomUUID(), id: null, key: "", value: "", enabled: true }],
+            variables: [...state.variables, { uiId: generateId(), id: null, key: "", value: "", enabled: true }],
         })),
 
     removeVariable: (uiId) =>

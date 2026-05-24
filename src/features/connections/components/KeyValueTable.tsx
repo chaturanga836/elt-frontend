@@ -5,6 +5,7 @@ import { KeyValuePair } from '@/types/restForm';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button, Checkbox, CheckboxProps, Input } from 'antd';
 import VariableInput from './VariableInput';
+import { generateId } from '@/lib/generateId';
 
 interface KeyValueTableProps {
   initialPairs?: KeyValuePair[];
@@ -16,7 +17,7 @@ interface KeyValueTableProps {
 }
 
 const createEmptyPair = (): KeyValuePair => ({
-   uiId: crypto.randomUUID(),
+   uiId: generateId(),
   id: null,
   key: null,
   value: null,

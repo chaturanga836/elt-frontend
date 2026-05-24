@@ -1,9 +1,9 @@
 import { BodyType, IFormData, IGraphQL, IRawBody, IRequestBodyState } from "@/types/connection";
-
+import { generateId } from "@/lib/generateId";
 
 export class FormDataDefaults implements IFormData {
   pairs = [{
-   uiId: crypto.randomUUID(),
+   uiId: generateId(),
   id: null,
   key: null,
   value: null,
