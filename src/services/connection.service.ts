@@ -67,9 +67,6 @@ export const connectionService = {
         if (store.groupId) {
             payload.group_id = store.groupId;
             payload.path = store.path || store.url;
-            payload.auth_type = 0;
-            payload.auth_config = {};
-            payload.variables = [];
         }
 
         return payload;

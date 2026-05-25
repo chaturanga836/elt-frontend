@@ -18,9 +18,9 @@ const tabs = [
 
 type Tab = typeof tabs[number]["id"];
 
-export default function RequestTab({ hideAuth = false }: { hideAuth?: boolean }) {
+export default function RequestTab() {
   const [activeTab, setActiveTab] = useState<Tab>("Params");
-  const visibleTabs = hideAuth ? tabs.filter((t) => t.id !== "Auth") : tabs;
+  const visibleTabs = tabs;
 
   const { params, headers, updateTable, updateQueryParams, variables } = useConnectionStore();
 

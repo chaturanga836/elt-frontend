@@ -149,7 +149,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
             variables: (data.variables as KeyValuePair[])?.length
                 ? (data.variables as KeyValuePair[])
                 : [{ uiId: generateId(), id: null, key: "", value: "", enabled: true }],
-            authType: groupId ? "none" : authType,
+            authType,
             basicAuth: authType === "basic" ? { ...new BasicAuthDefaults(), ...authConfig } : new BasicAuthDefaults(),
             bearerTokenAuth:
                 authType === "bearer"

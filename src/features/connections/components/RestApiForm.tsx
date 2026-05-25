@@ -71,11 +71,11 @@ export default function RestApiForm() {
               type="info"
               showIcon
               message={`Endpoint in group: ${groupName || groupId}`}
-              description="Base URL and authentication are inherited from the group. Edit path and params below."
+              description="Base URL is inherited from the group. Auth and variables default to the group's settings when set to 'None', or you can override with your own."
             />
           )}
           <UrlBar />
-          <RequestTab hideAuth={!!groupId} />
+          <RequestTab />
 
                 <Button
               type="primary"
