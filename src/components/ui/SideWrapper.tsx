@@ -10,6 +10,8 @@ import {
   HistoryOutlined,
   UnorderedListOutlined,
   NodeIndexOutlined,
+  ApiOutlined,
+  GroupOutlined,
 } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -44,11 +46,6 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
       ],
     },
     {
-      key: '/pipe/new',
-      icon: <PlusCircleOutlined />,
-      label: 'New Pipeline',
-    },
-    {
       key: 'workflows-group',
       icon: <NodeIndexOutlined />,
       label: 'Workflows',
@@ -66,9 +63,21 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
       ],
     },
     {
-      key: '/connections',
-      icon: <AppstoreOutlined />,
+      key: 'connections-group',
+      icon: <ApiOutlined />,
       label: 'Connections',
+      children: [
+        {
+          key: '/connections/rest-api/groups',
+          icon: <GroupOutlined />,
+          label: 'Groups',
+        },
+        {
+          key: '/connections',
+          icon: <AppstoreOutlined />,
+          label: 'Standalone',
+        },
+      ],
     },
     {
       key: '/task',
@@ -92,16 +101,25 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
     if (pathname.startsWith('/workflow')) {
       return '/workflow';
     }
+    if (pathname.startsWith('/connections/rest-api/groups')) {
+      return '/connections/rest-api/groups';
+    }
+    if (pathname.startsWith('/connections')) {
+      return '/connections';
+    }
     return pathname;
   };
 
   const getSelectedParentKeys = () => {
     const keys: string[] = [];
-    if (pathname === '/pipe' || pathname.startsWith('/pipe/history')) {
+    if (pathname.startsWith('/pipe')) {
       keys.push('pipelines-group');
     }
     if (pathname.startsWith('/workflow')) {
       keys.push('workflows-group');
+    }
+    if (pathname.startsWith('/connections')) {
+      keys.push('connections-group');
     }
     return keys;
   };
@@ -147,7 +165,7 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
           items={menuItems}
           onClick={({ key }) => {
             // Only route if clicking actionable items with path keys, not group container headers
-            if (key !== 'pipelines-group' && key !== 'workflows-group') {
+            if (!key.endsWith('-group')) {
               router.push(key);
             }
           }}
