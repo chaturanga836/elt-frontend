@@ -294,7 +294,7 @@ export default function RestApiGroupDetailPage() {
             <Input />
           </Form.Item>
 
-          <Divider orientation="left" plain>
+          <Divider titlePlacement="left" plain>
             Authentication
           </Divider>
 
@@ -364,7 +364,7 @@ export default function RestApiGroupDetailPage() {
             </>
           )}
 
-          <Divider orientation="left" plain>
+          <Divider titlePlacement="left" plain>
             Variables
           </Divider>
           <Text type="secondary" className="block mb-3 text-xs">

@@ -180,7 +180,7 @@ export default function NewRestApiGroupPage() {
             <Input placeholder="https://api.etherscan.io" />
           </Form.Item>
 
-          <Divider orientation="left" plain>
+          <Divider titlePlacement="left" plain>
             Authentication
           </Divider>
 
@@ -250,7 +250,7 @@ export default function NewRestApiGroupPage() {
             </>
           )}
 
-          <Divider orientation="left" plain>
+          <Divider titlePlacement="left" plain>
             Variables
           </Divider>
           <Text type="secondary" className="block mb-3 text-xs">
