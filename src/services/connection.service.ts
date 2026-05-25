@@ -276,6 +276,20 @@ export const connectionService = {
         return response.json();
     },
 
+    updateRestGroup: async (groupId: number, payload: Record<string, unknown>, tenantId: string = DEFAULT_TENANT) => {
+        const url = `${getBaseUrl()}/rest-api-connections/groups/${groupId}?tenant_id=${tenantId}`;
+        const response = await fetch(url, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || "Failed to update group");
+        }
+        return response.json();
+    },
+
     deleteRestGroup: async (groupId: number, tenantId: string = DEFAULT_TENANT) => {
         const url = `${getBaseUrl()}/rest-api-connections/groups/${groupId}?tenant_id=${tenantId}`;
         const response = await fetch(url, { method: "DELETE" });
