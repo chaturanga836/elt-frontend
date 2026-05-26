@@ -19,7 +19,7 @@ const methods: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 
 export default function UrlBar() {
   const store = useConnectionStore();
-  const { url, path, method, setUrl, setPath, setMethod, variables, groupId } = store;
+  const { url, path, method, setUrl, setPath, setMethod, variables, groupId, groupBaseUrl } = store;
   const displayUrl = groupId ? path || url : url;
   const onUrlChange = groupId ? setPath : setUrl;
   const [testing, setTesting] = useState(false);
@@ -65,6 +65,13 @@ export default function UrlBar() {
         <div className="pl-3 text-muted-foreground/40">
            <Globe size={14} />
         </div>
+        {groupId && groupBaseUrl && (
+          <div className="flex items-center pl-2 pr-0 shrink-0 border-r border-border">
+            <span className="text-xs font-mono text-muted-foreground bg-muted/50 px-2 py-0.5 rounded select-none whitespace-nowrap">
+              {groupBaseUrl}
+            </span>
+          </div>
+        )}
         <div className="flex-1">
           <VariableInput
             value={displayUrl}

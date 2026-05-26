@@ -20,6 +20,7 @@ interface ConnectionState {
     id: number | null;
     groupId: number | null;
     groupName: string | null;
+    groupBaseUrl: string | null;
     path: string;
 
     connectionName: string | null;
@@ -49,7 +50,7 @@ interface ConnectionState {
     setUrl: (url: string) => void;
     setPath: (path: string) => void;
     setMethod: (method: HttpMethod) => void;
-    setGroupContext: (groupId: number | null, groupName?: string | null) => void;
+    setGroupContext: (groupId: number | null, groupName?: string | null, groupBaseUrl?: string | null) => void;
     loadFromEndpoint: (data: Record<string, unknown>) => void;
     updateTable: (field: "params" | "headers", updatedPairs: KeyValuePair[]) => void;
     setBodyType: (type: BodyType) => void;
@@ -82,6 +83,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
     id: null,
     groupId: null,
     groupName: null,
+    groupBaseUrl: null,
     path: "",
     connectionName: null,
     description: null,
@@ -107,7 +109,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
     setUrl: (url) => set({ url }),
     setPath: (path) => set({ path, url: path }),
     setMethod: (method) => set({ method }),
-    setGroupContext: (groupId, groupName = null) => set({ groupId, groupName }),
+    setGroupContext: (groupId, groupName = null, groupBaseUrl = null) => set({ groupId, groupName, groupBaseUrl }),
     loadFromEndpoint: (data) => {
         const authNum = (data.auth_type as number) ?? 0;
         const authTypeMap: Record<number, AuthType> = {
@@ -338,6 +340,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
             id: null,
             groupId: null,
             groupName: null,
+            groupBaseUrl: null,
             path: "",
             connectionName: null,
             description: null,

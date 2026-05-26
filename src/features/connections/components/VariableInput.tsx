@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
-import { useConnectionStore } from '@/store/useConnectionStore';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { HighlightVariables } from './HighlightVariables';
 import { KeyValuePair } from '@/types/restForm';
+import { useDropdownStore } from '@/store/useDropdownStore';
 
 interface VariableInputProps {
   value: string;
@@ -17,14 +17,124 @@ export default function VariableInput({
   value, 
   onChange, 
   placeholder, 
-  className = "" ,
+  className = "",
   variables = []
 }: VariableInputProps) {
   const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { open, config, show, hide, updateFilter, selectedIndex, setSelectedIndex } = useDropdownStore();
 
+  const isOwnDropdown = open && config?.onSelect !== undefined && inputRef.current === document.activeElement;
+
+  const filteredItems = isOwnDropdown
+    ? variables.filter((v) => v.key && v.enabled && v.key.toLowerCase().includes((config?.filter || '').toLowerCase()))
+    : [];
+
+  const getVariableInsertContext = useCallback(
+    (inputValue: string, cursorPos: number) => {
+      const before = inputValue.slice(0, cursorPos);
+      const match = before.match(/\{\{([^}]*)$/);
+      if (match) {
+        return { active: true, filter: match[1], startPos: match.index! };
+      }
+      return { active: false, filter: '', startPos: -1 };
+    },
+    [],
+  );
+
+  const insertVariable = useCallback(
+    (varKey: string) => {
+      const input = inputRef.current;
+      if (!input) return;
+
+      const cursorPos = input.selectionStart || 0;
+      const before = value.slice(0, cursorPos);
+      const after = value.slice(cursorPos);
+
+      const match = before.match(/\{\{([^}]*)$/);
+      if (match) {
+        const prefix = before.slice(0, match.index!);
+        const newValue = `${prefix}{{${varKey}}}${after}`;
+        onChange(newValue);
+
+        const newCursorPos = prefix.length + varKey.length + 4;
+        requestAnimationFrame(() => {
+          input.setSelectionRange(newCursorPos, newCursorPos);
+          input.focus();
+        });
+      }
+    },
+    [value, onChange],
+  );
+
+  const showDropdown = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    show({
+      anchorRect: rect,
+      items: variables,
+      filter: '',
+      onSelect: insertVariable,
+    });
+  }, [variables, insertVariable, show]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    const cursorPos = e.target.selectionStart || 0;
+    onChange(newValue);
+
+    const ctx = getVariableInsertContext(newValue, cursorPos);
+    if (ctx.active) {
+      if (!open) {
+        showDropdown();
+      }
+      updateFilter(ctx.filter);
+    } else {
+      if (isOwnDropdown) hide();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isOwnDropdown || filteredItems.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex((selectedIndex + 1) % filteredItems.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex((selectedIndex - 1 + filteredItems.length) % filteredItems.length);
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      const selected = filteredItems[selectedIndex];
+      if (selected?.key) {
+        insertVariable(selected.key);
+        hide();
+      }
+    } else if (e.key === 'Escape') {
+      hide();
+    }
+  };
+
+  useEffect(() => {
+    if (!isFocused && isOwnDropdown) {
+      hide();
+    }
+  }, [isFocused, isOwnDropdown, hide]);
+
+  // Update anchor position if dropdown is open (handles scroll/resize edge cases)
+  useEffect(() => {
+    if (!isOwnDropdown) return;
+    const el = containerRef.current;
+    if (!el) return;
+
+    const { updateAnchor } = useDropdownStore.getState();
+    updateAnchor(el.getBoundingClientRect());
+  });
 
   return (
-    <div className={`relative w-full flex items-center min-h-9.5 cursor-text ${className}`}>
+    <div ref={containerRef} className={`relative w-full flex items-center min-h-9.5 cursor-text ${className}`}>
       {/* LAYER 1: The Highlight Renderer (Visible when NOT focused) */}
       <div 
         className={`absolute inset-0 px-3 py-2 pointer-events-none flex items-center overflow-hidden transition-opacity duration-150 ${
@@ -40,10 +150,14 @@ export default function VariableInput({
 
       {/* LAYER 2: The Actual Native Input (Visible/Opaque when focused) */}
       <input
+        ref={inputRef}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
         onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onBlur={() => {
+          setTimeout(() => setIsFocused(false), 200);
+        }}
         placeholder={isFocused ? placeholder : ""}
         className={`w-full h-full bg-transparent px-3 py-2 text-sm font-mono outline-none border-none transition-opacity duration-150 ${
           isFocused ? 'opacity-100' : 'opacity-0'

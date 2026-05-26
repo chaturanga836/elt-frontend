@@ -75,7 +75,7 @@ export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
             <Alert
               type="info"
               showIcon
-              message={`Endpoint in group: ${groupName || groupId}`}
+              title={`Endpoint in group: ${groupName || groupId}`}
               description="Base URL is inherited from the group. Auth and variables default to the group's settings when set to 'None', or you can override with your own."
             />
           )}
