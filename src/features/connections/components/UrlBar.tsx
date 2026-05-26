@@ -25,8 +25,25 @@ interface UrlBarProps {
 
 export default function UrlBar({ onTestResult }: UrlBarProps = {}) {
   const store = useConnectionStore();
-  const { url, path, method, setUrl, setPath, setMethod, variables, groupId, groupBaseUrl, updateQueryParams, params } = store;
+  const { url, path, method, setUrl, setPath, setMethod, variables, groupId, groupBaseUrl, updateQueryParams, params, groupAuthType, groupAuthConfig } = store;
   const displayUrl = groupId ? path || url : url;
+
+  const fullResolvedUrl = React.useMemo(() => {
+    const base = groupId && groupBaseUrl ? groupBaseUrl : '';
+    const pathPart = displayUrl || '';
+    const activeParams = params.filter(p => p.key && p.enabled);
+
+    const allEntries: { key: string; value: string }[] = activeParams.map(p => ({ key: p.key!, value: p.value || '' }));
+
+    if (groupId && groupAuthType === 4 && groupAuthConfig?.addTo === 'query' && groupAuthConfig?.key) {
+      allEntries.push({ key: groupAuthConfig.key, value: groupAuthConfig.value || '' });
+    }
+
+    const urlBase = base + pathPart;
+    if (allEntries.length === 0) return urlBase || '';
+    const qs = allEntries.map(e => `${encodeURIComponent(e.key)}=${encodeURIComponent(e.value)}`).join('&');
+    return `${urlBase}?${qs}`;
+  }, [displayUrl, params, groupId, groupBaseUrl, groupAuthType, groupAuthConfig]);
 
   const handleUrlChange = useCallback((rawValue: string) => {
     const value = rawValue.replace(/'+$/, ''); // strip trailing quotes from pastes
@@ -91,63 +108,75 @@ export default function UrlBar({ onTestResult }: UrlBarProps = {}) {
   };
 
   return (
-    <div className="flex items-center w-full gap-0 border border-border rounded bg-card shadow-sm focus-within:ring-1 focus-within:ring-primary/20 transition-all">
-      {/* METHOD SELECTOR */}
-      <Select
-        value={activeMethod}
-        onChange={setMethod}
-        variant="borderless"
-        className={`w-32 border-r border-border font-mono font-bold text-xs h-10 flex items-center ${activeColor}`}
-        options={methods.map(m => ({ label: m, value: m }))}
-      />
+    <div className="space-y-1.5">
+      <div className="flex items-center w-full gap-0 border border-border rounded bg-card shadow-sm focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+        {/* METHOD SELECTOR */}
+        <Select
+          value={activeMethod}
+          onChange={setMethod}
+          variant="borderless"
+          className={`w-32 border-r border-border font-mono font-bold text-xs h-10 flex items-center ${activeColor}`}
+          options={methods.map(m => ({ label: m, value: m }))}
+        />
 
-      {/* URL INPUT */}
-      <div className="relative flex-1 flex items-center">
-        <div className="pl-3 text-muted-foreground/40">
-           <Globe size={14} />
-        </div>
-        {groupId && groupBaseUrl && (
-          <Tooltip title="Base URL inherited from group (read-only)">
-            <div className="flex items-center pl-2 pr-0 shrink-0 border-r border-border">
-              <span className="text-xs font-mono text-muted-foreground bg-muted/50 px-2 py-0.5 rounded select-none whitespace-nowrap">
-                {groupBaseUrl}
-              </span>
-            </div>
-          </Tooltip>
-        )}
-        <div className="flex-1">
-          <VariableInput
-            value={displayUrl}
-            onChange={handleUrlChange}
-            variables={variables}
-            placeholder={groupId ? "/path (optional — leave empty if params-only)" : "https://api.example.com/v1/resource"}
-            className="w-full"
-          />
-        </div>
-        
-        {displayUrl.includes('{{') && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <Tooltip title="Contains environment variables">
-                <Badge dot status="processing" color="blue" />
-            </Tooltip>
+        {/* URL INPUT */}
+        <div className="relative flex-1 flex items-center">
+          <div className="pl-3 text-muted-foreground/40">
+            <Globe size={14} />
           </div>
-        )}
+          {groupId && groupBaseUrl && (
+            <Tooltip title="Base URL inherited from group (read-only)">
+              <div className="flex items-center pl-2 pr-0 shrink-0 border-r border-border">
+                <span className="text-xs font-mono text-muted-foreground bg-muted/50 px-2 py-0.5 rounded select-none whitespace-nowrap">
+                  {groupBaseUrl}
+                </span>
+              </div>
+            </Tooltip>
+          )}
+          <div className="flex-1">
+            <VariableInput
+              value={displayUrl}
+              onChange={handleUrlChange}
+              variables={variables}
+              placeholder={groupId ? "/path (optional — leave empty if params-only)" : "https://api.example.com/v1/resource"}
+              className="w-full"
+            />
+          </div>
+
+          {displayUrl.includes('{{') && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <Tooltip title="Contains environment variables">
+                <Badge dot status="processing" color="blue" />
+              </Tooltip>
+            </div>
+          )}
+        </div>
+
+        {/* TEST BUTTON */}
+        <button
+          disabled={testing}
+          className={`h-10 px-6 bg-secondary border-l border-border text-xs font-semibold transition-colors flex items-center gap-2 
+            ${testing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent hover:text-primary text-muted-foreground'}`}
+          onClick={handleTest}
+        >
+          {testing ? (
+            <Loader2 size={12} className="animate-spin" />
+          ) : (
+            <Send size={12} className="text-primary" />
+          )}
+          <span>{testing ? 'Sending...' : 'Test'}</span>
+        </button>
       </div>
 
-      {/* TEST BUTTON */}
-      <button 
-        disabled={testing}
-        className={`h-10 px-6 bg-secondary border-l border-border text-xs font-semibold transition-colors flex items-center gap-2 
-          ${testing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent hover:text-primary text-muted-foreground'}`}
-        onClick={handleTest}
-      >
-        {testing ? (
-          <Loader2 size={12} className="animate-spin" />
-        ) : (
-          <Send size={12} className="text-primary" />
-        )}
-        <span>{testing ? 'Sending...' : 'Test'}</span>
-      </button>
+      {/* Full resolved URL preview */}
+      {fullResolvedUrl && (
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/30 rounded border border-border/50">
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase shrink-0">Full URL</span>
+          <span className="text-[11px] font-mono text-muted-foreground truncate select-all">
+            {fullResolvedUrl}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
