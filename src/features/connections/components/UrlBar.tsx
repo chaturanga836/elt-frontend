@@ -7,6 +7,7 @@ import { useConnectionStore } from '@/store/useConnectionStore';
 import { HttpMethod } from '@/types/restForm';
 import VariableInput from './VariableInput';
 import { connectionService } from '@/services/connection.service';
+import { TestResponse } from './ResponsePanel';
 
 const methodColorMap: Record<HttpMethod, string> = {
   GET: "text-green-600",
@@ -17,7 +18,11 @@ const methodColorMap: Record<HttpMethod, string> = {
 };
 const methods: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 
-export default function UrlBar() {
+interface UrlBarProps {
+  onTestResult?: (result: TestResponse) => void;
+}
+
+export default function UrlBar({ onTestResult }: UrlBarProps = {}) {
   const store = useConnectionStore();
   const { url, path, method, setUrl, setPath, setMethod, variables, groupId, groupBaseUrl } = store;
   const displayUrl = groupId ? path || url : url;
@@ -33,15 +38,13 @@ export default function UrlBar() {
     setTesting(true);
     try {
       const result = await connectionService.testConnection(store);
-      
+      onTestResult?.(result);
+
       if (result.success) {
-        message.success(`Success! Status: ${result.status_code}`);
+        message.success(`Status: ${result.status_code} · ${result.response_time_ms}ms`);
       } else {
-        // This handles cases like 401 Unauthorized or 404 Not Found
-        message.error(`Failed: ${result.status_code} - ${result.error || 'Check credentials'}`);
+        message.error(`Failed: ${result.status_code}`);
       }
-      
-      console.log("Test Result:", result);
     } catch (error: any) {
       message.error(error.message || "Network error occurred");
     } finally {

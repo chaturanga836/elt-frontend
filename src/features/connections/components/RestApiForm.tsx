@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Edit2, Loader2, Save, Variable, Zap } from 'lucide-react';
 import UrlBar from './UrlBar';
 import RequestTab from './RequestTab';
+import ResponsePanel, { TestResponse } from './ResponsePanel';
 import { VariablesDrawer } from './VariablesDrawer';
 import { useConnectionStore } from '@/store/useConnectionStore';
 import { Alert, Button, Input, message } from 'antd';
@@ -16,6 +17,7 @@ interface RestApiFormProps {
 export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [testResponse, setTestResponse] = useState<TestResponse | null>(null);
   const variables = useConnectionStore((state) => state.variables);
   const updateVariables = useConnectionStore((state) => state.updateVariables);
   const { isSaving, saveCurrentConnection } = useApiStore();
@@ -28,7 +30,6 @@ export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
   
   const handleSave = async () => {
     try {
-      // For now, using a placeholder tenant_id
       await saveCurrentConnection("trial_user_001");
       message.success(connectionId ? "Connection updated" : "Connection saved");
       onSaved?.();
@@ -36,6 +37,7 @@ export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
       message.error(error.message || "Failed to save connection");
     }
   };
+
   return (
     <React.Fragment>
       <div className={`${onSaved ? 'min-h-0' : 'min-h-screen'} bg-background flex flex-col`}>
@@ -79,19 +81,21 @@ export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
               description="Base URL is inherited from the group. Path is optional — leave empty if the API uses query params only (e.g., Etherscan). Auth defaults to group settings when set to 'None'."
             />
           )}
-          <UrlBar />
+          <UrlBar onTestResult={setTestResponse} />
           <RequestTab />
 
-                <Button
-              type="primary"
-              size="small"
-              icon={isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              disabled={isSaving}
-              onClick={handleSave}
-              className="flex items-center gap-1.5 h-7.5 text-xs font-medium shadow-none"
-            >
-              {isSaving ? 'Saving...' : 'Save Connection'}
-            </Button>
+          <Button
+            type="primary"
+            size="small"
+            icon={isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            disabled={isSaving}
+            onClick={handleSave}
+            className="flex items-center gap-1.5 h-7.5 text-xs font-medium shadow-none"
+          >
+            {isSaving ? 'Saving...' : 'Save Connection'}
+          </Button>
+
+          <ResponsePanel response={testResponse} />
         </main>
       </div>
 
@@ -101,8 +105,6 @@ export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
         variables={variables}
         onVariablesChange={updateVariables}
       />
-
     </React.Fragment>
-
   );
 }
