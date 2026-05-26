@@ -76,7 +76,7 @@ export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
               type="info"
               showIcon
               title={`Endpoint in group: ${groupName || groupId}`}
-              description="Base URL is inherited from the group. Auth and variables default to the group's settings when set to 'None', or you can override with your own."
+              description="Base URL is inherited from the group. Path is optional — leave empty if the API uses query params only (e.g., Etherscan). Auth defaults to group settings when set to 'None'."
             />
           )}
           <UrlBar />

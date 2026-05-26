@@ -49,9 +49,14 @@ export const connectionService = {
             }
         };
 
+        const endpointPath = store.groupId ? (store.path || store.url || "") : "";
+        const effectiveUrl = store.groupId
+            ? (endpointPath || store.groupBaseUrl || "")
+            : store.url;
+
         const payload: Record<string, unknown> = {
             name: store.connectionName || "Untitled Connection",
-            url: store.groupId ? store.path || store.url : store.url,
+            url: effectiveUrl,
             method: METHOD_MAP[store.method?.toUpperCase()] || 1,
             auth_type: AUTH_MAP[store.authType?.toLowerCase()] || 0,
             body_method: BODY_METHOD_MAP[store.body?.activeType?.toLowerCase()] || 1,
@@ -66,7 +71,7 @@ export const connectionService = {
 
         if (store.groupId) {
             payload.group_id = store.groupId;
-            payload.path = store.path || store.url;
+            payload.path = endpointPath;
         }
 
         return payload;

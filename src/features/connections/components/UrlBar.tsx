@@ -28,7 +28,7 @@ export default function UrlBar() {
   const activeColor = methodColorMap[activeMethod] || "text-foreground";
 
   const handleTest = async () => {
-    if (!displayUrl) return message.warning(groupId ? "Please enter a path first" : "Please enter a URL first");
+    if (!groupId && !displayUrl) return message.warning("Please enter a URL first");
     
     setTesting(true);
     try {
@@ -66,18 +66,20 @@ export default function UrlBar() {
            <Globe size={14} />
         </div>
         {groupId && groupBaseUrl && (
-          <div className="flex items-center pl-2 pr-0 shrink-0 border-r border-border">
-            <span className="text-xs font-mono text-muted-foreground bg-muted/50 px-2 py-0.5 rounded select-none whitespace-nowrap">
-              {groupBaseUrl}
-            </span>
-          </div>
+          <Tooltip title="Base URL inherited from group (read-only)">
+            <div className="flex items-center pl-2 pr-0 shrink-0 border-r border-border">
+              <span className="text-xs font-mono text-muted-foreground bg-muted/50 px-2 py-0.5 rounded select-none whitespace-nowrap">
+                {groupBaseUrl}
+              </span>
+            </div>
+          </Tooltip>
         )}
         <div className="flex-1">
           <VariableInput
             value={displayUrl}
             onChange={onUrlChange}
             variables={variables}
-            placeholder={groupId ? "/api/v3/account" : "https://api.example.com/v1/resource"}
+            placeholder={groupId ? "/path (optional — leave empty if params-only)" : "https://api.example.com/v1/resource"}
             className="w-full"
           />
         </div>
