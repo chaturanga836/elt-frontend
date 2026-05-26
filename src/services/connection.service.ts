@@ -49,10 +49,8 @@ export const connectionService = {
             }
         };
 
-        const endpointPath = store.groupId ? (store.path || store.url || "") : "";
-        const effectiveUrl = store.groupId
-            ? (endpointPath || store.groupBaseUrl || "")
-            : store.url;
+        const endpointPath = store.groupId ? (store.path || "") : "";
+        const effectiveUrl = store.groupId ? endpointPath : store.url;
 
         const payload: Record<string, unknown> = {
             name: store.connectionName || "Untitled Connection",
