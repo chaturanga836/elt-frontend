@@ -12,6 +12,7 @@ import {
   NodeIndexOutlined,
   ApiOutlined,
   GroupOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -85,6 +86,11 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
       label: 'Tasks',
     },
     {
+      key: '/external-links',
+      icon: <SafetyCertificateOutlined />,
+      label: 'External Links',
+    },
+    {
       key: '/settings',
       icon: <SettingOutlined />,
       label: 'Settings',
@@ -106,6 +112,9 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
     }
     if (pathname.startsWith('/connections')) {
       return '/connections';
+    }
+    if (pathname.startsWith('/external-links')) {
+      return '/external-links';
     }
     return pathname;
   };
