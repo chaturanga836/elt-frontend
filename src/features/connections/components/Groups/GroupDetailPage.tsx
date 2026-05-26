@@ -31,7 +31,7 @@ export default function GroupDetailPage() {
     try {
       const data = await connectionService.getRestGroup(groupId, TENANT);
       setGroup(data);
-      setGroupContext(groupId, data.name, data.base_url);
+      setGroupContext(groupId, data.name, data.base_url, data.auth_type, data.auth_config);
     } catch {
       message.error('Failed to load group');
     } finally {
@@ -47,7 +47,7 @@ export default function GroupDetailPage() {
 
   const openAddEndpoint = () => {
     reset();
-    setGroupContext(groupId, group?.name || null, group?.base_url || null);
+    setGroupContext(groupId, group?.name || null, group?.base_url || null, group?.auth_type || 0, group?.auth_config || {});
     setAddModalOpen(true);
   };
 
@@ -99,7 +99,7 @@ export default function GroupDetailPage() {
             const ep = group.endpoints.find((e) => e.id === row.id);
             if (ep) {
               loadFromEndpoint(ep as Record<string, unknown>);
-              setGroupContext(groupId, group.name, group.base_url);
+              setGroupContext(groupId, group.name, group.base_url, group.auth_type, group.auth_config);
               router.push(`/connections/rest-api/${row.id}/edit`);
             }
           }}
@@ -173,7 +173,7 @@ export default function GroupDetailPage() {
         footer={null}
         width={900}
         destroyOnHidden
-        afterClose={() => { reset(); setGroupContext(groupId, group.name, group.base_url); }}
+        afterClose={() => { reset(); setGroupContext(groupId, group.name, group.base_url, group.auth_type, group.auth_config); }}
       >
         <div className="max-h-[70vh] overflow-y-auto">
           <RestApiForm onSaved={onEndpointSaved} />

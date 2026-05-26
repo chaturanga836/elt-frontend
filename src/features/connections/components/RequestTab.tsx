@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
-import KeyValueTable from './KeyValueTable';
+import React, { useState, useMemo } from 'react';
+import KeyValueTable, { InheritedParam } from './KeyValueTable';
 import { Lock, Code2, ListTree, Settings2 } from 'lucide-react';
 import RestApiBody from './RestApiBody';
 import RequestAuth from './Auth';
-import { useConnectionStore } from '@/store/useConnectionStore'; // Import the store
+import { useConnectionStore } from '@/store/useConnectionStore';
 import FetchSettings from './Settings';
 
 const tabs = [
@@ -22,7 +22,16 @@ export default function RequestTab() {
   const [activeTab, setActiveTab] = useState<Tab>("Params");
   const visibleTabs = tabs;
 
-  const { params, headers, updateTable, updateQueryParams, variables } = useConnectionStore();
+  const { params, headers, updateTable, updateQueryParams, variables, groupId, groupAuthType, groupAuthConfig } = useConnectionStore();
+
+  const inheritedParams: InheritedParam[] = useMemo(() => {
+    if (!groupId || groupAuthType !== 4 || !groupAuthConfig) return [];
+    const addTo = groupAuthConfig.addTo || 'header';
+    if (addTo !== 'query') return [];
+    const key = groupAuthConfig.key;
+    if (!key) return [];
+    return [{ key, value: groupAuthConfig.value || '', source: 'Group API Key' }];
+  }, [groupId, groupAuthType, groupAuthConfig]);
 
   return (
     <div className="flex flex-col w-full h-full min-h-100">
@@ -54,9 +63,9 @@ export default function RequestTab() {
         {activeTab === "Params" && (
           <div className="space-y-2">
             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2">Query Parameters</p>
-            {/* 2. Connect Params to Store */}
             <KeyValueTable 
-              initialPairs={params} 
+              initialPairs={params}
+              inheritedParams={inheritedParams}
               globalVariables={variables}
               onChange={(data) => updateQueryParams(data)}
               keyPlaceholder="parameter" 
