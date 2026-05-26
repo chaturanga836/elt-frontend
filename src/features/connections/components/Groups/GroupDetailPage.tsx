@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button, Card, Space, Spin, Table, Tag, Typography, message } from 'antd';
-import { ArrowLeftOutlined, EditOutlined, SettingOutlined } from '@ant-design/icons';
+import { Button, Card, Modal, Space, Spin, Table, Tag, Typography, message } from 'antd';
+import { ArrowLeftOutlined, EditOutlined, PlusOutlined, SettingOutlined } from '@ant-design/icons';
 import { connectionService } from '@/services/connection.service';
 import { RestConnectionGroupDetail } from '@/types/restConnectionGroup';
 import { useConnectionStore } from '@/store/useConnectionStore';
 import { AUTH_LABELS } from './AuthFields';
 import GroupSettingsDrawer from './GroupSettingsDrawer';
+import RestApiForm from '../RestApiForm';
 
 const { Title, Text } = Typography;
 const TENANT = 'trial_user_001';
@@ -20,8 +21,10 @@ export default function GroupDetailPage() {
   const [loading, setLoading] = useState(true);
   const [group, setGroup] = useState<RestConnectionGroupDetail | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
   const setGroupContext = useConnectionStore((s) => s.setGroupContext);
   const loadFromEndpoint = useConnectionStore((s) => s.loadFromEndpoint);
+  const reset = useConnectionStore((s) => s.reset);
 
   const load = async () => {
     setLoading(true);
@@ -41,6 +44,18 @@ export default function GroupDetailPage() {
     return () => setGroupContext(null, null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId]);
+
+  const openAddEndpoint = () => {
+    reset();
+    setGroupContext(groupId, group?.name || null);
+    setAddModalOpen(true);
+  };
+
+  const onEndpointSaved = () => {
+    setAddModalOpen(false);
+    reset();
+    load();
+  };
 
   if (loading || !group) {
     return (
@@ -127,7 +142,14 @@ export default function GroupDetailPage() {
         </Button>
       </div>
 
-      <Card title={`Endpoints (${group.endpoints.length})`}>
+      <Card
+        title={`Endpoints (${group.endpoints.length})`}
+        extra={
+          <Button type="primary" icon={<PlusOutlined />} size="small" onClick={openAddEndpoint}>
+            Add Endpoint
+          </Button>
+        }
+      >
         <Table
           rowKey="id"
           dataSource={group.endpoints}
@@ -143,6 +165,20 @@ export default function GroupDetailPage() {
         onClose={() => setDrawerOpen(false)}
         onSaved={load}
       />
+
+      <Modal
+        title={`Add Endpoint to ${group.name}`}
+        open={addModalOpen}
+        onCancel={() => { setAddModalOpen(false); reset(); }}
+        footer={null}
+        width={900}
+        destroyOnClose
+        afterClose={() => { reset(); setGroupContext(groupId, group.name); }}
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
+          <RestApiForm onSaved={onEndpointSaved} />
+        </div>
+      </Modal>
     </div>
   );
 }

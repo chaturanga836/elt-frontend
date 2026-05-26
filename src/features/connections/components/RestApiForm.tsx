@@ -9,7 +9,11 @@ import { useConnectionStore } from '@/store/useConnectionStore';
 import { Alert, Button, Input, message } from 'antd';
 import { useApiStore } from '@/store/useApiStore';
 
-export default function RestApiForm() {
+interface RestApiFormProps {
+  onSaved?: () => void;
+}
+
+export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const variables = useConnectionStore((state) => state.variables);
@@ -26,14 +30,15 @@ export default function RestApiForm() {
     try {
       // For now, using a placeholder tenant_id
       await saveCurrentConnection("trial_user_001");
-      message.success(connectionId ? "Connection updated" : "Connection saved to Postgres");
+      message.success(connectionId ? "Connection updated" : "Connection saved");
+      onSaved?.();
     } catch (error: any) {
       message.error(error.message || "Failed to save connection");
     }
   };
   return (
     <React.Fragment>
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className={`${onSaved ? 'min-h-0' : 'min-h-screen'} bg-background flex flex-col`}>
         <header className="border-b border-border bg-card px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap size={20} className="text-primary" />
