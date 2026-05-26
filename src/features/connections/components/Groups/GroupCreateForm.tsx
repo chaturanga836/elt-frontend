@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import {
+  Badge,
   Button,
   Card,
   Checkbox,
   Collapse,
   Divider,
+  Drawer,
   Form,
   Input,
   Select,
@@ -14,7 +16,7 @@ import {
   Typography,
   message,
 } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, SettingOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { connectionService } from '@/services/connection.service';
 import {
@@ -34,6 +36,7 @@ export default function GroupCreateForm() {
   const [saving, setSaving] = useState(false);
   const [authType, setAuthType] = useState(0);
   const [variables, setVariables] = useState<VarRow[]>([createEmptyVar()]);
+  const [varsDrawerOpen, setVarsDrawerOpen] = useState(false);
 
   const [providers, setProviders] = useState<IntegrationProvider[]>([]);
   const [templates, setTemplates] = useState<EndpointTemplate[]>([]);
@@ -135,7 +138,11 @@ export default function GroupCreateForm() {
           <Divider titlePlacement="left" plain>
             Variables
           </Divider>
-          <VariablesEditor variables={variables} onChange={setVariables} />
+          <Badge count={variables.filter((v) => v.key).length} size="small" offset={[8, 0]}>
+            <Button icon={<SettingOutlined />} onClick={() => setVarsDrawerOpen(true)}>
+              Manage Variables
+            </Button>
+          </Badge>
 
           {providers.length > 0 && (
             <Collapse
@@ -173,7 +180,7 @@ export default function GroupCreateForm() {
                           >
                             {templates.map((t) => (
                               <Checkbox key={t.template_key} value={t.template_key}>
-                                <Space direction="vertical" size={0}>
+                                <Space orientation ="vertical" size={0}>
                                   <Text strong>{t.name}</Text>
                                   <Text type="secondary" style={{ fontSize: 11 }}>
                                     {t.method === 1 ? 'GET' : 'POST'} {t.path}
@@ -196,6 +203,20 @@ export default function GroupCreateForm() {
           </Button>
         </Form>
       </Card>
+
+      <Drawer
+        title="Group Variables"
+        width={480}
+        open={varsDrawerOpen}
+        onClose={() => setVarsDrawerOpen(false)}
+        extra={
+          <Button type="primary" onClick={() => setVarsDrawerOpen(false)}>
+            Done
+          </Button>
+        }
+      >
+        <VariablesEditor variables={variables} onChange={setVariables} />
+      </Drawer>
     </div>
   );
 }
