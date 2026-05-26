@@ -1,13 +1,14 @@
 'use client';
 
 import { Select, Badge, Tooltip, message } from 'antd';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Send, Globe, Loader2 } from 'lucide-react';
 import { useConnectionStore } from '@/store/useConnectionStore';
-import { HttpMethod } from '@/types/restForm';
+import { HttpMethod, KeyValuePair } from '@/types/restForm';
 import VariableInput from './VariableInput';
 import { connectionService } from '@/services/connection.service';
 import { TestResponse } from './ResponsePanel';
+import { generateId } from '@/lib/generateId';
 
 const methodColorMap: Record<HttpMethod, string> = {
   GET: "text-green-600",
@@ -24,9 +25,46 @@ interface UrlBarProps {
 
 export default function UrlBar({ onTestResult }: UrlBarProps = {}) {
   const store = useConnectionStore();
-  const { url, path, method, setUrl, setPath, setMethod, variables, groupId, groupBaseUrl } = store;
+  const { url, path, method, setUrl, setPath, setMethod, variables, groupId, groupBaseUrl, updateQueryParams, params } = store;
   const displayUrl = groupId ? path || url : url;
-  const onUrlChange = groupId ? setPath : setUrl;
+
+  const handleUrlChange = useCallback((rawValue: string) => {
+    const value = rawValue.replace(/'+$/, ''); // strip trailing quotes from pastes
+    const qIndex = value.indexOf('?');
+
+    if (qIndex === -1) {
+      if (groupId) setPath(value); else setUrl(value);
+      return;
+    }
+
+    const pathPart = value.slice(0, qIndex);
+    const queryString = value.slice(qIndex + 1);
+
+    if (groupId) setPath(pathPart); else setUrl(pathPart);
+
+    const searchParams = new URLSearchParams(queryString);
+    const existingKeys = new Set(params.filter(p => p.key).map(p => p.key));
+    const newParams: KeyValuePair[] = [...params];
+
+    searchParams.forEach((val, key) => {
+      if (!existingKeys.has(key)) {
+        newParams.push({
+          uiId: generateId(),
+          id: null,
+          key,
+          value: val,
+          enabled: true,
+        });
+      } else {
+        const idx = newParams.findIndex(p => p.key === key);
+        if (idx !== -1) {
+          newParams[idx] = { ...newParams[idx], value: val };
+        }
+      }
+    });
+
+    updateQueryParams(newParams);
+  }, [groupId, setPath, setUrl, params, updateQueryParams]);
   const [testing, setTesting] = useState(false);
 
   const activeMethod = method as HttpMethod;
@@ -80,7 +118,7 @@ export default function UrlBar({ onTestResult }: UrlBarProps = {}) {
         <div className="flex-1">
           <VariableInput
             value={displayUrl}
-            onChange={onUrlChange}
+            onChange={handleUrlChange}
             variables={variables}
             placeholder={groupId ? "/path (optional — leave empty if params-only)" : "https://api.example.com/v1/resource"}
             className="w-full"
