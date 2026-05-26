@@ -103,13 +103,13 @@ export default function AuthFields({ authType, onAuthTypeChange }: AuthFieldsPro
 
       {authType === 4 && (
         <>
-          <Form.Item
+          {/* <Form.Item
             name="auth_apikey_key"
             label="Parameter Name"
             rules={[{ required: true, message: 'Parameter name is required' }]}
           >
             <Input placeholder="e.g. apikey, X-API-KEY" />
-          </Form.Item>
+          </Form.Item> */}
           <Form.Item
             name="auth_apikey_value"
             label="API Key"
