@@ -8,6 +8,8 @@ import "./globals.css";
 import StaticHandler from '@/lib/antd/static';
 import SideWrapper from "@/components/ui/SideWrapper";
 import VariableDropdownPortal from "@/components/ui/VariableDropdownPortal";
+import AuthProvider from "@/components/auth/AuthProvider";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,11 +25,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AntdRegistry>
           <ConfigProvider theme={theme}>
             <App> 
-              <StaticHandler />
-              <SideWrapper>
-                {children}
-              </SideWrapper>
-              <VariableDropdownPortal />
+              <AuthProvider>
+                <AuthGuard>
+                  <StaticHandler />
+                  <SideWrapper>
+                    {children}
+                  </SideWrapper>
+                  <VariableDropdownPortal />
+                </AuthGuard>
+              </AuthProvider>
             </App>
           </ConfigProvider>
         </AntdRegistry>

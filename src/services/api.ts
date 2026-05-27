@@ -37,7 +37,11 @@ api.interceptors.response.use(
     if (status === 401) {
       // Keycloak Session Expired
       console.error('Session expired');
-      // notification.warning({ message: 'Session Expired', description: 'Please log in again.' });
+      localStorage.removeItem('token');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+      return Promise.reject(error);
     }
 
     // 2. Global Notification Logic (Debounced)

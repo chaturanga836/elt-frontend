@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Layout, Menu, theme } from 'antd';
+import { Avatar, Button, Layout, Menu, Space, theme, Typography } from 'antd';
 import {
   ProjectOutlined,
   PlusCircleOutlined,
@@ -15,13 +15,20 @@ import {
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
+import { useAuthStore } from '@/store/useAuthStore';
+import { logoutFromKeycloak } from '@/lib/keycloak';
 
 const { Sider, Content } = Layout;
+const { Text } = Typography;
 
 export default function SideWrapper({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const email = useAuthStore((s) => s.email);
+  const username = useAuthStore((s) => s.username);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
   
   const {
     token: { colorBgContainer },
@@ -133,6 +140,14 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
     return keys;
   };
 
+  if (pathname === '/login' || pathname === '/auth/callback') {
+    return <>{children}</>;
+  }
+
+  if (!isAuthenticated) {
+    return <>{children}</>;
+  }
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider 
@@ -149,7 +164,9 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
           left: 0, 
           top: 0, 
           bottom: 0,
-          zIndex: 1000 
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         <div style={{ 
@@ -179,6 +196,41 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
             }
           }}
         />
+        <div style={{ marginTop: 'auto', padding: collapsed ? '12px 8px' : '12px', borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+          {collapsed ? (
+            <Button
+              type="text"
+              style={{ color: '#fff', width: '100%' }}
+              onClick={async () => {
+                localStorage.removeItem('token');
+                clearAuth();
+                await logoutFromKeycloak(`${window.location.origin}/login`);
+              }}
+            >
+              Out
+            </Button>
+          ) : (
+            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+              <Space>
+                <Avatar size="small">{(username || email || 'U').slice(0, 1).toUpperCase()}</Avatar>
+                <div style={{ lineHeight: 1.2 }}>
+                  <Text style={{ color: '#fff', display: 'block' }}>{username || 'User'}</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12 }}>{email || 'No email'}</Text>
+                </div>
+              </Space>
+              <Button
+                block
+                onClick={async () => {
+                  localStorage.removeItem('token');
+                  clearAuth();
+                  await logoutFromKeycloak(`${window.location.origin}/login`);
+                }}
+              >
+                Logout
+              </Button>
+            </Space>
+          )}
+        </div>
       </Sider>
 
       {/* This layout shifts based on sidebar width */}
