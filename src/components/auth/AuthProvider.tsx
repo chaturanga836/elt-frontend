@@ -1,7 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
-import { initializeKeycloak, loadUserProfile, refreshTokenIfNeeded } from '@/lib/keycloak';
+import {
+  completeManualOAuthCallback,
+  initializeKeycloak,
+  isSecureAuthContext,
+  loadUserProfile,
+  parseOAuthCallbackFromUrl,
+  refreshTokenIfNeeded,
+} from '@/lib/keycloak';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -14,31 +21,37 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     const run = async () => {
       try {
+        if (!isSecureAuthContext() && parseOAuthCallbackFromUrl()) {
+          await completeManualOAuthCallback();
+        }
+
         const authenticated = await initializeKeycloak();
         if (!alive) return;
 
-        if (!authenticated) {
+        const token = (await refreshTokenIfNeeded()) || localStorage.getItem('token');
+
+        if (!authenticated && !token) {
           localStorage.removeItem('token');
+          localStorage.removeItem('refresh_token');
           clearAuth();
           return;
         }
 
-        const token = await refreshTokenIfNeeded();
-        const profile = await loadUserProfile();
-
         if (token) {
           localStorage.setItem('token', token);
+          const profile = await loadUserProfile();
           setAuth({
             token,
             username: profile?.username || null,
             email: profile?.email || null,
           });
         } else {
-          localStorage.removeItem('token');
           clearAuth();
         }
-      } catch {
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
         localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
         clearAuth();
       } finally {
         if (alive) setInitialized(true);
