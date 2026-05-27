@@ -36,10 +36,6 @@ function getInitOptions(onLoad: KeycloakInitOptions['onLoad'] = 'check-sso'): Ke
   };
 }
 
-function applyNoPkce(client: KeycloakInstance): void {
-  client.pkceMethod = false;
-}
-
 export function getKeycloakClient(): KeycloakInstance {
   if (!keycloak) {
     keycloak = new Keycloak({
@@ -47,7 +43,6 @@ export function getKeycloakClient(): KeycloakInstance {
       realm: KEYCLOAK_REALM,
       clientId: KEYCLOAK_CLIENT_ID,
     });
-    applyNoPkce(keycloak);
   }
   return keycloak;
 }
@@ -156,7 +151,6 @@ export async function initializeKeycloak(): Promise<boolean> {
   }
 
   const client = getKeycloakClient();
-  applyNoPkce(client);
   return client.init(getInitOptions('check-sso'));
 }
 
@@ -169,7 +163,6 @@ export async function loginWithKeycloak(redirectUri?: string): Promise<void> {
   }
 
   const client = getKeycloakClient();
-  applyNoPkce(client);
   if (!client.didInitialize) {
     await client.init(getInitOptions('check-sso'));
   }
@@ -195,7 +188,6 @@ export async function logoutFromKeycloak(redirectUri?: string): Promise<void> {
   }
 
   const client = getKeycloakClient();
-  applyNoPkce(client);
   await client.logout({ redirectUri: postLogout });
 }
 
@@ -230,7 +222,6 @@ export async function refreshTokenIfNeeded(): Promise<string | null> {
   }
 
   const client = getKeycloakClient();
-  applyNoPkce(client);
   if (!client.authenticated) return existing;
   await client.updateToken(30);
   const token = client.token || null;

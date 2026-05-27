@@ -6,6 +6,9 @@ services:
       args:
         - NEXT_PUBLIC_BUILD_ID=${BUILD_ID:-development}
         - NEXT_PUBLIC_API_URL=http://13.200.160.10:8000/api/v1
+        - NEXT_PUBLIC_KC_URL=http://13.200.160.10:8081
+        - NEXT_PUBLIC_KC_REALM=workspace-realm
+        - NEXT_PUBLIC_KC_CLIENT_ID=workspace-web
     ports:
       - "3000:3000"
     volumes:
