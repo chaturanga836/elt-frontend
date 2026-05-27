@@ -13,6 +13,7 @@ import TaskNode from './TaskNode';
 import CodeEdge from './CodeEdge';
 import StartNode from "./StartNode";
 import EndNode from "./EndNode";
+import RestEndpointNode from "./RestEndpointNode";
 
 const GRID_SIZE_X = 200;
 const GRID_SIZE_Y = 20;
@@ -20,6 +21,7 @@ const GRID_SIZE_Y = 20;
 // Update nodeTypes to include the new permanent nodes
 const nodeTypes = { 
   taskNode: TaskNode,
+  restNode: RestEndpointNode,
   startNode: StartNode,
   endNode: EndNode 
 };

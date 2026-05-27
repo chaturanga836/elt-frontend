@@ -2,7 +2,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Node, Edge, useReactFlow } from '@xyflow/react'; // Removed ReactFlowProvider import
 import { Button, Space, Input } from 'antd';
-import { PlusOutlined, SaveOutlined, EditOutlined } from '@ant-design/icons';
+import { PlusOutlined, SaveOutlined, EditOutlined, ApiOutlined } from '@ant-design/icons';
 import { usePipelineStore } from "@/store/usePipeStore";
 import PipelineCanvasInner from './PipelineCanvasInner';
 import { notification } from '@/lib/antd/static';
@@ -27,7 +27,7 @@ export default function PipelineCanvas() {
   const { getViewport } = useReactFlow();
 
 
-const clickAddNode = () => {
+const clickAddNode = (nodeType: 'taskNode' | 'restNode' = 'taskNode') => {
   const currentNodes = getNodes();
 
   // 1. Safely match types using string literals from your active data log
@@ -52,10 +52,10 @@ const clickAddNode = () => {
   // 4. Force strict explicit typing onto the new object declaration
   const newNode: Node = {
     id: newTrackingId,
-    type: 'taskNode', // Matches your log perfectly
+    type: nodeType,
     position: { x: newX, y: 200 },
     data: { 
-      label: `Task ${taskNodes.length + 1}`, 
+      label: nodeType === 'restNode' ? `REST ${taskNodes.length + 1}` : `Task ${taskNodes.length + 1}`, 
       node_uuid: `task_${uuidv4()}`,
       id: undefined 
     }
@@ -86,10 +86,11 @@ const clickAddNode = () => {
   setEdges(newEdges);
 };
 
-  const mapNodeTypeToInt = (typeString: string | undefined): 0 | 1 | 2 => {
+  const mapNodeTypeToInt = (typeString: string | undefined): 0 | 1 | 2 | 3 => {
     if (typeString === 'startNode') return 0;
     if (typeString === 'taskNode') return 1;
     if (typeString === 'endNode') return 2;
+    if (typeString === 'restNode') return 3;
     return 1; // Default fallback to execution node (taskNode)
   };
 
@@ -180,9 +181,15 @@ const payload: PipelineCreatePayload = {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => clickAddNode()}
+            onClick={() => clickAddNode('taskNode')}
           >
             Add Task
+          </Button>
+          <Button
+            icon={<ApiOutlined />}
+            onClick={() => clickAddNode('restNode')}
+          >
+            Add REST Endpoint
           </Button>
 
           <div style={{ width: '1px', height: '24px', background: '#f0f0f0', margin: '0 8px' }} />

@@ -1,7 +1,7 @@
 import { Node, Edge, Viewport } from '@xyflow/react';
 import { BoundaryHookConfig } from './boundaryHooks';
 
-export type TaskType = 0 | 1 | 2 ;
+export type TaskType = 0 | 1 | 2 | 3;
 
 export interface PipelineLogic {
   id?: number;
