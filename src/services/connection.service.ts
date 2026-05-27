@@ -300,4 +300,18 @@ export const connectionService = {
         if (!response.ok) throw new Error("Failed to delete group");
         return response.json();
     },
+
+    getAuthCapabilities: async () => {
+        const url = `${getBaseUrl()}/rest-api-connections/auth-capabilities`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to load auth capabilities");
+        return response.json();
+    },
+
+    getConnectionRuntime: async (connectionId: number, tenantId: string = DEFAULT_TENANT) => {
+        const url = `${getBaseUrl()}/rest-api-connections/connection/${connectionId}/runtime?tenant_id=${tenantId}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to load connection runtime");
+        return response.json();
+    },
 };
