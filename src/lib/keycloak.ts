@@ -1,12 +1,26 @@
 'use client';
 
-import Keycloak, { KeycloakInstance, KeycloakProfile } from 'keycloak-js';
+import Keycloak, { KeycloakInstance, KeycloakInitOptions, KeycloakProfile } from 'keycloak-js';
 
 let keycloak: KeycloakInstance | null = null;
 
 const KEYCLOAK_URL = process.env.NEXT_PUBLIC_KC_URL || 'http://localhost:8081';
 const KEYCLOAK_REALM = process.env.NEXT_PUBLIC_KC_REALM || 'workspace-realm';
 const KEYCLOAK_CLIENT_ID = process.env.NEXT_PUBLIC_KC_CLIENT_ID || 'workspace-web';
+
+/** PKCE (S256) needs Web Crypto — only available on HTTPS or http://localhost */
+function canUsePkce(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.isSecureContext && typeof crypto?.subtle !== 'undefined';
+}
+
+function getInitOptions(onLoad: KeycloakInitOptions['onLoad'] = 'check-sso'): KeycloakInitOptions {
+  return {
+    onLoad,
+    checkLoginIframe: false,
+    ...(canUsePkce() ? { pkceMethod: 'S256' } : { pkceMethod: false }),
+  };
+}
 
 export function getKeycloakClient(): KeycloakInstance {
   if (!keycloak) {
@@ -21,18 +35,17 @@ export function getKeycloakClient(): KeycloakInstance {
 
 export async function initializeKeycloak(): Promise<boolean> {
   const client = getKeycloakClient();
-  const authenticated = await client.init({
-    onLoad: 'check-sso',
-    pkceMethod: 'S256',
-    checkLoginIframe: false,
-  });
-  return authenticated;
+  return client.init(getInitOptions('check-sso'));
 }
 
 export async function loginWithKeycloak(redirectUri?: string): Promise<void> {
   const client = getKeycloakClient();
+  // Ensure init ran with correct PKCE setting before building the login URL
+  if (!client.didInitialize) {
+    await client.init(getInitOptions('login-required'));
+  }
   await client.login({
-    redirectUri: redirectUri || window.location.origin,
+    redirectUri: redirectUri || `${window.location.origin}/auth/callback`,
   });
 }
 
