@@ -2,20 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { KeyValuePair } from '@/types/restForm';
-import { Plus, Trash2, Lock } from 'lucide-react';
-import { Button, Checkbox, CheckboxProps, Input, Tooltip } from 'antd';
+import { Plus, Trash2 } from 'lucide-react';
+import { Button, Checkbox, Input } from 'antd';
 import VariableInput from './VariableInput';
 import { generateId } from '@/lib/generateId';
 
-export interface InheritedParam {
-  key: string;
-  value: string;
-  source: string;
-}
-
 interface KeyValueTableProps {
   initialPairs?: KeyValuePair[];
-  inheritedParams?: InheritedParam[];
   onChange?: (pairs: KeyValuePair[]) => void;
   keyPlaceholder?: string;
   valuePlaceholder?: string;
@@ -33,7 +26,6 @@ const createEmptyPair = (): KeyValuePair => ({
 
 export default function KeyValueTable({
   initialPairs = [],
-  inheritedParams = [],
   onChange,
   keyPlaceholder = "Key",
   valuePlaceholder = "Value",
@@ -46,7 +38,10 @@ export default function KeyValueTable({
     initialPairs.length > 0 ? initialPairs : [createEmptyPair()]
   );
 
-  // Sync internal state with parent
+  useEffect(() => {
+    setPairs(initialPairs.length > 0 ? initialPairs : [createEmptyPair()]);
+  }, [initialPairs]);
+
   const triggerChange = (updatedPairs: KeyValuePair[]) => {
     setPairs(updatedPairs);
     if (onChange) onChange(updatedPairs);
@@ -93,33 +88,7 @@ return (
         <div className="p-2 border-l border-border/50"></div>
       </div>
 
-      {/* INHERITED ROWS (read-only, from group) */}
-      {inheritedParams && inheritedParams.length > 0 && (
-        <div className="divide-y divide-border/50 bg-muted/20">
-          {inheritedParams.map((ip) => (
-            <div key={`inherited-${ip.key}`} className="grid grid-cols-[38px_1fr_1fr_38px] items-center">
-              <div className="flex items-center justify-center h-full">
-                <Tooltip title={`Inherited from ${ip.source}`}>
-                  <Lock size={12} className="text-muted-foreground/60" />
-                </Tooltip>
-              </div>
-              <div className="border-l border-border/50 h-full flex items-center px-3 py-2">
-                <span className="font-mono text-xs text-muted-foreground">{ip.key}</span>
-              </div>
-              <div className="border-l border-border/50 h-full flex items-center px-3 py-2">
-                <span className="font-mono text-xs text-muted-foreground">••••••••</span>
-              </div>
-              <div className="border-l border-border/50 flex items-center justify-center h-full">
-                <Tooltip title={`Managed by group auth (${ip.source})`}>
-                  <Lock size={11} className="text-muted-foreground/40" />
-                </Tooltip>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* 2. ROWS - No internal borders on inputs */}
+      {/* ROWS */}
       <div className="divide-y divide-border/50">
         {pairs.map((pair, index) => (
           <div key={pair.uiId} className="grid grid-cols-[38px_1fr_1fr_38px] group hover:bg-primary/[0.02] items-center transition-colors">

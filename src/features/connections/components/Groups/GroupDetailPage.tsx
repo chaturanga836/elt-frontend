@@ -25,6 +25,7 @@ export default function GroupDetailPage() {
   const setGroupContext = useConnectionStore((s) => s.setGroupContext);
   const loadFromEndpoint = useConnectionStore((s) => s.loadFromEndpoint);
   const reset = useConnectionStore((s) => s.reset);
+  const initializeGroupEndpoint = useConnectionStore((s) => s.initializeGroupEndpoint);
 
   const load = async () => {
     setLoading(true);
@@ -48,6 +49,7 @@ export default function GroupDetailPage() {
   const openAddEndpoint = () => {
     reset();
     setGroupContext(groupId, group?.name || null, group?.base_url || null, group?.auth_type || 0, group?.auth_config || {});
+    initializeGroupEndpoint();
     setAddModalOpen(true);
   };
 

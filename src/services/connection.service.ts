@@ -1,4 +1,5 @@
 import { ConnectionCategory } from "@/types/connection";
+import { extractRelativePath, stripQuery } from "@/lib/urlSync";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const getBaseUrl = () => (API_BASE.endsWith("/api/v1") ? API_BASE : `${API_BASE}/api/v1`);
@@ -49,12 +50,12 @@ export const connectionService = {
             }
         };
 
-        const endpointPath = store.groupId ? (store.path || "") : "";
-        const effectiveUrl = store.groupId ? endpointPath : store.url;
+        const urlBase = stripQuery(store.url || "");
+        const endpointPath = store.groupId ? extractRelativePath(urlBase, store.groupBaseUrl) : "";
 
         const payload: Record<string, unknown> = {
             name: store.connectionName || "Untitled Connection",
-            url: effectiveUrl,
+            url: urlBase,
             method: METHOD_MAP[store.method?.toUpperCase()] || 1,
             auth_type: AUTH_MAP[store.authType?.toLowerCase()] || 0,
             body_method: BODY_METHOD_MAP[store.body?.activeType?.toLowerCase()] || 1,

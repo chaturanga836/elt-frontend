@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import KeyValueTable, { InheritedParam } from './KeyValueTable';
+import React, { useState } from 'react';
+import KeyValueTable from './KeyValueTable';
 import { Lock, Code2, ListTree, Settings2 } from 'lucide-react';
 import RestApiBody from './RestApiBody';
 import RequestAuth from './Auth';
@@ -22,16 +22,7 @@ export default function RequestTab() {
   const [activeTab, setActiveTab] = useState<Tab>("Params");
   const visibleTabs = tabs;
 
-  const { params, headers, updateTable, updateQueryParams, variables, groupId, groupAuthType, groupAuthConfig } = useConnectionStore();
-
-  const inheritedParams: InheritedParam[] = useMemo(() => {
-    if (!groupId || groupAuthType !== 4 || !groupAuthConfig) return [];
-    const addTo = groupAuthConfig.addTo || 'header';
-    if (addTo !== 'query') return [];
-    const key = groupAuthConfig.key;
-    if (!key) return [];
-    return [{ key, value: groupAuthConfig.value || '', source: 'Group API Key' }];
-  }, [groupId, groupAuthType, groupAuthConfig]);
+  const { params, headers, updateTable, updateQueryParams, variables } = useConnectionStore();
 
   return (
     <div className="flex flex-col w-full h-full min-h-100">
@@ -65,7 +56,6 @@ export default function RequestTab() {
             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2">Query Parameters</p>
             <KeyValueTable 
               initialPairs={params}
-              inheritedParams={inheritedParams}
               globalVariables={variables}
               onChange={(data) => updateQueryParams(data)}
               keyPlaceholder="parameter" 

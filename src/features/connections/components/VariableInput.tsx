@@ -8,6 +8,7 @@ import { useDropdownStore } from '@/store/useDropdownStore';
 interface VariableInputProps {
   value: string;
   onChange: (val: string) => void;
+  onPaste?: (e: React.ClipboardEvent<HTMLInputElement>) => void;
   placeholder?: string;
   className?: string;
   variables: KeyValuePair[];
@@ -16,6 +17,7 @@ interface VariableInputProps {
 export default function VariableInput({ 
   value, 
   onChange, 
+  onPaste,
   placeholder, 
   className = "",
   variables = []
@@ -153,6 +155,7 @@ export default function VariableInput({
         ref={inputRef}
         value={value}
         onChange={handleChange}
+        onPaste={onPaste}
         onKeyDown={handleKeyDown}
         onFocus={() => setIsFocused(true)}
         onBlur={() => {

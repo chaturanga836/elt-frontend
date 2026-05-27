@@ -15,6 +15,14 @@ import {
     IRequestBodyState,
 } from "@/types/connection";
 import { generateId } from "@/lib/generateId";
+import {
+    buildUrlWithParams,
+    extractRelativePath,
+    mergeParamsFromQuery,
+    parseFullUrl,
+    seedGroupAuthParams,
+    stripQuery,
+} from "@/lib/urlSync";
 
 interface ConnectionState {
     id: number | null;
@@ -51,6 +59,8 @@ interface ConnectionState {
     setConnection: (name: string, description: string) => void;
     setUrl: (url: string) => void;
     setPath: (path: string) => void;
+    setUrlFromBar: (raw: string) => void;
+    initializeGroupEndpoint: () => void;
     setMethod: (method: HttpMethod) => void;
     setGroupContext: (groupId: number | null, groupName?: string | null, groupBaseUrl?: string | null, groupAuthType?: number, groupAuthConfig?: Record<string, any>) => void;
     loadFromEndpoint: (data: Record<string, unknown>) => void;
@@ -110,8 +120,49 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
     // --- Actions ---
     setId: (id) => set({ id }),
     setConnection: (name, description) => set({ connectionName: name, description }),
-    setUrl: (url) => set({ url }),
-    setPath: (path) => set({ path, url: path }),
+    setUrl: (url) => set({ url: stripQuery(url) }),
+    setPath: (path) => set({ path }),
+    setUrlFromBar: (raw) =>
+        set((state) => {
+            let { baseUrl, queryPairs } = parseFullUrl(raw);
+
+            if (!baseUrl && state.groupBaseUrl) {
+                baseUrl = stripQuery(state.groupBaseUrl);
+            } else if (!baseUrl && state.url) {
+                baseUrl = stripQuery(state.url);
+            }
+
+            const userRemovedQuery = !raw.includes("?") && state.params.some((p) => p.key);
+            const params =
+                queryPairs.length > 0
+                    ? mergeParamsFromQuery(state.params, queryPairs)
+                    : userRemovedQuery
+                      ? [{ uiId: generateId(), id: null, key: "", value: "", enabled: true }]
+                      : state.params;
+
+            const path = state.groupId ? extractRelativePath(baseUrl, state.groupBaseUrl) : "";
+
+            return {
+                url: stripQuery(baseUrl),
+                path,
+                params,
+            };
+        }),
+    initializeGroupEndpoint: () =>
+        set((state) => {
+            const base = stripQuery(state.groupBaseUrl || "");
+            const authParams = seedGroupAuthParams(state.groupAuthType, state.groupAuthConfig);
+            const params =
+                authParams.length > 0
+                    ? [...authParams, { uiId: generateId(), id: null, key: "", value: "", enabled: true }]
+                    : [{ uiId: generateId(), id: null, key: "", value: "", enabled: true }];
+            return {
+                url: base,
+                path: "",
+                params,
+                authType: state.groupAuthType > 0 ? "none" : state.authType,
+            };
+        }),
     setMethod: (method) => set({ method }),
     setGroupContext: (groupId, groupName = null, groupBaseUrl = null, groupAuthType = 0, groupAuthConfig = {}) => set({ groupId, groupName, groupBaseUrl, groupAuthType, groupAuthConfig }),
     loadFromEndpoint: (data) => {
@@ -136,8 +187,14 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
         };
         const bodyType = bodyTypeMap[bodyMethod] || "none";
         const path = (data.path as string) || "";
-        const url = path || (data.url as string) || "";
         const groupId = (data.group_id as number) ?? null;
+        const rawParams = (data.params as KeyValuePair[]) || [];
+        const effectiveUrl = (data.effective_url as string) || (data.url as string) || "";
+        const url = stripQuery(effectiveUrl || (groupId ? "" : path));
+        const params =
+            rawParams.length > 0
+                ? rawParams
+                : [{ uiId: generateId(), id: null, key: "", value: "", enabled: true }];
 
         set({
             id: (data.id as number) ?? null,
@@ -146,11 +203,11 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
             connectionName: (data.name as string) || null,
             path,
             url,
+            params,
             method:
                 ({ 1: "GET", 2: "POST", 3: "PUT", 4: "DELETE", 5: "PATCH" } as Record<number, HttpMethod>)[
                     data.method as number
                 ] || "GET",
-            params: (data.params as KeyValuePair[]) || [],
             headers: (data.headers as KeyValuePair[]) || [],
             variables: (data.variables as KeyValuePair[])?.length
                 ? (data.variables as KeyValuePair[])
