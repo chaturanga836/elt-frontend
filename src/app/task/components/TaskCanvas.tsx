@@ -2,16 +2,35 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Editor, OnMount } from '@monaco-editor/react';
-import { Input, Button, Card, Space, Breadcrumb, notification, Alert } from 'antd';
-import { SaveOutlined, ArrowLeftOutlined, CodeOutlined, WarningOutlined } from '@ant-design/icons';
+import { Input, Button, Card, Space, Breadcrumb, notification, Alert, Modal, List, Tag, Typography } from 'antd';
+import { SaveOutlined, ArrowLeftOutlined, CodeOutlined, WarningOutlined, LinkOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { TaskService } from '@/services/task.service';
 import { ExternalLinkService } from '@/services/external-link.service';
+import { connectionService } from '@/services/connection.service';
 import { detectExternalUrls, UrlViolation } from '@/lib/validateExternalUrls';
 import Link from 'next/link';
 
+type ConnectionRecord = {
+  id: number;
+  name: string;
+  source_type: string;
+  url?: string;
+  description?: string;
+  prototype_id?: string;
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  'rest-api': 'REST API',
+  db: 'Database',
+  file: 'Storage',
+};
+
+const TENANT_ID = 'trial_user_001';
+
 export default function TaskCanvas() {
   const router = useRouter();
+  const { Text } = Typography;
   const [loading, setLoading] = useState(false);
   const [taskData, setTaskData] = useState({
     name: '',
@@ -21,6 +40,11 @@ export default function TaskCanvas() {
 
   const [violations, setViolations] = useState<UrlViolation[]>([]);
   const [allowedUrls, setAllowedUrls] = useState<string[]>([]);
+  const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false);
+  const [connectionSearch, setConnectionSearch] = useState('');
+  const [connectionsLoading, setConnectionsLoading] = useState(false);
+  const [connectionsError, setConnectionsError] = useState<string | null>(null);
+  const [connections, setConnections] = useState<ConnectionRecord[]>([]);
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
 
@@ -31,6 +55,34 @@ export default function TaskCanvas() {
       .then((res) => setAllowedUrls(res.items.map((l) => l.url)))
       .catch(() => {});
   }, []);
+
+  const loadConnections = useCallback(async () => {
+    setConnectionsLoading(true);
+    setConnectionsError(null);
+    try {
+      const res = await connectionService.getUnifiedConnections(TENANT_ID);
+      const normalized = (Array.isArray(res) ? res : []).map((row: any) => ({
+        id: Number(row.id),
+        name: String(row.name || `Connection ${row.id}`),
+        source_type: String(row.source_type || 'rest-api'),
+        url: row.url ? String(row.url) : undefined,
+        description: row.description ? String(row.description) : undefined,
+        prototype_id: row.prototype_id ? String(row.prototype_id) : undefined,
+      }));
+      setConnections(normalized.filter((c) => Number.isFinite(c.id)));
+    } catch {
+      setConnectionsError('Failed to load connections. Please try again.');
+      setConnections([]);
+    } finally {
+      setConnectionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isConnectionModalOpen && connections.length === 0 && !connectionsLoading) {
+      void loadConnections();
+    }
+  }, [isConnectionModalOpen, connections.length, connectionsLoading, loadConnections]);
 
   const validateCode = useCallback(
     (code: string) => {
@@ -75,6 +127,62 @@ export default function TaskCanvas() {
     setTaskData({ ...taskData, script: code });
     validateCode(code);
   };
+
+  const buildConnectionSnippet = (connection: ConnectionRecord) => {
+    const payload = {
+      id: connection.id,
+      name: connection.name,
+      source_type: connection.source_type,
+      prototype_id: connection.prototype_id || null,
+      url: connection.url || null,
+    };
+    return `\n# Connection Reference\n# Use this object to resolve credentials/runtime details in your backend worker.\nconnection_ref = ${JSON.stringify(payload, null, 2)}\n`;
+  };
+
+  const insertSnippetInEditor = (snippet: string) => {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editor || !monaco) {
+      const next = `${taskData.script}${snippet}`;
+      setTaskData((prev) => ({ ...prev, script: next }));
+      validateCode(next);
+      return;
+    }
+
+    const selection = editor.getSelection();
+    const range =
+      selection ||
+      new monaco.Range(
+        editor.getModel().getLineCount(),
+        editor.getModel().getLineMaxColumn(editor.getModel().getLineCount()),
+        editor.getModel().getLineCount(),
+        editor.getModel().getLineMaxColumn(editor.getModel().getLineCount()),
+      );
+
+    editor.executeEdits('connection-snippet', [{ range, text: snippet, forceMoveMarkers: true }]);
+    const updatedCode = editor.getValue();
+    setTaskData((prev) => ({ ...prev, script: updatedCode }));
+    validateCode(updatedCode);
+  };
+
+  const handleInsertConnection = (connection: ConnectionRecord) => {
+    insertSnippetInEditor(buildConnectionSnippet(connection));
+    setIsConnectionModalOpen(false);
+    api.success({
+      message: 'Connection inserted',
+      description: `"${connection.name}" reference added to script.`,
+    });
+  };
+
+  const filteredConnections = connections.filter((c) => {
+    const q = connectionSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      c.name.toLowerCase().includes(q) ||
+      c.source_type.toLowerCase().includes(q) ||
+      (c.prototype_id || '').toLowerCase().includes(q)
+    );
+  });
 
   const handleSave = async () => {
     if (!taskData.name) {
@@ -190,7 +298,14 @@ export default function TaskCanvas() {
 
           <Card
             style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
-            title={<Space><CodeOutlined /> Python Script</Space>}
+            title={
+              <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                <Space><CodeOutlined /> Python Script</Space>
+                <Button icon={<LinkOutlined />} onClick={() => setIsConnectionModalOpen(true)}>
+                  Insert Connection
+                </Button>
+              </Space>
+            }
             styles={{ body: { flex: 1, padding: 0, overflow: 'hidden' } }}
           >
             <Editor
@@ -211,6 +326,61 @@ export default function TaskCanvas() {
           </Card>
         </div>
       </div>
+      <Modal
+        title="Insert Connection Reference"
+        open={isConnectionModalOpen}
+        onCancel={() => setIsConnectionModalOpen(false)}
+        footer={null}
+        width={720}
+      >
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <Input
+            placeholder="Search by name, type, or prototype"
+            value={connectionSearch}
+            onChange={(e) => setConnectionSearch(e.target.value)}
+          />
+
+          {connectionsError && (
+            <Alert
+              type="error"
+              showIcon
+              message={connectionsError}
+              action={
+                <Button size="small" onClick={() => void loadConnections()} loading={connectionsLoading}>
+                  Retry
+                </Button>
+              }
+            />
+          )}
+
+          <List
+            bordered
+            loading={connectionsLoading}
+            locale={{ emptyText: 'No connections found' }}
+            dataSource={filteredConnections}
+            renderItem={(item) => (
+              <List.Item
+                actions={[
+                  <Button key={`insert-${item.id}`} type="link" onClick={() => handleInsertConnection(item)}>
+                    Insert
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta
+                  title={
+                    <Space>
+                      <Text strong>{item.name}</Text>
+                      <Tag>{SOURCE_LABELS[item.source_type] || item.source_type}</Tag>
+                      {item.prototype_id ? <Tag color="blue">{item.prototype_id}</Tag> : null}
+                    </Space>
+                  }
+                  description={item.url || item.description || 'No details available'}
+                />
+              </List.Item>
+            )}
+          />
+        </Space>
+      </Modal>
     </>
   );
 }
