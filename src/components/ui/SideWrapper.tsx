@@ -37,6 +37,11 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
   // Nested grouping structures inside AntD require unique parenting keys
   const menuItems = [
     {
+      key: '/workspaces',
+      icon: <AppstoreOutlined />,
+      label: 'Workspaces',
+    },
+    {
       key: 'pipelines-group',
       icon: <ProjectOutlined />,
       label: 'Pipelines',
@@ -122,6 +127,12 @@ export default function SideWrapper({ children }: { children: React.ReactNode })
     }
     if (pathname.startsWith('/external-links')) {
       return '/external-links';
+    }
+    if (pathname.startsWith('/workspaces')) {
+      return '/workspaces';
+    }
+    if (pathname === '/settings') {
+      return '/settings';
     }
     return pathname;
   };

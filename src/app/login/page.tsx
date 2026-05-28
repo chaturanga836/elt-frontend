@@ -13,7 +13,7 @@ export default function LoginPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   useEffect(() => {
-    if (isAuthenticated) router.replace('/');
+    if (isAuthenticated) router.replace('/workspaces');
   }, [isAuthenticated, router]);
 
   const handleLogin = () => {
@@ -28,7 +28,7 @@ export default function LoginPage() {
           Sign in
         </Title>
         <Paragraph type="secondary" style={{ marginBottom: 24 }}>
-          Authenticate with Keycloak to access workspaces and pipelines.
+          Sign in with Keycloak. After login you will choose or create a workspace.
         </Paragraph>
         <Button
           type="primary"

@@ -23,7 +23,7 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     if (!initialized || error) return;
-    router.replace(isAuthenticated ? '/' : '/login');
+    router.replace(isAuthenticated ? '/workspaces' : '/login');
   }, [initialized, isAuthenticated, router, error]);
 
   if (error) {

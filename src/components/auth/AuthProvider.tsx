@@ -10,6 +10,8 @@ import {
   shouldUseManualAuthFlow,
 } from '@/lib/keycloak';
 import { useAuthStore } from '@/store/useAuthStore';
+import { UserService } from '@/services/user.service';
+import { isSuperAdminToken } from '@/lib/jwt';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const setAuth = useAuthStore((s) => s.setAuth);
@@ -39,11 +41,25 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
         if (token) {
           localStorage.setItem('token', token);
-          const profile = await loadUserProfile();
+          const kcProfile = await loadUserProfile();
+          let isSuperAdmin = isSuperAdminToken(token);
+          let realmRoles: string[] = [];
+          let workspaceIds: number[] = [];
+          try {
+            const me = await UserService.getMe();
+            isSuperAdmin = me.is_super_admin;
+            realmRoles = me.realm_roles;
+            workspaceIds = me.workspace_ids;
+          } catch {
+            /* API profile optional if backend unreachable */
+          }
           setAuth({
             token,
-            username: profile?.username || null,
-            email: profile?.email || null,
+            username: kcProfile?.username || null,
+            email: kcProfile?.email || null,
+            isSuperAdmin,
+            realmRoles,
+            workspaceIds,
           });
         } else {
           clearAuth();
