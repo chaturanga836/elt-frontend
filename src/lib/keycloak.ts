@@ -21,6 +21,25 @@ export function isSecureAuthContext(): boolean {
   return window.isSecureContext && typeof crypto?.subtle !== 'undefined';
 }
 
+function isNonLocalHttpKeycloak(): boolean {
+  try {
+    const parsed = new URL(KEYCLOAK_URL);
+    if (parsed.protocol !== 'http:') return false;
+    const host = parsed.hostname.toLowerCase();
+    return !['localhost', '127.0.0.1', '::1'].includes(host);
+  } catch {
+    return KEYCLOAK_URL.startsWith('http://');
+  }
+}
+
+/**
+ * Use manual OAuth flow for non-HTTPS Keycloak deployments.
+ * keycloak-js flow may fail in this mode and can trigger HTTPS-required screens.
+ */
+export function shouldUseManualAuthFlow(): boolean {
+  return !isSecureAuthContext() || isNonLocalHttpKeycloak();
+}
+
 function randomString(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -146,7 +165,7 @@ export async function completeManualOAuthCallback(): Promise<boolean> {
 }
 
 export async function initializeKeycloak(): Promise<boolean> {
-  if (!isSecureAuthContext()) {
+  if (shouldUseManualAuthFlow()) {
     return Boolean(localStorage.getItem('token'));
   }
 
@@ -157,7 +176,7 @@ export async function initializeKeycloak(): Promise<boolean> {
 export async function loginWithKeycloak(redirectUri?: string): Promise<void> {
   const redirect = redirectUri || getManualCallbackRedirectUri();
 
-  if (!isSecureAuthContext()) {
+  if (shouldUseManualAuthFlow()) {
     loginWithoutPkce(redirect);
     return;
   }
@@ -176,7 +195,7 @@ export async function logoutFromKeycloak(redirectUri?: string): Promise<void> {
 
   const postLogout = redirectUri || `${window.location.origin}/login`;
 
-  if (!isSecureAuthContext()) {
+  if (shouldUseManualAuthFlow()) {
     const params = new URLSearchParams({
       client_id: KEYCLOAK_CLIENT_ID,
       post_logout_redirect_uri: postLogout,
@@ -192,7 +211,7 @@ export async function logoutFromKeycloak(redirectUri?: string): Promise<void> {
 }
 
 export async function loadUserProfile(): Promise<KeycloakProfile | null> {
-  if (!isSecureAuthContext()) {
+  if (shouldUseManualAuthFlow()) {
     const token = localStorage.getItem('token');
     if (!token) return null;
     const res = await fetch(
@@ -217,7 +236,7 @@ export async function loadUserProfile(): Promise<KeycloakProfile | null> {
 
 export async function refreshTokenIfNeeded(): Promise<string | null> {
   const existing = localStorage.getItem('token');
-  if (!isSecureAuthContext()) {
+  if (shouldUseManualAuthFlow()) {
     return existing;
   }
 

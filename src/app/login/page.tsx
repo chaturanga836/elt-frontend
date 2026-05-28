@@ -16,6 +16,11 @@ export default function LoginPage() {
     if (isAuthenticated) router.replace('/');
   }, [isAuthenticated, router]);
 
+  const handleLogin = () => {
+    console.log(`${window.location.origin}/auth/callback`);
+    loginWithKeycloak(`${window.location.origin}/auth/callback`);
+  };
+
   return (
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 }}>
       <Card style={{ width: 420, borderRadius: 12 }}>
@@ -29,7 +34,7 @@ export default function LoginPage() {
           type="primary"
           size="large"
           block
-          onClick={() => loginWithKeycloak(`${window.location.origin}/auth/callback`)}
+          onClick={handleLogin}
         >
           Continue with Keycloak
         </Button>

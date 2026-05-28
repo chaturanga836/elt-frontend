@@ -4,10 +4,10 @@ import { useEffect } from 'react';
 import {
   completeManualOAuthCallback,
   initializeKeycloak,
-  isSecureAuthContext,
   loadUserProfile,
   parseOAuthCallbackFromUrl,
   refreshTokenIfNeeded,
+  shouldUseManualAuthFlow,
 } from '@/lib/keycloak';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -21,7 +21,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     const run = async () => {
       try {
-        if (!isSecureAuthContext() && parseOAuthCallbackFromUrl()) {
+        if (shouldUseManualAuthFlow() && parseOAuthCallbackFromUrl()) {
           await completeManualOAuthCallback();
         }
 
