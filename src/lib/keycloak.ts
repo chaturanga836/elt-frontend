@@ -1,6 +1,7 @@
 'use client';
 
 import Keycloak, { KeycloakInstance, KeycloakInitOptions, KeycloakProfile } from 'keycloak-js';
+import { isAccessTokenExpiringSoon } from '@/lib/jwt';
 
 const KEYCLOAK_URL = (process.env.NEXT_PUBLIC_KC_URL || 'http://localhost:8081').replace(/\/$/, '');
 const KEYCLOAK_REALM = process.env.NEXT_PUBLIC_KC_REALM || 'workspace-realm';
@@ -85,7 +86,7 @@ export function loginWithoutPkce(redirectUri?: string): void {
     client_id: KEYCLOAK_CLIENT_ID,
     redirect_uri: redirect,
     response_type: 'code',
-    scope: 'openid',
+    scope: 'openid offline_access',
     state,
     response_mode: 'query',
   });
@@ -137,6 +138,75 @@ export async function exchangeCodeForTokens(
   return response.json();
 }
 
+type TokenResponse = {
+  access_token: string;
+  refresh_token?: string;
+  id_token?: string;
+  expires_in?: number;
+};
+
+function persistTokens(tokens: TokenResponse): string {
+  localStorage.setItem('token', tokens.access_token);
+  if (tokens.refresh_token) {
+    localStorage.setItem('refresh_token', tokens.refresh_token);
+  }
+  return tokens.access_token;
+}
+
+export async function exchangeRefreshToken(
+  refreshToken: string,
+): Promise<TokenResponse> {
+  const tokenUrl = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token`;
+  const body = new URLSearchParams({
+    grant_type: 'refresh_token',
+    client_id: KEYCLOAK_CLIENT_ID,
+    refresh_token: refreshToken,
+  });
+
+  const response = await fetch(tokenUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Refresh token failed (${response.status}): ${text}`);
+  }
+
+  return response.json();
+}
+
+/** Refresh access token using stored refresh_token (manual OAuth / HTTP deployments). */
+export async function refreshManualAccessToken(): Promise<string | null> {
+  const refreshToken = localStorage.getItem('refresh_token');
+  if (!refreshToken) return null;
+
+  try {
+    const tokens = await exchangeRefreshToken(refreshToken);
+    return persistTokens(tokens);
+  } catch {
+    return null;
+  }
+}
+
+/** Returns a valid access token, refreshing when near expiry (manual flow). */
+export async function ensureValidAccessToken(): Promise<string | null> {
+  const existing = localStorage.getItem('token');
+  if (!existing) return null;
+
+  if (!shouldUseManualAuthFlow()) {
+    return refreshTokenIfNeeded();
+  }
+
+  if (!isAccessTokenExpiringSoon(existing, 30)) {
+    return existing;
+  }
+
+  const refreshed = await refreshManualAccessToken();
+  return refreshed ?? existing;
+}
+
 /** Complete manual OAuth callback; returns true if this page was a callback. */
 export async function completeManualOAuthCallback(): Promise<boolean> {
   const parsed = parseOAuthCallbackFromUrl();
@@ -154,11 +224,7 @@ export async function completeManualOAuthCallback(): Promise<boolean> {
 
   const tokens = await exchangeCodeForTokens(parsed.code, expected.redirectUri);
   sessionStorage.removeItem(AUTH_STATE_KEY);
-
-  localStorage.setItem('token', tokens.access_token);
-  if (tokens.refresh_token) {
-    localStorage.setItem('refresh_token', tokens.refresh_token);
-  }
+  persistTokens(tokens);
 
   window.history.replaceState({}, '', '/auth/callback');
   return true;
@@ -212,7 +278,7 @@ export async function logoutFromKeycloak(redirectUri?: string): Promise<void> {
 
 export async function loadUserProfile(): Promise<KeycloakProfile | null> {
   if (shouldUseManualAuthFlow()) {
-    const token = localStorage.getItem('token');
+    const token = await ensureValidAccessToken();
     if (!token) return null;
     const res = await fetch(
       `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/userinfo`,
@@ -235,11 +301,11 @@ export async function loadUserProfile(): Promise<KeycloakProfile | null> {
 }
 
 export async function refreshTokenIfNeeded(): Promise<string | null> {
-  const existing = localStorage.getItem('token');
   if (shouldUseManualAuthFlow()) {
-    return existing;
+    return ensureValidAccessToken();
   }
 
+  const existing = localStorage.getItem('token');
   const client = getKeycloakClient();
   if (!client.authenticated) return existing;
   await client.updateToken(30);

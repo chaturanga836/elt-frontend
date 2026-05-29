@@ -1,6 +1,11 @@
 // src/services/api.ts
 import axios from 'axios';
 import { notification } from '@/lib/antd/static'; // Using the bridge we set up
+import {
+  ensureValidAccessToken,
+  refreshManualAccessToken,
+  shouldUseManualAuthFlow,
+} from '@/lib/keycloak';
 
 // Helper to prevent duplicate notifications in a short window
 let lastNotificationTime = 0;
@@ -11,9 +16,11 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Request Interceptor
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token'); 
+// Request Interceptor — refresh access token before expiry when using manual OAuth
+api.interceptors.request.use(async (config) => {
+  const token = shouldUseManualAuthFlow()
+    ? await ensureValidAccessToken()
+    : localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -35,9 +42,19 @@ api.interceptors.response.use(
     }
 
     if (status === 401) {
-      // Keycloak Session Expired
+      const config = error.config as typeof error.config & { _retriedAfterRefresh?: boolean };
+      if (shouldUseManualAuthFlow() && config && !config._retriedAfterRefresh) {
+        const newToken = await refreshManualAccessToken();
+        if (newToken) {
+          config._retriedAfterRefresh = true;
+          config.headers.Authorization = `Bearer ${newToken}`;
+          return api.request(config);
+        }
+      }
+
       console.error('Session expired');
       localStorage.removeItem('token');
+      localStorage.removeItem('refresh_token');
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }

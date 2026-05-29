@@ -2,6 +2,7 @@ export type JwtPayload = {
   sub?: string;
   email?: string;
   preferred_username?: string;
+  exp?: number;
   realm_access?: { roles?: string[] };
   groups?: string[];
   workspace_groups?: string[];
@@ -27,4 +28,16 @@ export function extractRealmRoles(token: string): string[] {
 
 export function isSuperAdminToken(token: string): boolean {
   return extractRealmRoles(token).includes('super_admin');
+}
+
+export function getAccessTokenExpiry(token: string): number | null {
+  const exp = parseJwtPayload(token)?.exp;
+  return typeof exp === 'number' ? exp : null;
+}
+
+/** True when the access token is expired or within skewSeconds of expiry. */
+export function isAccessTokenExpiringSoon(token: string, skewSeconds = 30): boolean {
+  const exp = getAccessTokenExpiry(token);
+  if (exp === null) return true;
+  return Date.now() / 1000 >= exp - skewSeconds;
 }

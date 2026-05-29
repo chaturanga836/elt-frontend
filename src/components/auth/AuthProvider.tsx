@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import {
   completeManualOAuthCallback,
+  ensureValidAccessToken,
   initializeKeycloak,
   loadUserProfile,
   parseOAuthCallbackFromUrl,
@@ -79,6 +80,17 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       alive = false;
     };
   }, [setAuth, clearAuth, setInitialized]);
+
+  // Proactive refresh on HTTP/manual Keycloak so idle tabs stay signed in
+  useEffect(() => {
+    if (!shouldUseManualAuthFlow()) return;
+    const intervalMs = 60_000;
+    const tick = () => {
+      void ensureValidAccessToken();
+    };
+    const id = window.setInterval(tick, intervalMs);
+    return () => window.clearInterval(id);
+  }, []);
 
   return <>{children}</>;
 }
