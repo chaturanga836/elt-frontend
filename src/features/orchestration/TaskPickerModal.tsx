@@ -16,6 +16,8 @@ import {
 import { SearchOutlined, PlusOutlined, CheckCircleFilled } from '@ant-design/icons';
 import { TaskService, TaskResponse } from '@/services/task.service';
 import { useDebouncedFetch } from '@/features/connections/hooks/useDebouncedFetch';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { workspacePath } from '@/lib/paths';
 
 const { Text } = Typography;
 const PAGE_SIZE = 10;
@@ -40,6 +42,7 @@ export default function TaskPickerModal({
   selectedId,
   showCreateButton = true,
 }: TaskPickerModalProps) {
+  const workspaceId = useWorkspaceId();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -100,7 +103,7 @@ export default function TaskPickerModal({
             type="dashed"
             block
             icon={<PlusOutlined />}
-            onClick={() => router.push('/task/new')}
+            onClick={() => router.push(workspacePath(workspaceId, 'task/new'))}
             style={{ height: 40 }}
           >
             Create new task

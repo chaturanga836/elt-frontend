@@ -10,11 +10,14 @@ import { useConnectionStore } from '@/store/useConnectionStore';
 import { AUTH_LABELS } from './AuthFields';
 import GroupSettingsDrawer from './GroupSettingsDrawer';
 import RestApiForm from '../RestApiForm';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { workspacePath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
 const TENANT = 'trial_user_001';
 
 export default function GroupDetailPage() {
+  const workspaceId = useWorkspaceId();
   const params = useParams();
   const router = useRouter();
   const groupId = Number(params.groupId);
@@ -102,7 +105,7 @@ export default function GroupDetailPage() {
             if (ep) {
               loadFromEndpoint(ep as Record<string, unknown>);
               setGroupContext(groupId, group.name, group.base_url, group.auth_type, group.auth_config);
-              router.push(`/connections/rest-api/${row.id}/edit`);
+              router.push(workspacePath(workspaceId, `connections/rest-api/${row.id}/edit`));
             }
           }}
         />
@@ -118,7 +121,7 @@ export default function GroupDetailPage() {
         type="link"
         icon={<ArrowLeftOutlined />}
         className="px-0 mb-4"
-        onClick={() => router.push('/connections/rest-api/groups')}
+        onClick={() => router.push(workspacePath(workspaceId, 'connections/rest-api/groups'))}
       >
         Back to groups
       </Button>

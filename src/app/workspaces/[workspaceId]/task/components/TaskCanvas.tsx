@@ -10,6 +10,8 @@ import { ExternalLinkService } from '@/services/external-link.service';
 import { connectionService } from '@/services/connection.service';
 import { detectExternalUrls, UrlViolation } from '@/lib/validateExternalUrls';
 import Link from 'next/link';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { workspacePath } from '@/lib/paths';
 
 type ConnectionRecord = {
   id: number;
@@ -29,6 +31,7 @@ const SOURCE_LABELS: Record<string, string> = {
 const TENANT_ID = 'trial_user_001';
 
 export default function TaskCanvas() {
+  const workspaceId = useWorkspaceId();
   const router = useRouter();
   const { Text } = Typography;
   const [loading, setLoading] = useState(false);
@@ -204,7 +207,7 @@ export default function TaskCanvas() {
         message: 'Task Created',
         description: 'Task created successfully.',
       });
-      router.push('/task');
+      router.push(workspacePath(workspaceId, 'task'));
     } catch (err: any) {
       console.error(err);
       const detail = err?.response?.data?.detail;
@@ -230,7 +233,7 @@ export default function TaskCanvas() {
       <div style={{ padding: '24px', height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space direction="vertical" size={0}>
-            <Breadcrumb items={[{ title: <Link href="/task">Tasks</Link> }, { title: 'New Task' }]} />
+            <Breadcrumb items={[{ title: <Link href={workspacePath(workspaceId, 'task')}>Tasks</Link> }, { title: 'New Task' }]} />
             <h2 style={{ margin: 0 }}>Create Independent Task</h2>
           </Space>
           <Space>

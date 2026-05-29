@@ -6,11 +6,14 @@ import { PlusOutlined, FolderOutlined, ArrowLeftOutlined } from '@ant-design/ico
 import { useRouter } from 'next/navigation';
 import { connectionService } from '@/services/connection.service';
 import { RestConnectionGroup } from '@/types/restConnectionGroup';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { workspacePath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
 const TENANT = 'trial_user_001';
 
 export default function GroupListPage() {
+  const workspaceId = useWorkspaceId();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<RestConnectionGroup[]>([]);
@@ -61,7 +64,7 @@ export default function GroupListPage() {
       key: 'actions',
       render: (_: unknown, row: RestConnectionGroup) => (
         <Space>
-          <Button type="link" onClick={() => router.push(`/connections/rest-api/groups/${row.id}`)}>
+          <Button type="link" onClick={() => router.push(workspacePath(workspaceId, `connections/rest-api/groups/${row.id}`))}>
             Open
           </Button>
           <Popconfirm
@@ -87,7 +90,7 @@ export default function GroupListPage() {
         type="link"
         icon={<ArrowLeftOutlined />}
         className="px-0 mb-4"
-        onClick={() => router.push('/connections')}
+        onClick={() => router.push(workspacePath(workspaceId, 'connections'))}
       >
         Back to Connections
       </Button>
@@ -102,13 +105,13 @@ export default function GroupListPage() {
           </Text>
         </div>
         <Space>
-          <Button onClick={() => router.push('/connections/rest-api')}>
+          <Button onClick={() => router.push(workspacePath(workspaceId, 'connections/rest-api'))}>
             Standalone REST
           </Button>
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => router.push('/connections/rest-api/groups/new')}
+            onClick={() => router.push(workspacePath(workspaceId, 'connections/rest-api/groups/new'))}
           >
             New Group
           </Button>

@@ -5,8 +5,11 @@ import { Table, Button, Space, Input, Card, notification } from 'antd';
 import { EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { TaskService, TaskResponse } from '@/services/task.service';
 import Link from 'next/link';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { workspacePath } from '@/lib/paths';
 
 export default function TaskListTable() {
+  const workspaceId = useWorkspaceId();
   const [data, setData] = useState<{ items: TaskResponse[]; total: number }>({ items: [], total: 0 });
   const [loading, setLoading] = useState(true);
   
@@ -88,7 +91,7 @@ export default function TaskListTable() {
       width: 120,
       render: (_: any, record: TaskResponse) => (
         <Space>
-          <Link href={`/task/${record.id}`}>
+          <Link href={workspacePath(workspaceId, `task/${record.id}`)}>
             <Button icon={<EditOutlined />} size="small" type="primary" ghost>
               View/Edit
             </Button>
@@ -103,7 +106,7 @@ export default function TaskListTable() {
       <Card 
         title="Independent Task Library" 
         extra={
-          <Link href="/task/new">
+          <Link href={workspacePath(workspaceId, 'task/new')}>
             <Button type="primary" icon={<PlusOutlined />}>Create New Task</Button>
           </Link>
         }

@@ -15,6 +15,8 @@ import {
 import { ArrowLeftOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { connectionService } from '@/services/connection.service';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { resolveWorkspacePath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
 
@@ -46,7 +48,10 @@ export default function DynamicConnectionForm({
   tenantId = 'trial_user_001',
   backHref,
 }: DynamicConnectionFormProps) {
+  const workspaceId = useWorkspaceId();
   const router = useRouter();
+  const resolvedBackHref = resolveWorkspacePath(workspaceId, backHref);
+  const connectionsHome = resolveWorkspacePath(workspaceId, '/connections');
   const [form] = Form.useForm();
   const [schema, setSchema] = useState<UIFieldSchema[]>([]);
   const [resolvedProto, setResolvedProto] = useState(prototypeId);
@@ -153,7 +158,7 @@ export default function DynamicConnectionForm({
         );
         message.success('Connection saved');
       }
-      router.push('/connections');
+      router.push(connectionsHome);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to save';
       message.error(msg);
@@ -175,7 +180,7 @@ export default function DynamicConnectionForm({
       <Button
         type="link"
         icon={<ArrowLeftOutlined />}
-        onClick={() => router.push(backHref)}
+        onClick={() => router.push(resolvedBackHref)}
         className="mb-4 px-0"
       >
         Back

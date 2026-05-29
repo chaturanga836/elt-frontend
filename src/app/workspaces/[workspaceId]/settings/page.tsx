@@ -10,12 +10,14 @@ import { WorkspaceItem, WorkspaceService } from '@/services/workspace.service';
 import WorkspaceGeneralTab from '@/features/workspaces/components/WorkspaceGeneralTab';
 import WorkspaceMembersTab from '@/features/workspaces/components/WorkspaceMembersTab';
 import WorkspacePluginsTab from '@/features/workspaces/components/WorkspacePluginsTab';
+import { workspacePath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
 
 export default function WorkspaceSettingsPage() {
   const params = useParams();
-  const workspaceId = Number(params.id);
+  const raw = params?.workspaceId;
+  const workspaceId = typeof raw === 'string' ? Number(raw) : Number(raw?.[0]);
   const setCurrentWorkspaceId = useWorkspaceStore((s) => s.setCurrentWorkspaceId);
   const [workspace, setWorkspace] = useState<WorkspaceItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,6 +91,11 @@ export default function WorkspaceSettingsPage() {
           ]}
         />
       </Card>
+      <div className="mt-4">
+        <Link href={workspacePath(workspace.id, 'pipe')}>
+          <Button type="primary">Open workspace</Button>
+        </Link>
+      </div>
     </div>
   );
 }

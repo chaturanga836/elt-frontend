@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { WorkspaceService } from '@/services/workspace.service';
+import { workspacePath } from '@/lib/paths';
 import { COMMON_TIMEZONES } from '@/constants/timezones';
 
 const { Title, Text } = Typography;
@@ -46,7 +47,7 @@ export default function NewWorkspacePage() {
       const ws = await WorkspaceService.create(orgId, values);
       setCurrentWorkspaceId(ws.id);
       notification.success({ message: 'Workspace created' });
-      router.push(`/workspaces/${ws.id}/settings`);
+      router.push(workspacePath(ws.id, 'pipe'));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to create workspace';
       notification.error({ message: msg });

@@ -1,10 +1,5 @@
-'use client';
+import LegacyWorkspaceRedirect from '@/components/workspace/LegacyWorkspaceRedirect';
 
-import React, { useEffect, useState } from 'react';
-import TaskListTable from './components/TaskListTable';
-
-export default function TaskList() {
-    return (<>
-    <TaskListTable />
-    </>)
+export default function LegacyTaskRedirect() {
+  return <LegacyWorkspaceRedirect segment="task" />;
 }

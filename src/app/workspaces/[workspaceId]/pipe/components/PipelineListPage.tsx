@@ -5,8 +5,11 @@ import { Table, Button, Space, Tag, Input, Card } from 'antd';
 import { PlayCircleOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { PipelineService } from '@/services/pipe.service';
 import Link from 'next/link';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { workspacePath } from '@/lib/paths';
 
 export default function PipelineListPage() {
+  const workspaceId = useWorkspaceId();
   const [data, setData] = useState({ items: [], total: 0 });
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, size: 10 });
@@ -17,8 +20,7 @@ export default function PipelineListPage() {
       setLoading(true);
       // Passing search and pagination params to the service
       const response = await PipelineService.getPipelines({
-        // org_id: 1,
-        // workspace_id: 1,
+        workspace_id: workspaceId,
         page: pagination.page,
         size: pagination.size,
         // name: searchText
@@ -29,7 +31,7 @@ export default function PipelineListPage() {
     } finally {
       setLoading(false);
     }
-  }, [pagination, searchText]);
+  }, [pagination, searchText, workspaceId]);
 
   useEffect(() => {
     fetchPipelines();
@@ -61,7 +63,7 @@ export default function PipelineListPage() {
       dataIndex: 'name',
       key: 'name',
       render: (text: string, record: any) => (
-        <Link href={`/pipe/${record.pipeline_uuid}`}>
+        <Link href={workspacePath(workspaceId, `pipe/${record.pipeline_uuid}`)}>
           <span style={{ color: '#1890ff', fontWeight: 600 }}>{text}</span>
         </Link>
       ),
@@ -86,7 +88,7 @@ export default function PipelineListPage() {
           <Button icon={<PlayCircleOutlined />} size="small" onClick={() => handleRunPipeline(record.pipeline_uuid)}>
             Run
           </Button>
-          <Link href={`/pipe/${record.pipeline_uuid}`}>
+          <Link href={workspacePath(workspaceId, `pipe/${record.pipeline_uuid}`)}>
             <Button icon={<EditOutlined />} size="small" type="primary" ghost>Edit</Button>
           </Link>
         </Space>
@@ -97,7 +99,7 @@ export default function PipelineListPage() {
   return (
     <div style={{ padding: '24px' }}>
       <Card title="Data Pipelines" extra={
-        <Link href="/pipe/new">
+        <Link href={workspacePath(workspaceId, 'pipe/new')}>
           <Button type="primary" icon={<PlusOutlined />}>Create Pipeline</Button>
         </Link>
       }>

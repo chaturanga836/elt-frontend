@@ -18,6 +18,8 @@ import {
 } from 'antd';
 import { ArrowLeftOutlined, SettingOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { workspacePath } from '@/lib/paths';
 import { connectionService } from '@/services/connection.service';
 import {
   EndpointTemplate,
@@ -31,6 +33,7 @@ const { Title, Text } = Typography;
 const TENANT = 'trial_user_001';
 
 export default function GroupCreateForm() {
+  const workspaceId = useWorkspaceId();
   const router = useRouter();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
@@ -91,7 +94,7 @@ export default function GroupCreateForm() {
       };
       const group = await connectionService.createRestGroup(payload, TENANT);
       message.success('Group created');
-      router.push(`/connections/rest-api/groups/${group.id}`);
+      router.push(workspacePath(workspaceId, `connections/rest-api/groups/${group.id}`));
     } catch (e: unknown) {
       message.error(e instanceof Error ? e.message : 'Failed to create group');
     } finally {
@@ -105,7 +108,7 @@ export default function GroupCreateForm() {
         type="link"
         icon={<ArrowLeftOutlined />}
         className="px-0 mb-4"
-        onClick={() => router.push('/connections/rest-api/groups')}
+        onClick={() => router.push(workspacePath(workspaceId, 'connections/rest-api/groups'))}
       >
         Back
       </Button>

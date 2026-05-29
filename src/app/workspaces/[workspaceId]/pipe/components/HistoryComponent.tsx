@@ -22,6 +22,8 @@ import {
     PipelineRunHistoryParams,
 } from '@/services/pipe.service';
 import { canViewRunDetail, statusTag } from './runDetailUtils';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { workspacePath } from '@/lib/paths';
 
 const { RangePicker } = DatePicker;
 const { Title } = Typography;
@@ -36,6 +38,7 @@ interface PipelineRun {
 }
 
 export default function HistoryComponent() {
+    const workspaceId = useWorkspaceId();
     const router = useRouter();
     const [data, setData] = useState<PipelineRun[]>([]);
     const [loading, setLoading] = useState(false);
@@ -78,7 +81,7 @@ export default function HistoryComponent() {
     };
 
     const openRunDetail = (runId: number) => {
-        router.push(`/pipe/history/${runId}`);
+        router.push(workspacePath(workspaceId, `pipe/history/${runId}`));
     };
 
     const columns = [

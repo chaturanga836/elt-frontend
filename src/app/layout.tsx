@@ -5,7 +5,6 @@ import { ConfigProvider, App } from 'antd';
 import theme from '@/lib/antd/themeConfig';
 import "./globals.css";
 import StaticHandler from '@/lib/antd/static';
-import SideWrapper from "@/components/ui/SideWrapper";
 import VariableDropdownPortal from "@/components/ui/VariableDropdownPortal";
 import AuthProvider from "@/components/auth/AuthProvider";
 import AuthGuard from "@/components/auth/AuthGuard";
@@ -25,9 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <AuthProvider>
                 <AuthGuard>
                   <StaticHandler />
-                  <SideWrapper>
-                    {children}
-                  </SideWrapper>
+                  {children}
                   <VariableDropdownPortal />
                 </AuthGuard>
               </AuthProvider>

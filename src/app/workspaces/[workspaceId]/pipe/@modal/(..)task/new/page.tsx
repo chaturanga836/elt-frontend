@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Modal } from 'antd';
-import TaskCanvas from '@/app/task/components/TaskCanvas';
+import TaskCanvas from '../../../../task/components/TaskCanvas';
 
 export default function TaskInterceptPage() {
   const router = useRouter();

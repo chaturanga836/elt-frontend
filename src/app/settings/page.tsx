@@ -1,9 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Avatar, Card, Descriptions, Space, Tag, Typography } from 'antd';
+import { Avatar, Button, Card, Descriptions, Space, Tag, Typography } from 'antd';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useWorkspaceStore } from '@/store/useWorkspaceStore';
+import { workspacePath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
 
@@ -13,9 +15,19 @@ export default function SettingsPage() {
   const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
   const realmRoles = useAuthStore((s) => s.realmRoles);
   const workspaceIds = useAuthStore((s) => s.workspaceIds);
+  const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
 
   return (
     <div className="p-8 max-w-2xl">
+      {currentWorkspaceId ? (
+        <div className="mb-4">
+          <Link href={workspacePath(currentWorkspaceId, 'pipe')}>
+            <Button type="link" style={{ paddingLeft: 0 }}>
+              Back to workspace
+            </Button>
+          </Link>
+        </div>
+      ) : null}
       <Title level={2} style={{ marginTop: 0 }}>
         Account
       </Title>

@@ -5,6 +5,8 @@ import { Card, Col, Row, Typography, Spin, message, Button } from 'antd';
 import { ArrowLeftOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { connectionService } from '@/services/connection.service';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { resolveWorkspacePath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
 
@@ -28,7 +30,10 @@ export default function PrototypePicker({
   basePath,
   backHref = '/connections',
 }: PrototypePickerProps) {
+  const workspaceId = useWorkspaceId();
   const router = useRouter();
+  const resolvedBase = resolveWorkspacePath(workspaceId, basePath);
+  const resolvedBack = resolveWorkspacePath(workspaceId, backHref);
   const [prototypes, setPrototypes] = useState<PrototypeItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,7 +64,7 @@ export default function PrototypePicker({
       <Button
         type="link"
         icon={<ArrowLeftOutlined />}
-        onClick={() => router.push(backHref)}
+        onClick={() => router.push(resolvedBack)}
         className="mb-4 px-0"
       >
         Back to Connections
@@ -75,7 +80,7 @@ export default function PrototypePicker({
             <Card
               hoverable
               className="h-full border-2 hover:border-blue-500 transition-all"
-              onClick={() => router.push(`${basePath}/new/${proto.id}`)}
+              onClick={() => router.push(`${resolvedBase}/new/${proto.id}`)}
             >
               <div className="text-3xl text-blue-500 mb-3">
                 <DatabaseOutlined />

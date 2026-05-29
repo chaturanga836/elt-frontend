@@ -11,9 +11,11 @@ import { PipelineService } from '@/services/pipe.service';
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { PipelineCreatePayload } from '@/types/pipetypes';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { buildBoundaryNodeConfig } from '@/types/boundaryHooks';
 
 export default function PipelineCanvas() {
+  const workspaceId = useWorkspaceId();
   const params = useParams();
   const {
     nodes, edges, name, setName, setNodes, setEdges, setUuid,
@@ -108,7 +110,7 @@ const payload: PipelineCreatePayload = {
     pipeline_uuid: targetUuid,
     name: name ?? "Untitled Pipeline",
     org_id: 1,
-    workspace_id: 1,
+    workspace_id: workspaceId,
     canvas_structure: {
       nodes: nodes,
       edges: edges,

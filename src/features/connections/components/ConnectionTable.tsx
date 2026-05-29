@@ -22,6 +22,8 @@ import {
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { connectionService } from '@/services/connection.service';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { workspacePath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
 
@@ -47,28 +49,29 @@ const SOURCE_LABELS: Record<string, string> = {
   file: 'Storage',
 };
 
-function editPath(record: ConnectionRecord): string {
+function editPath(workspaceId: number, record: ConnectionRecord): string {
   if (record.source_type === 'rest-api') {
-    return `/connections/rest-api/${record.id}/edit`;
+    return workspacePath(workspaceId, `connections/rest-api/${record.id}/edit`);
   }
   if (record.source_type === 'db') {
-    return `/connections/database/${record.id}/edit`;
+    return workspacePath(workspaceId, `connections/database/${record.id}/edit`);
   }
   if (record.source_type === 'file') {
-    return `/connections/storage/${record.id}/edit`;
+    return workspacePath(workspaceId, `connections/storage/${record.id}/edit`);
   }
-  return '/connections';
+  return workspacePath(workspaceId, 'connections');
 }
 
-function createPath(sourceId: string): string {
-  if (sourceId === 'rest-api') return '/connections/rest-api';
-  if (sourceId === 'rest-api-groups') return '/connections/rest-api/groups';
-  if (sourceId === 'db') return '/connections/database';
-  if (sourceId === 'file') return '/connections/storage';
-  return '/connections';
+function createPath(workspaceId: number, sourceId: string): string {
+  if (sourceId === 'rest-api') return workspacePath(workspaceId, 'connections/rest-api');
+  if (sourceId === 'rest-api-groups') return workspacePath(workspaceId, 'connections/rest-api/groups');
+  if (sourceId === 'db') return workspacePath(workspaceId, 'connections/database');
+  if (sourceId === 'file') return workspacePath(workspaceId, 'connections/storage');
+  return workspacePath(workspaceId, 'connections');
 }
 
 export default function ConnectionsTable({ tenantId }: { tenantId: string }) {
+  const workspaceId = useWorkspaceId();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ConnectionRecord[]>([]);
@@ -149,7 +152,7 @@ export default function ConnectionsTable({ tenantId }: { tenantId: string }) {
           <Button
             type="text"
             icon={<EditOutlined className="text-blue-500" />}
-            onClick={() => router.push(editPath(record))}
+            onClick={() => router.push(editPath(workspaceId, record))}
           />
           <Popconfirm
             title="Delete connection?"
@@ -238,7 +241,7 @@ export default function ConnectionsTable({ tenantId }: { tenantId: string }) {
               className="text-center border-2 hover:border-blue-500 transition-all"
               onClick={() => {
                 setIsModalOpen(false);
-                router.push(createPath(source.id));
+                router.push(createPath(workspaceId, source.id));
               }}
             >
               <div className="text-3xl text-blue-500 mb-2">{source.icon}</div>

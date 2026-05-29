@@ -19,10 +19,13 @@ import {
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { connectionService } from "@/services/connection.service";
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { workspacePath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
 
 export default function SourceRegister() {
+  const workspaceId = useWorkspaceId();
   const [form] = Form.useForm();
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
@@ -42,7 +45,7 @@ export default function SourceRegister() {
       // Using static message API to avoid build-time "not iterable" errors
       message.success('Source provider registered successfully');
       
-      router.push('/connections/connection-dev');
+      router.push(workspacePath(workspaceId, 'connections/connection-dev'));
     } catch (error) {
       console.error('Error registering source:', error);
       message.error('Failed to register source. Please check your connection.');
@@ -63,7 +66,7 @@ export default function SourceRegister() {
             { title: 'Connections' },
             { 
               title: (
-                <a onClick={() => router.push('/connections/connection-dev')}>
+                <a onClick={() => router.push(workspacePath(workspaceId, 'connections/connection-dev'))}>
                   Development
                 </a>
               ) 

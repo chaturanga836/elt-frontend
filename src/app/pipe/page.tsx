@@ -1,8 +1,5 @@
-'use client';
+import LegacyWorkspaceRedirect from '@/components/workspace/LegacyWorkspaceRedirect';
 
-import React from 'react';
-import PipelineListPage from './components/PipelineListPage';
-
-export default function PipePage() {
-  return <PipelineListPage />;
+export default function LegacyPipeRedirect() {
+  return <LegacyWorkspaceRedirect segment="pipe" />;
 }

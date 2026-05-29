@@ -5,8 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { Drawer, Button } from 'antd';
 import { ExpandOutlined } from '@ant-design/icons';
 import RunDetailView from '../../../components/RunDetailView';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { workspacePath } from '@/lib/paths';
 
 export default function PipelineRunDetailDrawerPage() {
+    const workspaceId = useWorkspaceId();
     const router = useRouter();
     const params = useParams();
     const runId = Number(params.runId);
@@ -25,10 +28,10 @@ export default function PipelineRunDetailDrawerPage() {
                         type="link"
                         icon={<ExpandOutlined />}
                         size="small"
-                        href={`/pipe/history/${runIdParam}`}
+                        href={workspacePath(workspaceId, `pipe/history/${runIdParam}`)}
                         onClick={(e) => {
                             e.preventDefault();
-                            window.location.assign(`/pipe/history/${runIdParam}`);
+                            window.location.assign(workspacePath(workspaceId, `pipe/history/${runIdParam}`));
                         }}
                     >
                         Full page

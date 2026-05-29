@@ -21,6 +21,7 @@ import {
   WorkflowNodeTypeInt,
 } from '@/types/workflow';
 import { buildBoundaryNodeConfig } from '@/types/boundaryHooks';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 
 function mapNodeType(type?: string): WorkflowNodeTypeInt {
   const map: Record<string, WorkflowNodeTypeInt> = {
@@ -36,6 +37,7 @@ function mapNodeType(type?: string): WorkflowNodeTypeInt {
 }
 
 function WorkflowCanvasContent() {
+  const workspaceId = useWorkspaceId();
   const params = useParams();
   const { getViewport } = useReactFlow();
   const {
@@ -63,7 +65,7 @@ function WorkflowCanvasContent() {
       name,
       description,
       org_id: 1,
-      workspace_id: 1,
+      workspace_id: workspaceId,
       canvas_structure: {
         nodes,
         edges,
