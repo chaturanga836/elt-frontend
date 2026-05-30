@@ -86,7 +86,7 @@ export function loginWithoutPkce(redirectUri?: string): void {
     client_id: KEYCLOAK_CLIENT_ID,
     redirect_uri: redirect,
     response_type: 'code',
-    scope: 'openid offline_access',
+    scope: 'openid',
     state,
     response_mode: 'query',
   });
@@ -186,6 +186,8 @@ export async function refreshManualAccessToken(): Promise<string | null> {
     const tokens = await exchangeRefreshToken(refreshToken);
     return persistTokens(tokens);
   } catch {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refresh_token');
     return null;
   }
 }
