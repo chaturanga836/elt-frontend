@@ -8,7 +8,7 @@ import { generateId } from '@/lib/generateId';
 import AuthFields, { buildAuthConfig } from './AuthFields';
 import VariablesEditor, { VarRow, createEmptyVar } from './VariablesEditor';
 
-const TENANT = 'trial_user_001';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 
 interface GroupSettingsDrawerProps {
   group: RestConnectionGroupDetail;
@@ -23,6 +23,7 @@ export default function GroupSettingsDrawer({
   onClose,
   onSaved,
 }: GroupSettingsDrawerProps) {
+  const workspaceId = useWorkspaceId();
   const [form] = Form.useForm();
   const [authType, setAuthType] = useState(0);
   const [variables, setVariables] = useState<VarRow[]>([createEmptyVar()]);
@@ -68,7 +69,7 @@ export default function GroupSettingsDrawer({
           .filter((v) => v.key)
           .map((v) => ({ uiId: v.uiId, key: v.key, value: v.value, enabled: true })),
       };
-      await connectionService.updateRestGroup(group.id, payload, TENANT);
+      await connectionService.updateRestGroup(group.id, payload, workspaceId);
       message.success('Group updated');
       onClose();
       onSaved();

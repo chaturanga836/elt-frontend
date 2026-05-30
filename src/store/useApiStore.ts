@@ -9,7 +9,7 @@ interface ApiState {
     error: string | null;
 
     // THE BRIDGE ACTION
-    saveCurrentConnection: (tenantId: string) => Promise<void>;
+    saveCurrentConnection: (workspaceId: number) => Promise<void>;
     saveSourceProvider: (providerData: any) => Promise<void>;
 }
 
@@ -18,7 +18,7 @@ export const useApiStore = create<ApiState>((set) => ({
     lastSaved: null,
     error: null,
 
-    saveCurrentConnection: async (tenantId: string) => {
+    saveCurrentConnection: async (workspaceId: number) => {
         // 1. Grab the latest data from the OTHER store
         const connectionData = useConnectionStore.getState();
 
@@ -26,7 +26,7 @@ export const useApiStore = create<ApiState>((set) => ({
         console.log("Raw Store Data:", connectionData);
         try {
             // 2. Call the service
-            const result = await connectionService.saveConnection(connectionData, tenantId, connectionData.id ?? undefined);
+            const result = await connectionService.saveConnection(connectionData, workspaceId, connectionData.id ?? undefined);
 
             // 3. Update the Connection Store with the new ID from Postgres
             if (!connectionData.id) {

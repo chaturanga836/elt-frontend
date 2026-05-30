@@ -9,12 +9,14 @@ import { VariablesDrawer } from './VariablesDrawer';
 import { useConnectionStore } from '@/store/useConnectionStore';
 import { Alert, Button, Input, message } from 'antd';
 import { useApiStore } from '@/store/useApiStore';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 
 interface RestApiFormProps {
   onSaved?: () => void;
 }
 
 export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
+  const workspaceId = useWorkspaceId();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [testResponse, setTestResponse] = useState<TestResponse | null>(null);
@@ -30,7 +32,7 @@ export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
   
   const handleSave = async () => {
     try {
-      await saveCurrentConnection("trial_user_001");
+      await saveCurrentConnection(workspaceId);
       message.success(connectionId ? "Connection updated" : "Connection saved");
       onSaved?.();
     } catch (error: any) {

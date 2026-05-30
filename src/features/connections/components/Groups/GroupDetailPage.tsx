@@ -14,7 +14,6 @@ import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
-const TENANT = 'trial_user_001';
 
 export default function GroupDetailPage() {
   const workspaceId = useWorkspaceId();
@@ -33,7 +32,7 @@ export default function GroupDetailPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const data = await connectionService.getRestGroup(groupId, TENANT);
+      const data = await connectionService.getRestGroup(groupId, workspaceId);
       setGroup(data);
       setGroupContext(groupId, data.name, data.base_url, data.auth_type, data.auth_config);
     } catch {

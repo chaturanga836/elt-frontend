@@ -21,6 +21,8 @@ export interface EndpointTemplate {
 export interface RestConnectionGroup {
   id: number;
   tenant_id: string;
+  workspace_id?: number | null;
+  created_by?: string | null;
   name: string;
   provider_key: string;
   description?: string;

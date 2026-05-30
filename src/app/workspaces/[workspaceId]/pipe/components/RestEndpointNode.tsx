@@ -7,6 +7,9 @@ import { ApiOutlined } from '@ant-design/icons';
 import { usePipelineStore } from '@/store/usePipeStore';
 import { connectionService } from '@/services/connection.service';
 
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { workspaceTenantId } from '@/lib/tenantScope';
+
 const { Text } = Typography;
 
 type RestConnectionSummary = {
@@ -18,9 +21,8 @@ type RestConnectionSummary = {
   group_name?: string | null;
 };
 
-const DEFAULT_TENANT = 'trial_user_001';
-
 export default function RestEndpointNode({ id, data }: { id: string; data: Record<string, unknown> }) {
+  const workspaceId = useWorkspaceId();
   const updateNodeData = usePipelineStore((s) => s.updateNodeData);
   const selectedId = (data.rest_connection_id as number | undefined) ?? undefined;
   const [open, setOpen] = useState(false);
@@ -40,7 +42,7 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
     (async () => {
       try {
         setLoading(true);
-        const res = await connectionService.getConnections(DEFAULT_TENANT);
+        const res = await connectionService.getConnections(workspaceId);
         if (!mounted) return;
         setItems(res || []);
       } finally {
@@ -50,7 +52,7 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
     return () => {
       mounted = false;
     };
-  }, [open]);
+  }, [open, workspaceId]);
 
   const onOk = async () => {
     const values = await form.validateFields();
@@ -71,7 +73,8 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
         ...(data.node_config as any),
         rest_connection_id,
         overrides,
-        tenant_id: DEFAULT_TENANT,
+        tenant_id: workspaceTenantId(workspaceId),
+        workspace_id: workspaceId,
         label: selected?.name || 'REST Endpoint',
       },
       rest_connection_id,

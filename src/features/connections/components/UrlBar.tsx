@@ -7,6 +7,7 @@ import { useConnectionStore } from '@/store/useConnectionStore';
 import { HttpMethod } from '@/types/restForm';
 import VariableInput from './VariableInput';
 import { connectionService } from '@/services/connection.service';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { TestResponse } from './ResponsePanel';
 import { buildUrlWithParams } from '@/lib/urlSync';
 
@@ -24,6 +25,7 @@ interface UrlBarProps {
 }
 
 export default function UrlBar({ onTestResult }: UrlBarProps = {}) {
+  const workspaceId = useWorkspaceId();
   const store = useConnectionStore();
   const { url, params, method, setMethod, variables, groupId, setUrlFromBar } = store;
 
@@ -39,7 +41,7 @@ export default function UrlBar({ onTestResult }: UrlBarProps = {}) {
 
     setTesting(true);
     try {
-      const result = await connectionService.testConnection(store);
+      const result = await connectionService.testConnection(store, workspaceId);
       onTestResult?.(result);
 
       if (result.success) {

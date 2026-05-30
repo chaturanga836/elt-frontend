@@ -7,9 +7,10 @@ import RestApiForm from '@/features/connections/components/RestApiForm';
 import { connectionService } from '@/services/connection.service';
 import { useConnectionStore } from '@/store/useConnectionStore';
 
-const TENANT = 'trial_user_001';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 
 export default function EditRestPage() {
+  const workspaceId = useWorkspaceId();
   const params = useParams();
   const connectionId = Number(params.id);
   const [loading, setLoading] = useState(true);
@@ -25,7 +26,7 @@ export default function EditRestPage() {
       setLoading(true);
       reset();
       try {
-        const data = await connectionService.getRestConnection(connectionId, TENANT);
+        const data = await connectionService.getRestConnection(connectionId, workspaceId);
         if (cancelled) return;
         if (data.group_id) {
           setGroupContext(data.group_id, data.group_name || null);
@@ -43,7 +44,7 @@ export default function EditRestPage() {
       cancelled = true;
       reset();
     };
-  }, [connectionId, reset, loadFromEndpoint, setGroupContext]);
+  }, [connectionId, reset, loadFromEndpoint, setGroupContext, workspaceId]);
 
   if (loading) {
     return (

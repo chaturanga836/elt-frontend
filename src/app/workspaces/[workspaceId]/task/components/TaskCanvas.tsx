@@ -28,8 +28,6 @@ const SOURCE_LABELS: Record<string, string> = {
   file: 'Storage',
 };
 
-const TENANT_ID = 'trial_user_001';
-
 export default function TaskCanvas() {
   const workspaceId = useWorkspaceId();
   const router = useRouter();
@@ -63,7 +61,7 @@ export default function TaskCanvas() {
     setConnectionsLoading(true);
     setConnectionsError(null);
     try {
-      const res = await connectionService.getUnifiedConnections(TENANT_ID);
+      const res = await connectionService.getUnifiedConnections(workspaceId);
       const normalized = (Array.isArray(res) ? res : []).map((row: any) => ({
         id: Number(row.id),
         name: String(row.name || `Connection ${row.id}`),
@@ -79,7 +77,7 @@ export default function TaskCanvas() {
     } finally {
       setConnectionsLoading(false);
     }
-  }, []);
+  }, [workspaceId]);
 
   useEffect(() => {
     if (isConnectionModalOpen && connections.length === 0 && !connectionsLoading) {

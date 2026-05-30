@@ -30,7 +30,6 @@ import AuthFields, { buildAuthConfig } from './AuthFields';
 import VariablesEditor, { VarRow, createEmptyVar } from './VariablesEditor';
 
 const { Title, Text } = Typography;
-const TENANT = 'trial_user_001';
 
 export default function GroupCreateForm() {
   const workspaceId = useWorkspaceId();
@@ -47,8 +46,8 @@ export default function GroupCreateForm() {
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
 
   useEffect(() => {
-    connectionService.getIntegrationProviders().then(setProviders);
-  }, []);
+    connectionService.getIntegrationProviders(workspaceId).then(setProviders);
+  }, [workspaceId]);
 
   useEffect(() => {
     if (selectedProvider === 'custom') {
@@ -70,11 +69,11 @@ export default function GroupCreateForm() {
         );
       }
     }
-    connectionService.getIntegrationTemplates(selectedProvider).then((t) => {
+    connectionService.getIntegrationTemplates(selectedProvider, workspaceId).then((t) => {
       setTemplates(t);
       setSelectedTemplates(t.map((x: EndpointTemplate) => x.template_key));
     });
-  }, [selectedProvider, providers, form]);
+  }, [selectedProvider, providers, form, workspaceId]);
 
   const onFinish = async (values: Record<string, unknown>) => {
     setSaving(true);
@@ -92,7 +91,7 @@ export default function GroupCreateForm() {
         fetch_settings: { retries: 3, timeout: 30 },
         template_keys: selectedTemplates.length ? selectedTemplates : undefined,
       };
-      const group = await connectionService.createRestGroup(payload, TENANT);
+      const group = await connectionService.createRestGroup(payload, workspaceId);
       message.success('Group created');
       router.push(workspacePath(workspaceId, `connections/rest-api/groups/${group.id}`));
     } catch (e: unknown) {

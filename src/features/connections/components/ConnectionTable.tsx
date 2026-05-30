@@ -70,7 +70,7 @@ function createPath(workspaceId: number, sourceId: string): string {
   return workspacePath(workspaceId, 'connections');
 }
 
-export default function ConnectionsTable({ tenantId }: { tenantId: string }) {
+export default function ConnectionsTable() {
   const workspaceId = useWorkspaceId();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -80,7 +80,7 @@ export default function ConnectionsTable({ tenantId }: { tenantId: string }) {
   const loadConnections = async () => {
     setLoading(true);
     try {
-      const res = await connectionService.getUnifiedConnections(tenantId);
+      const res = await connectionService.getUnifiedConnections(workspaceId);
       setData(res);
     } catch {
       message.error('Failed to load connections');
@@ -90,8 +90,8 @@ export default function ConnectionsTable({ tenantId }: { tenantId: string }) {
   };
 
   useEffect(() => {
-    if (tenantId) loadConnections();
-  }, [tenantId]);
+    if (workspaceId) loadConnections();
+  }, [workspaceId]);
 
   const handleDelete = async (record: ConnectionRecord) => {
     try {
@@ -99,7 +99,7 @@ export default function ConnectionsTable({ tenantId }: { tenantId: string }) {
         message.info('REST API delete coming soon');
         return;
       }
-      await connectionService.deleteGenericConnection(record.id, tenantId);
+      await connectionService.deleteGenericConnection(record.id, workspaceId);
       message.success('Connection deleted');
       loadConnections();
     } catch {

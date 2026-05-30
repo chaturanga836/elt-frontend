@@ -36,7 +36,6 @@ interface DynamicConnectionFormProps {
   prototypeId: string;
   categoryLabel: string;
   connectionId?: number;
-  tenantId?: string;
   backHref: string;
 }
 
@@ -45,7 +44,6 @@ export default function DynamicConnectionForm({
   prototypeId,
   categoryLabel,
   connectionId,
-  tenantId = 'trial_user_001',
   backHref,
 }: DynamicConnectionFormProps) {
   const workspaceId = useWorkspaceId();
@@ -69,7 +67,7 @@ export default function DynamicConnectionForm({
         if (connectionId) {
           const existing = await connectionService.getGenericConnection(
             connectionId,
-            tenantId,
+            workspaceId,
           );
           proto = existing.prototype_id;
           setResolvedProto(proto);
@@ -102,7 +100,7 @@ export default function DynamicConnectionForm({
       }
     };
     load();
-  }, [categoryId, prototypeId, connectionId, tenantId, form]);
+  }, [categoryId, prototypeId, connectionId, workspaceId, form]);
 
   const visibleFields = schema.filter((field) => {
     if (!field.condition) return true;
@@ -142,7 +140,7 @@ export default function DynamicConnectionForm({
         await connectionService.updateGenericConnection(
           connectionId,
           { name, description, config },
-          tenantId,
+          workspaceId,
         );
         message.success('Connection updated');
       } else {
@@ -154,7 +152,7 @@ export default function DynamicConnectionForm({
             prototype_id: resolvedProto,
             config,
           },
-          tenantId,
+          workspaceId,
         );
         message.success('Connection saved');
       }

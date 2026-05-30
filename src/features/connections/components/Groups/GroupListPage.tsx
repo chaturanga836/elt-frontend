@@ -10,7 +10,6 @@ import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
-const TENANT = 'trial_user_001';
 
 export default function GroupListPage() {
   const workspaceId = useWorkspaceId();
@@ -21,7 +20,7 @@ export default function GroupListPage() {
   const load = async () => {
     setLoading(true);
     try {
-      setGroups(await connectionService.listRestGroups(TENANT));
+      setGroups(await connectionService.listRestGroups(workspaceId));
     } catch {
       message.error('Failed to load connection groups');
     } finally {
@@ -70,7 +69,7 @@ export default function GroupListPage() {
           <Popconfirm
             title="Delete group and all endpoints?"
             onConfirm={async () => {
-              await connectionService.deleteRestGroup(row.id, TENANT);
+              await connectionService.deleteRestGroup(row.id, workspaceId);
               message.success('Group deleted');
               load();
             }}
