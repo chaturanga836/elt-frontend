@@ -11,13 +11,16 @@ import {
   shouldUseManualAuthFlow,
 } from '@/lib/keycloak';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { UserService } from '@/services/user.service';
+import { OrganizationService } from '@/services/organization.service';
 import { isSuperAdminToken } from '@/lib/jwt';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const setAuth = useAuthStore((s) => s.setAuth);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const setInitialized = useAuthStore((s) => s.setInitialized);
+  const setOrgId = useWorkspaceStore((s) => s.setOrgId);
 
   useEffect(() => {
     let alive = true;
@@ -54,6 +57,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           } catch {
             /* API profile optional if backend unreachable */
           }
+          try {
+            const org = await OrganizationService.getDefault();
+            setOrgId(org.organization_id);
+          } catch {
+            /* Default org optional if backend unreachable */
+          }
           setAuth({
             token,
             username: kcProfile?.username || null,
@@ -79,7 +88,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     return () => {
       alive = false;
     };
-  }, [setAuth, clearAuth, setInitialized]);
+  }, [setAuth, clearAuth, setInitialized, setOrgId]);
 
   // Proactive refresh on HTTP/manual Keycloak so idle tabs stay signed in
   useEffect(() => {
