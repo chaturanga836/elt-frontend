@@ -30,7 +30,7 @@ api.interceptors.request.use(async (config) => {
 // Response Interceptor
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const status = error.response?.status;
     const now = Date.now();
 
