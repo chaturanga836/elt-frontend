@@ -19,25 +19,22 @@ export default function Home() {
       if (!id || id === 'new') return;
 
       try {
-        const response = await PipelineService.getPipeline(id as string);
-        const { pipeline } = response;
-        const pipe_id = pipeline.id;
+        const pipeline = await PipelineService.getPipeline(id as string);
+        const pipeId = pipeline.id;
         const uuid = pipeline.pipeline_uuid;
-
         const canvas = pipeline.canvas_structure || {};
         const initialNodes = canvas.nodes || [];
         const initialEdges = canvas.edges || [];
 
-        setPipeline(pipe_id, uuid, initialNodes, initialEdges, pipeline.name);
-        setId(pipe_id);
-
+        setPipeline(pipeId, uuid, initialNodes, initialEdges, pipeline.name);
+        setId(pipeId);
       } catch (error) {
-        console.error("Hydration Error:", error);
+        console.error('Hydration Error:', error);
       }
     };
 
-    hydrateCanvas();
-  }, [id, setPipeline]);
+    void hydrateCanvas();
+  }, [id, setPipeline, setId]);
 
   return (
     <React.Fragment>

@@ -18,12 +18,13 @@ export default function PipelineCanvas() {
   const workspaceId = useWorkspaceId();
   const params = useParams();
   const {
-    nodes, edges, name, setName, setNodes, setEdges, setUuid,
-    setId, getId, getNodes, updateNodePosition
+    nodes, edges, name, uuid, setName, setNodes, setEdges, setUuid,
+    setId, getId, getCurrentUuid, getNodes, updateNodePosition
   } = usePipelineStore();
 
   const [isSaving, setIsSaving] = useState(false);
-  const [currentUuid, setCurrentUuid] = useState<string | null>(params?.uuid as string || null);
+  const routePipelineUuid =
+    typeof params?.id === 'string' && params.id !== 'new' ? params.id : null;
   
   // Requires ReactFlowProvider from pipe/layout.tsx
   const { getViewport } = useReactFlow();
@@ -102,11 +103,11 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' = 'taskNode') => {
     }
 
     setIsSaving(true);
-    const targetUuid = currentUuid || uuidv4();
-    const id = getId();
+    const pipelineId = getId();
+    const targetUuid = getCurrentUuid() || uuid || routePipelineUuid || uuidv4();
 
 const payload: PipelineCreatePayload = {
-    ...(id && { id }),
+    ...(pipelineId && { id: pipelineId }),
     pipeline_uuid: targetUuid,
     name: name ?? "Untitled Pipeline",
     org_id: 1,
@@ -147,16 +148,15 @@ const payload: PipelineCreatePayload = {
   };
 
     try {
-      let data;
-      if (id) {
-        data = await PipelineService.UpdatePipeline(id, payload);
+      if (pipelineId) {
+        await PipelineService.UpdatePipeline(pipelineId, payload);
       } else {
-        data = await PipelineService.savePipeline(payload);
-        setId(data.pipeline.pipeline_id);
+        const data = await PipelineService.savePipeline(payload);
+        setId(data.pipeline_id);
       }
       notification.success({
         message: 'Pipeline Saved',
-        description: `Successfully saved.`,
+        description: 'Successfully saved.',
       });
       setUuid(targetUuid);
     } catch (err) {
