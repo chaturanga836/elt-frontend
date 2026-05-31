@@ -88,13 +88,14 @@ export default function VariableInput({
     onChange(newValue);
 
     const ctx = getVariableInsertContext(newValue, cursorPos);
-    if (ctx.active) {
+    const hasEnabledVars = variables.some((v) => v.key && v.enabled);
+    if (ctx.active && hasEnabledVars) {
       if (!open) {
         showDropdown();
       }
       updateFilter(ctx.filter);
-    } else {
-      if (isOwnDropdown) hide();
+    } else if (isOwnDropdown) {
+      hide();
     }
   };
 
@@ -125,15 +126,24 @@ export default function VariableInput({
     }
   }, [isFocused, isOwnDropdown, hide]);
 
-  // Update anchor position if dropdown is open (handles scroll/resize edge cases)
+  // Sync dropdown anchor on open; listen for scroll/resize only (not every render)
   useEffect(() => {
-    if (!isOwnDropdown) return;
+    if (!open || !isOwnDropdown) return;
     const el = containerRef.current;
     if (!el) return;
 
-    const { updateAnchor } = useDropdownStore.getState();
-    updateAnchor(el.getBoundingClientRect());
-  });
+    const syncAnchor = () => {
+      useDropdownStore.getState().updateAnchor(el.getBoundingClientRect());
+    };
+
+    syncAnchor();
+    window.addEventListener('resize', syncAnchor);
+    window.addEventListener('scroll', syncAnchor, true);
+    return () => {
+      window.removeEventListener('resize', syncAnchor);
+      window.removeEventListener('scroll', syncAnchor, true);
+    };
+  }, [open, isOwnDropdown]);
 
   return (
     <div ref={containerRef} className={`relative w-full flex items-center min-h-9.5 cursor-text ${className}`}>
