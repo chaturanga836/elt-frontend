@@ -1,6 +1,18 @@
 import { KeyValuePair } from '@/types/restForm';
 import { generateId } from '@/lib/generateId';
 
+/** Encode for query strings but leave {{var}} placeholders readable (backend resolves them). */
+export function encodePreservingVariables(part: string): string {
+  if (!part) return '';
+  const segments = part.split(/(\{\{[^}]+\}\})/g);
+  return segments
+    .map((segment) => {
+      if (/^\{\{[^}]+\}\}$/.test(segment)) return segment;
+      return encodeURIComponent(segment);
+    })
+    .join('');
+}
+
 export function stripQuery(url: string): string {
   if (!url) return '';
   const idx = url.indexOf('?');
@@ -11,7 +23,10 @@ export function paramsToQueryString(params: KeyValuePair[]): string {
   const active = params.filter((p) => p.key && p.enabled);
   if (active.length === 0) return '';
   return active
-    .map((p) => `${encodeURIComponent(p.key!)}=${encodeURIComponent(p.value ?? '')}`)
+    .map(
+      (p) =>
+        `${encodePreservingVariables(p.key!)}=${encodePreservingVariables(p.value ?? '')}`,
+    )
     .join('&');
 }
 

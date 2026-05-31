@@ -102,18 +102,28 @@ return (
               />
             </div>
 
-            {/* Key Input - Variant="borderless" is the secret */}
-            <div className="border-l border-border/50 h-full">
-              <Input
-                variant="borderless"
-                value={pair.key ?? ""}
-                onChange={(e) => updateRow(pair.uiId, "key", e.target.value)}
-                placeholder={keyPlaceholder}
-                className="h-full w-full font-mono text-xs px-3 py-2 focus:bg-background"
-              />
+            {/* Key — support {{var}} like value column */}
+            <div className="border-l border-border/50 h-full flex items-center min-w-0">
+              {useVariableInput ? (
+                <VariableInput
+                  value={pair.key ?? ""}
+                  variables={globalVariables}
+                  onChange={(val) => updateRow(pair.uiId, "key", val)}
+                  placeholder={keyPlaceholder}
+                  className="h-full w-full font-mono text-xs"
+                />
+              ) : (
+                <Input
+                  variant="borderless"
+                  value={pair.key ?? ""}
+                  onChange={(e) => updateRow(pair.uiId, "key", e.target.value)}
+                  placeholder={keyPlaceholder}
+                  className="h-full w-full font-mono text-xs px-3 py-2 focus:bg-background"
+                />
+              )}
             </div>
 
-{/* Value Cell: Conditional Rendering */}
+            {/* Value */}
             <div className="border-l border-border/50 h-full flex items-center min-w-0">
               {useVariableInput ? (
                 <VariableInput
