@@ -50,18 +50,18 @@ function WorkflowCanvasContent() {
     getId,
     setId,
     setUuid,
+    uuid: storeUuid,
   } = useWorkflowStore();
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
-  const [workflowUuid, setWorkflowUuid] = useState<string | null>(
-    (params?.id as string) || null,
-  );
+  const routeWorkflowUuid =
+    typeof params?.id === 'string' && params.id !== 'new' ? params.id : null;
 
   const buildPayload = (): WorkflowCreatePayload => {
-    const uuid = workflowUuid || uuidv4();
+    const workflowUuid = storeUuid || routeWorkflowUuid || uuidv4();
     return {
       ...(getId() ? { id: getId()! } : {}),
-      workflow_uuid: uuid,
+      workflow_uuid: workflowUuid,
       name,
       description,
       org_id: 1,
@@ -105,7 +105,6 @@ function WorkflowCanvasContent() {
         const res = await WorkflowService.saveWorkflow(payload);
         setId(res.workflow_id);
       }
-      setWorkflowUuid(payload.workflow_uuid);
       setUuid(payload.workflow_uuid);
       notification.success({ message: 'Workflow saved' });
     } catch (e) {
@@ -116,7 +115,7 @@ function WorkflowCanvasContent() {
   };
 
   const handleRun = async () => {
-    const uuid = workflowUuid || useWorkflowStore.getState().uuid;
+    const uuid = storeUuid || routeWorkflowUuid;
     if (!uuid) {
       notification.warning({ message: 'Save workflow before running' });
       return;

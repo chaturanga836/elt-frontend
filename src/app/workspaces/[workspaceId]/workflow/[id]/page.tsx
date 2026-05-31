@@ -13,7 +13,9 @@ export default function EditWorkflowPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || id === 'new') return;
+    const resetWorkflow = useWorkflowStore.getState().resetWorkflow;
+    resetWorkflow();
     (async () => {
       try {
         const res = await WorkflowService.getWorkflow(id as string);
