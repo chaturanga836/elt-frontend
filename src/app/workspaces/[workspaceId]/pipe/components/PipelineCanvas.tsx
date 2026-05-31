@@ -133,9 +133,17 @@ const payload: PipelineCreatePayload = {
         nodeType === 2,
       );
 
+      const nodeData = node.data as Record<string, unknown>;
+      const config = nodeData.config as { name?: string } | undefined;
+      const label =
+        config?.name ||
+        (nodeData.label as string) ||
+        (nodeType === 0 ? 'Start' : nodeType === 2 ? 'End' : 'Task');
+
       return {
         node_uuid: node.id,
-        id: node.data?.id ? Number(node.data.id) : undefined,
+        id: nodeData.id ? Number(nodeData.id) : undefined,
+        name: label,
         node_type: nodeType,
         task_id: isBoundary
           ? (nodeConfig.hook_task_id ?? null)
