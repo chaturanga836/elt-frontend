@@ -11,8 +11,9 @@ export interface getTaskListParams {
 export interface TaskResponse {
     id: number;
     name: string;
-    description: string;
-    version: number;
+    description?: string;
+    script: string;
+    version?: number;
     created_at: string;
     updated_at: string;
 }
@@ -20,6 +21,11 @@ export const TaskService = {
 
     createTask: async (payload: any) => {
         const response = await api.post('/tasks/', payload);
+        return response.data;
+    },
+
+    getTask: async (id: number) => {
+        const response = await api.get<TaskResponse>(`/tasks/${id}`);
         return response.data;
     },
 

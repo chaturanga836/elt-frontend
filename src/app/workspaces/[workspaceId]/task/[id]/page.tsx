@@ -1,10 +1,16 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import TaskCanvas from '../components/TaskCanvas';
 
+export default function EditTaskPage() {
+  const params = useParams();
+  const raw = params?.id;
+  const taskId = typeof raw === 'string' ? Number(raw) : Number(raw?.[0]);
 
-export default function EditTask() {
-    return (<>
-     <p>edit task component</p>
-    </>)
+  if (!Number.isFinite(taskId) || taskId < 1) {
+    return null;
+  }
+
+  return <TaskCanvas taskId={taskId} />;
 }

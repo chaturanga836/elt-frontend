@@ -28,11 +28,13 @@ const SOURCE_LABELS: Record<string, string> = {
   file: 'Storage',
 };
 
-export default function TaskCanvas() {
+export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
   const workspaceId = useWorkspaceId();
   const router = useRouter();
   const { Text } = Typography;
+  const isEditMode = taskId != null && taskId > 0;
   const [loading, setLoading] = useState(false);
+  const [hydrating, setHydrating] = useState(isEditMode);
   const [taskData, setTaskData] = useState({
     name: '',
     description: '',
@@ -52,10 +54,39 @@ export default function TaskCanvas() {
   const [api, contextHolder] = notification.useNotification();
 
   useEffect(() => {
-    ExternalLinkService.list({ limit: 500 })
+    ExternalLinkService.list({ limit: 500, workspace_id: workspaceId })
       .then((res) => setAllowedUrls(res.items.map((l) => l.url)))
       .catch(() => {});
-  }, []);
+  }, [workspaceId]);
+
+  useEffect(() => {
+    if (!isEditMode || !taskId) return;
+
+    let alive = true;
+    (async () => {
+      try {
+        setHydrating(true);
+        const task = await TaskService.getTask(taskId);
+        if (!alive) return;
+        setTaskData({
+          name: task.name || '',
+          description: task.description || '',
+          script: task.script || '',
+        });
+      } catch {
+        if (alive) {
+          notification.error({ message: 'Failed to load task' });
+          router.push(workspacePath(workspaceId, 'task'));
+        }
+      } finally {
+        if (alive) setHydrating(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [isEditMode, taskId, router, workspaceId]);
 
   const loadConnections = useCallback(async () => {
     setConnectionsLoading(true);
@@ -200,11 +231,24 @@ export default function TaskCanvas() {
 
     try {
       setLoading(true);
-      await TaskService.createTask(taskData);
-      api.success({
-        message: 'Task Created',
-        description: 'Task created successfully.',
-      });
+      const payload = {
+        name: taskData.name,
+        script: taskData.script,
+      };
+
+      if (isEditMode && taskId) {
+        await TaskService.updateTask(taskId, payload);
+        api.success({
+          message: 'Task Updated',
+          description: 'Task saved successfully.',
+        });
+      } else {
+        await TaskService.createTask(payload);
+        api.success({
+          message: 'Task Created',
+          description: 'Task created successfully.',
+        });
+      }
       router.push(workspacePath(workspaceId, 'task'));
     } catch (err: any) {
       console.error(err);
@@ -217,7 +261,9 @@ export default function TaskCanvas() {
       } else {
         api.error({
           message: 'Error',
-          description: 'Failed to create task. Please try again.',
+          description: isEditMode
+            ? 'Failed to update task. Please try again.'
+            : 'Failed to create task. Please try again.',
         });
       }
     } finally {
@@ -231,23 +277,34 @@ export default function TaskCanvas() {
       <div style={{ padding: '24px', height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space direction="vertical" size={0}>
-            <Breadcrumb items={[{ title: <Link href={workspacePath(workspaceId, 'task')}>Tasks</Link> }, { title: 'New Task' }]} />
-            <h2 style={{ margin: 0 }}>Create Independent Task</h2>
+            <Breadcrumb
+              items={[
+                { title: <Link href={workspacePath(workspaceId, 'task')}>Tasks</Link> },
+                { title: isEditMode ? 'Edit Task' : 'New Task' },
+              ]}
+            />
+            <h2 style={{ margin: 0 }}>
+              {isEditMode ? 'Edit Task' : 'Create Independent Task'}
+            </h2>
           </Space>
           <Space>
             <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>Cancel</Button>
             <Button
               type="primary"
               icon={<SaveOutlined />}
-              loading={loading}
+              loading={loading || hydrating}
               onClick={handleSave}
-              disabled={violations.length > 0}
+              disabled={violations.length > 0 || hydrating}
             >
-              Save Task
+              {isEditMode ? 'Update Task' : 'Save Task'}
             </Button>
           </Space>
         </div>
 
+        {hydrating ? (
+          <Card loading style={{ flex: 1 }} />
+        ) : (
+        <>
         {violations.length > 0 && (
           <Alert
             type="error"
@@ -326,6 +383,8 @@ export default function TaskCanvas() {
             />
           </Card>
         </div>
+        </>
+        )}
       </div>
       <Modal
         title="Insert Connection Reference"

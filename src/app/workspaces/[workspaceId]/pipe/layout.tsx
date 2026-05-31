@@ -1,5 +1,7 @@
-// app/pipe/layout.tsx
+'use client';
+
 import React from 'react';
+import { ReactFlowProvider } from '@xyflow/react';
 
 export default function PipeLayout({
   children,
@@ -9,9 +11,11 @@ export default function PipeLayout({
   modal: React.ReactNode;
 }) {
   return (
-    <div className="pipeline-system-wrapper">
-      {children}
-      {modal}
-    </div>
+    <ReactFlowProvider>
+      <div className="pipeline-system-wrapper">
+        {children}
+        {modal}
+      </div>
+    </ReactFlowProvider>
   );
 }

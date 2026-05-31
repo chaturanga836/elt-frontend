@@ -1,6 +1,6 @@
 'use client';
 import { v4 as uuidv4 } from 'uuid';
-import { Node, Edge, useReactFlow } from '@xyflow/react'; // Removed ReactFlowProvider import
+import { Node, Edge, useReactFlow } from '@xyflow/react';
 import { Button, Space, Input } from 'antd';
 import { PlusOutlined, SaveOutlined, EditOutlined, ApiOutlined } from '@ant-design/icons';
 import { usePipelineStore } from "@/store/usePipeStore";
@@ -25,7 +25,7 @@ export default function PipelineCanvas() {
   const [isSaving, setIsSaving] = useState(false);
   const [currentUuid, setCurrentUuid] = useState<string | null>(params?.uuid as string || null);
   
-  // This hook now talks to the Provider in your NewPipelinePage
+  // Requires ReactFlowProvider from pipe/layout.tsx
   const { getViewport } = useReactFlow();
 
 
@@ -167,7 +167,6 @@ const payload: PipelineCreatePayload = {
   };
 
   return (
-    /* REMOVED ReactFlowProvider from here */
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{
         padding: '10px 20px',
