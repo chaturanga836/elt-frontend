@@ -10,6 +10,7 @@ import { WorkspaceItem, WorkspaceService } from '@/services/workspace.service';
 import WorkspaceGeneralTab from '@/features/workspaces/components/WorkspaceGeneralTab';
 import WorkspaceMembersTab from '@/features/workspaces/components/WorkspaceMembersTab';
 import WorkspacePluginsTab from '@/features/workspaces/components/WorkspacePluginsTab';
+import WorkspaceAgentSettingsTab from '@/features/workspaces/components/WorkspaceAgentSettingsTab';
 import { workspacePath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
@@ -87,6 +88,11 @@ export default function WorkspaceSettingsPage() {
               key: 'plugins',
               label: 'Plugins',
               children: <WorkspacePluginsTab workspaceId={workspace.id} />,
+            },
+            {
+              key: 'agent',
+              label: 'AI & Agent',
+              children: <WorkspaceAgentSettingsTab workspaceId={workspace.id} />,
             },
           ]}
         />
