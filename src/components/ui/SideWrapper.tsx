@@ -14,6 +14,7 @@ import {
   GroupOutlined,
   SafetyCertificateOutlined,
   SwapOutlined,
+  FilePdfOutlined,
 } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -124,6 +125,11 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
       label: 'External Links',
     },
     {
+      key: workspacePath(workspaceId, 'reports'),
+      icon: <FilePdfOutlined />,
+      label: 'Reports',
+    },
+    {
       key: workspacePath(workspaceId, 'settings'),
       icon: <SettingOutlined />,
       label: 'Workspace Settings',
@@ -155,6 +161,9 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
     }
     if (pathname.includes('/external-links')) {
       return workspacePath(workspaceId, 'external-links');
+    }
+    if (pathname.includes('/reports')) {
+      return workspacePath(workspaceId, 'reports');
     }
     if (pathname.includes('/settings') && pathname.startsWith(wsPrefix)) {
       return workspacePath(workspaceId, 'settings');

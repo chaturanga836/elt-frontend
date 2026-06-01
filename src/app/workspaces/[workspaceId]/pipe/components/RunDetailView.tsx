@@ -17,6 +17,7 @@ import {
     PipelineNodeLog,
 } from '@/services/pipe.service';
 import { formatJsonBlock, statusTag } from './runDetailUtils';
+import RunReportPanel from '@/features/reports/components/RunReportPanel';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -180,6 +181,11 @@ export default function RunDetailView({ runId }: RunDetailViewProps) {
                     </Descriptions.Item>
                 )}
             </Descriptions>
+
+            <RunReportPanel
+                runId={runDetail.run.id}
+                pipelineUuid={runDetail.run.pipeline_uuid}
+            />
 
             <div>
                 <Title level={5} style={{ marginBottom: 12 }}>Node execution</Title>
