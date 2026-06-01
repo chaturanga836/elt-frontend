@@ -16,7 +16,7 @@ import {
   notification,
 } from 'antd';
 import {
-  AgentSettingsPublic,
+  AgentDatabaseTypeInfo,
   AgentSettingsUpdate,
   WorkspaceAgentSettingsService,
 } from '@/services/workspaceAgentSettings.service';
@@ -36,17 +36,23 @@ export default function WorkspaceAgentSettingsTab({ workspaceId }: Props) {
     providers: ['openai', 'anthropic', 'ollama', 'custom'],
     models: {},
   });
+  const [dbTypes, setDbTypes] = useState<AgentDatabaseTypeInfo[]>([]);
   const [configured, setConfigured] = useState(false);
   const [provider, setProvider] = useState('openai');
+  const dbType = Form.useWatch('db_type', form) || 'postgres';
+
+  const selectedDbMeta = dbTypes.find((t) => t.key === dbType) || dbTypes[0];
 
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const [cat, settings] = await Promise.all([
+      const [llmCat, dbCat, settings] = await Promise.all([
         WorkspaceAgentSettingsService.getLlmCatalog(),
+        WorkspaceAgentSettingsService.getDatabaseCatalog(),
         WorkspaceAgentSettingsService.get(workspaceId),
       ]);
-      setCatalog({ providers: cat.providers, models: cat.suggested_models });
+      setCatalog({ providers: llmCat.providers, models: llmCat.suggested_models });
+      setDbTypes(dbCat.types);
       setConfigured(settings.configured);
       setProvider(settings.llm.provider);
       form.setFieldsValue({
@@ -56,6 +62,7 @@ export default function WorkspaceAgentSettingsTab({ workspaceId }: Props) {
         llm_api_key_hint: settings.llm.api_key || '',
         llm_base_url: settings.llm.base_url || '',
         db_enabled: settings.database.enabled,
+        db_type: settings.database.db_type || 'postgres',
         db_host: settings.database.host,
         db_port: settings.database.port,
         db_name: settings.database.database,
@@ -63,6 +70,7 @@ export default function WorkspaceAgentSettingsTab({ workspaceId }: Props) {
         db_password: '',
         db_password_hint: settings.database.password || '',
         db_ssl_mode: settings.database.ssl_mode,
+        db_auth_source: settings.database.auth_source || 'admin',
       });
     } catch {
       notification.error({ message: 'Failed to load agent settings' });
@@ -75,6 +83,13 @@ export default function WorkspaceAgentSettingsTab({ workspaceId }: Props) {
     void load();
   }, [load]);
 
+  const onDbTypeChange = (type: string) => {
+    const meta = dbTypes.find((t) => t.key === type);
+    if (meta) {
+      form.setFieldValue('db_port', meta.default_port);
+    }
+  };
+
   const buildPayload = (): AgentSettingsUpdate => {
     const v = form.getFieldsValue();
     return {
@@ -86,12 +101,14 @@ export default function WorkspaceAgentSettingsTab({ workspaceId }: Props) {
       },
       database: {
         enabled: v.db_enabled,
+        db_type: v.db_type || 'postgres',
         host: v.db_host || '',
-        port: v.db_port ?? 5432,
+        port: v.db_port ?? selectedDbMeta?.default_port ?? 5432,
         database: v.db_name || '',
         username: v.db_username || '',
         password: v.db_password || undefined,
         ssl_mode: v.db_ssl_mode || 'prefer',
+        auth_source: v.db_auth_source || 'admin',
       },
     };
   };
@@ -130,22 +147,18 @@ export default function WorkspaceAgentSettingsTab({ workspaceId }: Props) {
   };
 
   const modelOptions = catalog.models[provider] || [];
+  const isMongo = dbType === 'mongodb';
 
   return (
     <Card loading={loading} bordered={false}>
       <Paragraph type="secondary">
-        Configure AI and database connections for agent workflows in this workspace. Deployment
-        only needs <Text code>ETL_API_URL</Text> on the agent service; keys and customer database
-        are managed here.
+        Configure AI and customer databases (PostgreSQL, MySQL, MongoDB) for agent workflows.
+        Platform deployment only needs <Text code>ETL_API_URL</Text> on the agent service.
       </Paragraph>
 
-      <Form form={form} layout="vertical" onFinish={onSave}>
+      <Form form={form} layout="vertical" onFinish={onSave} initialValues={{ db_type: 'postgres' }}>
         <TitleSection title="LLM" />
-        <Form.Item
-          name="llm_provider"
-          label="Provider"
-          rules={[{ required: true }]}
-        >
+        <Form.Item name="llm_provider" label="Provider" rules={[{ required: true }]}>
           <Select
             options={catalog.providers.map((p) => ({ value: p, label: p }))}
             onChange={(v) => setProvider(v)}
@@ -186,22 +199,36 @@ export default function WorkspaceAgentSettingsTab({ workspaceId }: Props) {
         <Divider />
         <TitleSection title="Customer database" />
         <Paragraph type="secondary" style={{ marginTop: 0 }}>
-          Optional Postgres used by agent tools to read the customer&apos;s data (separate from
-          platform metadata).
+          Optional database the AI agent can query (separate from platform metadata).
         </Paragraph>
         <Form.Item name="db_enabled" label="Enable database" valuePropName="checked">
           <Switch />
         </Form.Item>
-        <Form.Item name="db_host" label="Host">
+        <Form.Item name="db_type" label="Database type" rules={[{ required: true }]}>
+          <Select
+            options={dbTypes.map((t) => ({ value: t.key, label: t.label }))}
+            onChange={onDbTypeChange}
+          />
+        </Form.Item>
+        <Form.Item name="db_host" label="Host" rules={[{ required: true }]}>
           <Input placeholder="db.customer.example.com" />
         </Form.Item>
-        <Form.Item name="db_port" label="Port">
+        <Form.Item name="db_port" label="Port" rules={[{ required: true }]}>
           <InputNumber min={1} max={65535} style={{ width: 160 }} />
         </Form.Item>
-        <Form.Item name="db_name" label="Database name">
-          <Input />
+        <Form.Item
+          name="db_name"
+          label={selectedDbMeta?.database_label || 'Database name'}
+          rules={[{ required: true }]}
+        >
+          <Input placeholder={isMongo ? 'my_app_db' : 'analytics'} />
         </Form.Item>
-        <Form.Item name="db_username" label="Username">
+        <Form.Item
+          name="db_username"
+          label="Username"
+          rules={isMongo ? [] : [{ required: true }]}
+          extra={isMongo ? 'Optional if MongoDB has no authentication' : undefined}
+        >
           <Input autoComplete="off" />
         </Form.Item>
         <Form.Item
@@ -210,7 +237,9 @@ export default function WorkspaceAgentSettingsTab({ workspaceId }: Props) {
           extra={
             configured && form.getFieldValue('db_password_hint')
               ? `Saved: ${form.getFieldValue('db_password_hint')} — leave blank to keep`
-              : undefined
+              : isMongo
+                ? 'Optional without auth'
+                : undefined
           }
         >
           <Input.Password autoComplete="new-password" />
@@ -218,22 +247,32 @@ export default function WorkspaceAgentSettingsTab({ workspaceId }: Props) {
         <Form.Item name="db_password_hint" hidden>
           <Input />
         </Form.Item>
-        <Form.Item name="db_ssl_mode" label="SSL mode">
-          <Select
-            options={[
-              { value: 'disable', label: 'disable' },
-              { value: 'prefer', label: 'prefer' },
-              { value: 'require', label: 'require' },
-            ]}
-          />
-        </Form.Item>
+        {isMongo ? (
+          <Form.Item
+            name="db_auth_source"
+            label="Auth source"
+            extra="Authentication database (often admin)"
+          >
+            <Input placeholder="admin" />
+          </Form.Item>
+        ) : (
+          <Form.Item name="db_ssl_mode" label="SSL mode">
+            <Select
+              options={[
+                { value: 'disable', label: 'disable' },
+                { value: 'prefer', label: 'prefer' },
+                { value: 'require', label: 'require' },
+              ]}
+            />
+          </Form.Item>
+        )}
         <Form.Item>
           <Space>
             <Button type="primary" htmlType="submit" loading={saving}>
               Save settings
             </Button>
             <Button onClick={() => void onTestDb()} loading={testing}>
-              Test database connection
+              Test connection
             </Button>
           </Space>
         </Form.Item>

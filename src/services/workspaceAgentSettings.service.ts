@@ -9,12 +9,14 @@ export type AgentLlmSettings = {
 
 export type AgentDatabaseSettings = {
   enabled: boolean;
+  db_type: 'postgres' | 'mysql' | 'mongodb' | string;
   host: string;
   port: number;
   database: string;
   username: string;
   password?: string | null;
   ssl_mode: string;
+  auth_source?: string | null;
 };
 
 export type AgentSettingsPublic = {
@@ -33,9 +35,26 @@ export type AgentLlmCatalog = {
   suggested_models: Record<string, string[]>;
 };
 
+export type AgentDatabaseTypeInfo = {
+  key: string;
+  label: string;
+  default_port: number;
+  supports_ssl: boolean;
+  database_label: string;
+};
+
+export type AgentDatabaseCatalog = {
+  types: AgentDatabaseTypeInfo[];
+};
+
 export const WorkspaceAgentSettingsService = {
   getLlmCatalog: async () => {
     const res = await api.get<AgentLlmCatalog>('/workspaces/catalog/llm');
+    return res.data;
+  },
+
+  getDatabaseCatalog: async () => {
+    const res = await api.get<AgentDatabaseCatalog>('/workspaces/catalog/databases');
     return res.data;
   },
 
