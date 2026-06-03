@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { WorkspaceItem, WorkspaceService } from '@/services/workspace.service';
+import AppBrand from '@/components/brand/AppBrand';
 import { workspacePath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
@@ -172,6 +173,9 @@ export default function WorkspacesPage() {
     <div className="p-8" style={{ minHeight: '100vh' }}>
       <div className="flex justify-between items-start mb-6">
         <div>
+          <div style={{ marginBottom: 12 }}>
+            <AppBrand variant="header" />
+          </div>
           <Title level={2} style={{ margin: 0 }}>
             Workspaces
           </Title>

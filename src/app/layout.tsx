@@ -13,6 +13,10 @@ import { BRAND_NAME, BRAND_TAGLINE } from "@/constants/brand";
 export const metadata: Metadata = {
   title: BRAND_NAME,
   description: BRAND_TAGLINE,
+  icons: {
+    icon: '/brand/dt-orch-logo.png',
+    apple: '/brand/dt-orch-logo.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
