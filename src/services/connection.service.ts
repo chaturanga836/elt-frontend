@@ -1,21 +1,9 @@
 import { ConnectionCategory } from "@/types/connection";
 import { extractRelativePath, stripQuery } from "@/lib/urlSync";
-import { workspaceQuery } from "@/lib/tenantScope";
+import api from "./api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const getBaseUrl = () => (API_BASE.endsWith("/api/v1") ? API_BASE : `${API_BASE}/api/v1`);
-
-function authHeaders(): HeadersInit {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (typeof window !== "undefined") {
-        const token = localStorage.getItem("token");
-        if (token) headers.Authorization = `Bearer ${token}`;
-    }
-    return headers;
-}
-
-function wsQuery(workspaceId: number): string {
-    return workspaceQuery(workspaceId);
+function wsParams(workspaceId: number) {
+    return { params: { workspace_id: workspaceId } };
 }
 
 const METHOD_MAP: Record<string, number> = {
@@ -89,65 +77,54 @@ export const connectionService = {
     },
 
     testConnection: async (storeData: any, workspaceId: number) => {
-        const url = `${getBaseUrl()}/rest-api-connections/test-connection?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, {
-            method: "POST",
-            headers: authHeaders(),
-            body: JSON.stringify(connectionService.preparePayload(storeData)),
-        });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || "Test request failed");
-        }
-        return response.json();
+        const response = await api.post(
+            "/rest-api-connections/test-connection",
+            connectionService.preparePayload(storeData),
+            wsParams(workspaceId),
+        );
+        return response.data;
     },
 
     saveConnection: async (storeData: any, workspaceId: number, connectionId?: number) => {
-        const isUpdate = !!connectionId;
-        const base = getBaseUrl();
-        const url = isUpdate
-            ? `${base}/rest-api-connections/update_rest_api_connection/${connectionId}?${wsQuery(workspaceId)}`
-            : `${base}/rest-api-connections/create_rest_api_connection?${wsQuery(workspaceId)}`;
-
-        const response = await fetch(url, {
-            method: isUpdate ? "PUT" : "POST",
-            headers: authHeaders(),
-            body: JSON.stringify(connectionService.preparePayload(storeData)),
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || "Failed to save connection");
+        const payload = connectionService.preparePayload(storeData);
+        const config = wsParams(workspaceId);
+        if (connectionId) {
+            const response = await api.put(
+                `/rest-api-connections/update_rest_api_connection/${connectionId}`,
+                payload,
+                config,
+            );
+            return response.data;
         }
-        return response.json();
+        const response = await api.post(
+            "/rest-api-connections/create_rest_api_connection",
+            payload,
+            config,
+        );
+        return response.data;
     },
 
     getConnections: async (workspaceId: number) => {
-        const url = `${getBaseUrl()}/rest-api-connections/list?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, { headers: authHeaders() });
-        if (!response.ok) throw new Error("Failed to fetch connections");
-        return response.json();
+        const response = await api.get("/rest-api-connections/list", wsParams(workspaceId));
+        return response.data;
     },
 
     getRestConnection: async (connectionId: number, workspaceId: number) => {
-        const url = `${getBaseUrl()}/rest-api-connections/connection/${connectionId}?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, { headers: authHeaders() });
-        if (!response.ok) throw new Error("Failed to load connection");
-        return response.json();
+        const response = await api.get(
+            `/rest-api-connections/connection/${connectionId}`,
+            wsParams(workspaceId),
+        );
+        return response.data;
     },
 
     getUnifiedConnections: async (workspaceId: number) => {
-        const url = `${getBaseUrl()}/connections/unified/list?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, { headers: authHeaders() });
-        if (!response.ok) throw new Error("Failed to fetch connections");
-        return response.json();
+        const response = await api.get("/connections/unified/list", wsParams(workspaceId));
+        return response.data;
     },
 
     getCategories: async (): Promise<{ data: ConnectionCategory[] }> => {
-        const url = `${getBaseUrl()}/connection-types/categories`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch categories");
-        const data = await response.json();
+        const response = await api.get("/connection-types/categories");
+        const data = response.data;
         return {
             data: data.map((c: any) => ({
                 id: String(c.id),
@@ -159,31 +136,20 @@ export const connectionService = {
     },
 
     getPrototypes: async (categoryId: number) => {
-        const url = `${getBaseUrl()}/connection-types/categories/${categoryId}/prototypes`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch prototypes");
-        return response.json();
+        const response = await api.get(`/connection-types/categories/${categoryId}/prototypes`);
+        return response.data;
     },
 
     getPrototypeSchema: async (categoryId: number, prototypeId: string) => {
-        const url = `${getBaseUrl()}/connection-types/categories/${categoryId}/prototypes/${prototypeId}/schema`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch schema");
-        return response.json();
+        const response = await api.get(
+            `/connection-types/categories/${categoryId}/prototypes/${prototypeId}/schema`,
+        );
+        return response.data;
     },
 
     createGenericConnection: async (payload: any, workspaceId: number) => {
-        const url = `${getBaseUrl()}/connections/create?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, {
-            method: "POST",
-            headers: authHeaders(),
-            body: JSON.stringify(payload),
-        });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || "Failed to create connection");
-        }
-        return response.json();
+        const response = await api.post("/connections/create", payload, wsParams(workspaceId));
+        return response.data;
     },
 
     updateGenericConnection: async (
@@ -191,139 +157,114 @@ export const connectionService = {
         payload: any,
         workspaceId: number,
     ) => {
-        const url = `${getBaseUrl()}/connections/update/${connectionId}?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, {
-            method: "PUT",
-            headers: authHeaders(),
-            body: JSON.stringify(payload),
-        });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || "Failed to update connection");
-        }
-        return response.json();
+        const response = await api.put(
+            `/connections/update/${connectionId}`,
+            payload,
+            wsParams(workspaceId),
+        );
+        return response.data;
     },
 
     getGenericConnection: async (connectionId: number, workspaceId: number) => {
-        const url = `${getBaseUrl()}/connections/${connectionId}?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, { headers: authHeaders() });
-        if (!response.ok) throw new Error("Failed to load connection");
-        return response.json();
+        const response = await api.get(
+            `/connections/${connectionId}`,
+            wsParams(workspaceId),
+        );
+        return response.data;
     },
 
     deleteGenericConnection: async (connectionId: number, workspaceId: number) => {
-        const url = `${getBaseUrl()}/connections/${connectionId}?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, { method: "DELETE", headers: authHeaders() });
-        if (!response.ok) throw new Error("Failed to delete connection");
-        return response.json();
+        const response = await api.delete(
+            `/connections/${connectionId}`,
+            wsParams(workspaceId),
+        );
+        return response.data;
     },
 
-    testGenericConnection: async (payload: any) => {
-        const url = `${getBaseUrl()}/connections/test`;
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-        });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || "Test failed");
-        }
-        return response.json();
+    testGenericConnection: async (payload: any, workspaceId: number) => {
+        const response = await api.post("/connections/test", payload, wsParams(workspaceId));
+        return response.data;
     },
 
     registerConnection: async (payload: any) => {
-        const url = `${getBaseUrl()}/dev/register`;
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-        });
-        if (!response.ok) throw new Error("Failed to register provider");
-        return response.json();
+        const response = await api.post("/dev/register", payload);
+        return response.data;
     },
 
     getProviders: async () => {
-        const url = `${getBaseUrl()}/dev/providers`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch providers");
-        return response.json();
+        const response = await api.get("/dev/providers");
+        return response.data;
     },
 
     getIntegrationProviders: async (workspaceId: number) => {
-        const url = `${getBaseUrl()}/rest-api-connections/integration-catalog/providers?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, { headers: authHeaders() });
-        if (!response.ok) throw new Error("Failed to load integration catalog");
-        return response.json();
+        const response = await api.get(
+            "/rest-api-connections/integration-catalog/providers",
+            wsParams(workspaceId),
+        );
+        return response.data;
     },
 
     getIntegrationTemplates: async (providerKey: string, workspaceId: number) => {
-        const url = `${getBaseUrl()}/rest-api-connections/integration-catalog/providers/${providerKey}/templates?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, { headers: authHeaders() });
-        if (!response.ok) throw new Error("Failed to load templates");
-        return response.json();
+        const response = await api.get(
+            `/rest-api-connections/integration-catalog/providers/${providerKey}/templates`,
+            wsParams(workspaceId),
+        );
+        return response.data;
     },
 
     listRestGroups: async (workspaceId: number) => {
-        const url = `${getBaseUrl()}/rest-api-connections/groups?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, { headers: authHeaders() });
-        if (!response.ok) throw new Error("Failed to list groups");
-        return response.json();
+        const response = await api.get("/rest-api-connections/groups", wsParams(workspaceId));
+        return response.data;
     },
 
     getRestGroup: async (groupId: number, workspaceId: number) => {
-        const url = `${getBaseUrl()}/rest-api-connections/groups/${groupId}?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, { headers: authHeaders() });
-        if (!response.ok) throw new Error("Failed to load group");
-        return response.json();
+        const response = await api.get(
+            `/rest-api-connections/groups/${groupId}`,
+            wsParams(workspaceId),
+        );
+        return response.data;
     },
 
     createRestGroup: async (payload: Record<string, unknown>, workspaceId: number) => {
-        const url = `${getBaseUrl()}/rest-api-connections/groups?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, {
-            method: "POST",
-            headers: authHeaders(),
-            body: JSON.stringify(payload),
-        });
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.detail || "Failed to create group");
-        }
-        return response.json();
+        const response = await api.post(
+            "/rest-api-connections/groups",
+            payload,
+            wsParams(workspaceId),
+        );
+        return response.data;
     },
 
-    updateRestGroup: async (groupId: number, payload: Record<string, unknown>, workspaceId: number) => {
-        const url = `${getBaseUrl()}/rest-api-connections/groups/${groupId}?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, {
-            method: "PUT",
-            headers: authHeaders(),
-            body: JSON.stringify(payload),
-        });
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.detail || "Failed to update group");
-        }
-        return response.json();
+    updateRestGroup: async (
+        groupId: number,
+        payload: Record<string, unknown>,
+        workspaceId: number,
+    ) => {
+        const response = await api.put(
+            `/rest-api-connections/groups/${groupId}`,
+            payload,
+            wsParams(workspaceId),
+        );
+        return response.data;
     },
 
     deleteRestGroup: async (groupId: number, workspaceId: number) => {
-        const url = `${getBaseUrl()}/rest-api-connections/groups/${groupId}?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, { method: "DELETE", headers: authHeaders() });
-        if (!response.ok) throw new Error("Failed to delete group");
-        return response.json();
+        const response = await api.delete(
+            `/rest-api-connections/groups/${groupId}`,
+            wsParams(workspaceId),
+        );
+        return response.data;
     },
 
     getAuthCapabilities: async () => {
-        const url = `${getBaseUrl()}/rest-api-connections/auth-capabilities`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to load auth capabilities");
-        return response.json();
+        const response = await api.get("/rest-api-connections/auth-capabilities");
+        return response.data;
     },
 
     getConnectionRuntime: async (connectionId: number, workspaceId: number) => {
-        const url = `${getBaseUrl()}/rest-api-connections/connection/${connectionId}/runtime?${wsQuery(workspaceId)}`;
-        const response = await fetch(url, { headers: authHeaders() });
-        if (!response.ok) throw new Error("Failed to load connection runtime");
-        return response.json();
+        const response = await api.get(
+            `/rest-api-connections/connection/${connectionId}/runtime`,
+            wsParams(workspaceId),
+        );
+        return response.data;
     },
 };

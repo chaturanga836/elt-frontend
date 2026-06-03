@@ -113,11 +113,14 @@ export default function DynamicConnectionForm({
       const values = await form.validateFields();
       setTesting(true);
       const { config } = splitFormValues(values);
-      const result = await connectionService.testGenericConnection({
-        category_id: categoryId,
-        prototype_id: resolvedProto,
-        config,
-      });
+      const result = await connectionService.testGenericConnection(
+        {
+          category_id: categoryId,
+          prototype_id: resolvedProto,
+          config,
+        },
+        workspaceId,
+      );
       if (result.success) {
         message.success(result.message || 'Connection successful');
       } else {
