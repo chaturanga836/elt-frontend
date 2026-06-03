@@ -4,6 +4,7 @@ import { Select } from 'antd';
 import { useEffect, useState } from 'react';
 import { useWorkflowStore } from '@/store/useWorkflowStore';
 import { WorkflowService } from '@/services/workflow.service';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import WorkflowNodeShell from './WorkflowNodeShell';
 
 export default function WfPipelineNode({
@@ -14,10 +15,11 @@ export default function WfPipelineNode({
   data: { label?: string; node_config?: { pipeline_uuid?: string; pipeline_name?: string } };
 }) {
   const updateNodeData = useWorkflowStore((s) => s.updateNodeData);
+  const workspaceId = useWorkspaceId();
   const [pipelines, setPipelines] = useState<{ label: string; value: string }[]>([]);
 
   useEffect(() => {
-    WorkflowService.listPipelines()
+    WorkflowService.listPipelines(workspaceId)
       .then((res) => {
         setPipelines(
           (res.items || []).map((p: { name: string; pipeline_uuid: string }) => ({
@@ -27,7 +29,7 @@ export default function WfPipelineNode({
         );
       })
       .catch(() => setPipelines([]));
-  }, []);
+  }, [workspaceId]);
 
   const config = data.node_config || {};
 

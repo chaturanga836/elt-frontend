@@ -20,7 +20,7 @@ export default function WorkflowListPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await WorkflowService.listWorkflows();
+      const res = await WorkflowService.listWorkflows(workspaceId);
       setItems(res.items || []);
     } finally {
       setLoading(false);
@@ -29,7 +29,7 @@ export default function WorkflowListPage() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [workspaceId]);
 
   const columns = [
     { title: 'Name', dataIndex: 'name', key: 'name' },
