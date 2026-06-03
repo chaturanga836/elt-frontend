@@ -31,6 +31,16 @@ export const PluginService = {
       `/plugins/workspaces/${workspaceId}/${pluginKey}`,
       { org_id: 1, ...body },
     );
+    return res.data as {
+      scraper_api_key?: string;
+      enabled: boolean;
+    };
+  },
+
+  regenerateScraperKey: async (workspaceId: number) => {
+    const res = await api.post<{ workspace_id: number; scraper_api_key: string }>(
+      `/plugins/workspaces/${workspaceId}/scraping/regenerate-key`,
+    );
     return res.data;
   },
 };
