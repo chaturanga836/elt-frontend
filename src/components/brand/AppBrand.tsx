@@ -11,7 +11,7 @@ import {
 
 const { Text } = Typography;
 
-export type AppBrandVariant = 'login' | 'sider' | 'sider-collapsed';
+export type AppBrandVariant = 'login' | 'marketing' | 'sider' | 'sider-collapsed';
 
 type AppBrandProps = {
   variant?: AppBrandVariant;
@@ -110,6 +110,47 @@ export default function AppBrand({
         >
           DT
         </Text>
+      </div>
+    );
+  }
+
+  if (variant === 'marketing') {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 14,
+          marginBottom: 8,
+        }}
+      >
+        <BrandLogo size={48} />
+        <div>
+          <Text
+            style={{
+              color: '#fff',
+              fontSize: 24,
+              fontWeight: 700,
+              display: 'block',
+              lineHeight: 1.2,
+              letterSpacing: -0.5,
+            }}
+          >
+            {BRAND_NAME}
+          </Text>
+          {showTagline ? (
+            <Text
+              style={{
+                color: 'rgba(240, 246, 252, 0.7)',
+                fontSize: 13,
+                display: 'block',
+                marginTop: 2,
+              }}
+            >
+              {BRAND_TAGLINE}
+            </Text>
+          ) : null}
+        </div>
       </div>
     );
   }

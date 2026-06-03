@@ -1,0 +1,166 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: row;
+}
+
+.marketing {
+  flex: 1.15;
+  min-height: 100vh;
+  padding: 48px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(145deg, #0c1929 0%, #132f4c 42%, #1a4d7a 100%);
+  color: #f0f6fc;
+  position: relative;
+  overflow: hidden;
+}
+
+.marketing::before {
+  content: '';
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(22, 119, 255, 0.22) 0%, transparent 70%);
+  top: -120px;
+  right: -80px;
+  pointer-events: none;
+}
+
+.marketing::after {
+  content: '';
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 70%);
+  bottom: -80px;
+  left: -60px;
+  pointer-events: none;
+}
+
+.marketingInner {
+  position: relative;
+  z-index: 1;
+  max-width: 520px;
+}
+
+.heroTitle {
+  margin: 28px 0 16px !important;
+  color: #fff !important;
+  font-size: clamp(1.75rem, 3vw, 2.25rem) !important;
+  line-height: 1.25 !important;
+  font-weight: 700 !important;
+}
+
+.heroLead {
+  color: rgba(240, 246, 252, 0.82) !important;
+  font-size: 16px !important;
+  line-height: 1.6 !important;
+  margin-bottom: 36px !important;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.featureCard {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  backdrop-filter: blur(8px);
+}
+
+.featureIcon {
+  font-size: 22px;
+  color: #69b1ff;
+  margin-bottom: 8px;
+}
+
+.featureTitle {
+  color: #fff !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  margin: 0 0 4px !important;
+}
+
+.featureDesc {
+  color: rgba(240, 246, 252, 0.65) !important;
+  font-size: 12px !important;
+  margin: 0 !important;
+  line-height: 1.45 !important;
+}
+
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(22, 119, 255, 0.2);
+  border: 1px solid rgba(105, 177, 255, 0.35);
+  color: #bae0ff;
+}
+
+.footerNote {
+  position: relative;
+  z-index: 1;
+  font-size: 12px;
+  color: rgba(240, 246, 252, 0.45);
+}
+
+.authPanel {
+  flex: 0.85;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+}
+
+.authCard {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08) !important;
+  border: 1px solid rgba(15, 23, 42, 0.06) !important;
+}
+
+.authCard :global(.ant-card-body) {
+  padding: 36px 32px !important;
+}
+
+@media (max-width: 960px) {
+  .page {
+    flex-direction: column;
+  }
+
+  .marketing {
+    min-height: auto;
+    padding: 32px 24px 28px;
+  }
+
+  .featureGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .footerNote {
+    display: none;
+  }
+
+  .authPanel {
+    min-height: auto;
+    padding: 24px 20px 40px;
+  }
+}
