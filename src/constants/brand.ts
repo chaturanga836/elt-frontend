@@ -8,6 +8,9 @@ export const BRAND_TAGLINE =
 /** Logo under public/ — horizontal mark (icon + wordmark). */
 export const BRAND_LOGO_SRC: string | null = '/brand/dt-orch-logo.png';
 
+/** Pitch / marketing cover (1080×450). */
+export const BRAND_BANNER_SRC = '/brand/dt-orch-pitch-banner.png';
+
 /** Logo image already includes the DT-Orch wordmark; hide duplicate text beside it. */
 export const BRAND_LOGO_INCLUDES_WORDMARK = true;
 

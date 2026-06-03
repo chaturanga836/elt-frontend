@@ -9,7 +9,6 @@ import {
   SafetyCertificateOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
-import AppBrand from '@/components/brand/AppBrand';
 import { BRAND_TAGLINE } from '@/constants/brand';
 import styles from '@/app/login/login.module.css';
 
@@ -49,8 +48,6 @@ export default function LoginMarketingPanel() {
   return (
     <section className={styles.marketing}>
       <div className={styles.marketingInner}>
-        <AppBrand variant="marketing" showTagline={false} />
-
         <Title level={1} className={styles.heroTitle}>
           Run your data platform on your terms
         </Title>
@@ -78,7 +75,7 @@ export default function LoginMarketingPanel() {
       <div className={styles.footerNote}>
         <TeamOutlined style={{ marginRight: 6 }} />
         <CloudServerOutlined style={{ marginRight: 6, marginLeft: 12 }} />
-        <Text style={{ color: 'inherit' }}>
+        <Text type="secondary">
           Deploy on your EC2 or Docker stack — you own the data and the keys.
         </Text>
       </div>
