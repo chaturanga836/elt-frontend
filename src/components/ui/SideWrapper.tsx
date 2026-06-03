@@ -19,6 +19,7 @@ import {
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { logoutFromKeycloak } from '@/lib/keycloak';
+import AppBrand from '@/components/brand/AppBrand';
 import { workspacePath } from '@/lib/paths';
 import { WorkspaceService, WorkspaceItem } from '@/services/workspace.service';
 
@@ -215,21 +216,8 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
           flexDirection: 'column',
         }}
       >
-        <div
-          style={{
-            height: 32,
-            margin: '16px',
-            background: 'rgba(255,255,255,0.2)',
-            borderRadius: 6,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-            fontWeight: 'bold',
-            fontSize: collapsed ? '12px' : '14px',
-          }}
-        >
-          {collapsed ? 'ELT' : 'ELT ENGINE'}
+        <div style={{ margin: collapsed ? '16px 12px' : '16px', minHeight: collapsed ? 56 : 48 }}>
+          <AppBrand variant={collapsed ? 'sider-collapsed' : 'sider'} showTagline={false} />
         </div>
 
         {!collapsed && (

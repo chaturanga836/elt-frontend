@@ -8,10 +8,11 @@ import StaticHandler from '@/lib/antd/static';
 import VariableDropdownPortal from "@/components/ui/VariableDropdownPortal";
 import AuthProvider from "@/components/auth/AuthProvider";
 import AuthGuard from "@/components/auth/AuthGuard";
+import { BRAND_NAME, BRAND_TAGLINE } from "@/constants/brand";
 
 export const metadata: Metadata = {
-  title: "Data Connections Manager",
-  description: "Configure your REST, File, and Database connections",
+  title: BRAND_NAME,
+  description: BRAND_TAGLINE,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

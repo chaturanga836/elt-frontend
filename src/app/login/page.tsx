@@ -3,6 +3,7 @@
 import { Button, Card, Typography } from 'antd';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import AppBrand from '@/components/brand/AppBrand';
 import { loginWithKeycloak } from '@/lib/keycloak';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -22,9 +23,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 }}>
-      <Card style={{ width: 420, borderRadius: 12 }}>
-        <Title level={3} style={{ marginBottom: 8 }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+        background: 'linear-gradient(160deg, #f5f7fa 0%, #e8ecf1 100%)',
+      }}
+    >
+      <AppBrand variant="login" />
+      <Card style={{ width: 420, borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}>
+        <Title level={4} style={{ marginBottom: 8 }}>
           Sign in
         </Title>
         <Paragraph type="secondary" style={{ marginBottom: 24 }}>
