@@ -5,12 +5,18 @@ import api from "./api";
 
 type KvRow = { uiId?: string; id?: number | null; key?: string; value?: string; enabled?: boolean };
 
-function withUiIds(rows: KvRow[]): KvRow[] {
-    return rows.map((r) => ({
+function trimKvRow(r: KvRow): KvRow {
+    return {
         ...r,
+        key: typeof r.key === "string" ? r.key.trim() : r.key,
+        value: typeof r.value === "string" ? r.value.trim() : r.value,
         uiId: r.uiId || generateId(),
         enabled: r.enabled ?? true,
-    }));
+    };
+}
+
+function withUiIds(rows: KvRow[]): KvRow[] {
+    return rows.map(trimKvRow).filter((r) => r.key);
 }
 
 /** Flat JSON bodies (e.g. scraper) should not send an empty editor `content` wrapper. */
@@ -93,9 +99,9 @@ export const connectionService = {
             auth_type: AUTH_MAP[store.authType?.toLowerCase()] || 0,
             body_method: bodyMethod,
             body,
-            headers: withUiIds(store.headers.filter((h: KvRow) => h.key)),
-            params: withUiIds(store.params.filter((p: KvRow) => p.key)),
-            variables: withUiIds(store.variables.filter((v: KvRow) => v.key)),
+            headers: withUiIds(store.headers.filter((h: KvRow) => String(h.key ?? "").trim())),
+            params: withUiIds(store.params.filter((p: KvRow) => String(p.key ?? "").trim())),
+            variables: withUiIds(store.variables.filter((v: KvRow) => String(v.key ?? "").trim())),
             pagination: store.pagination || { strategy: "none", config: {} },
             auth_config: getAuthConfig(),
             fetch_settings: store.fetchSettings || { retries: 3, timeout: 30 },

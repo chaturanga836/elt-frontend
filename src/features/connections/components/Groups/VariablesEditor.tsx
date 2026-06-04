@@ -23,6 +23,13 @@ export default function VariablesEditor({ variables, onChange }: VariablesEditor
   const update = (uiId: string, field: 'key' | 'value', val: string) =>
     onChange(variables.map((v) => (v.uiId === uiId ? { ...v, [field]: val } : v)));
 
+  const trimField = (uiId: string, field: 'key' | 'value') =>
+    onChange(
+      variables.map((v) =>
+        v.uiId === uiId ? { ...v, [field]: v[field].trim() } : v,
+      ),
+    );
+
   const remove = (uiId: string) =>
     onChange(variables.filter((v) => v.uiId !== uiId));
 
@@ -40,12 +47,14 @@ export default function VariablesEditor({ variables, onChange }: VariablesEditor
             placeholder="key"
             value={v.key}
             onChange={(e) => update(v.uiId, 'key', e.target.value)}
+            onBlur={() => trimField(v.uiId, 'key')}
             className="flex-1"
           />
           <Input
             placeholder="value"
             value={v.value}
             onChange={(e) => update(v.uiId, 'value', e.target.value)}
+            onBlur={() => trimField(v.uiId, 'value')}
             className="flex-1"
           />
           <Button

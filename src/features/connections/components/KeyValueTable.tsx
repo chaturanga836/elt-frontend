@@ -47,6 +47,16 @@ export default function KeyValueTable({
     if (onChange) onChange(updatedPairs);
   };
 
+  const trimRowField = (id: string, field: "key" | "value") => {
+    const newPairs = pairs.map((p) => {
+      if (p.uiId !== id) return p;
+      const current = p[field];
+      if (typeof current !== "string") return p;
+      return { ...p, [field]: current.trim() };
+    });
+    triggerChange(newPairs);
+  };
+
   const updateRow = (id: string | null, field: keyof KeyValuePair, val: string | boolean) => {
     const newPairs = pairs.map(p => {
       if (p.uiId === id) {
@@ -117,6 +127,7 @@ return (
                   variant="borderless"
                   value={pair.key ?? ""}
                   onChange={(e) => updateRow(pair.uiId, "key", e.target.value)}
+                  onBlur={() => trimRowField(pair.uiId, "key")}
                   placeholder={keyPlaceholder}
                   className="h-full w-full font-mono text-xs px-3 py-2 focus:bg-background"
                 />
@@ -138,6 +149,7 @@ return (
                   variant="borderless"
                   value={pair.value ?? ""}
                   onChange={(e) => updateRow(pair.uiId, "value", e.target.value)}
+                  onBlur={() => trimRowField(pair.uiId, "value")}
                   placeholder={valuePlaceholder}
                   className="h-full w-full font-mono text-xs px-3 py-2 focus:bg-background"
                 />
