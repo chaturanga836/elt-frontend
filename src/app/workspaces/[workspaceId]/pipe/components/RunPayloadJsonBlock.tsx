@@ -136,18 +136,12 @@ export default function RunPayloadJsonBlock({
         width="100%"
         style={{ top: 0, maxWidth: '100vw', padding: 0 }}
         styles={{
-          content: {
-            height: '100vh',
-            maxHeight: '100vh',
-            borderRadius: 0,
-            display: 'flex',
-            flexDirection: 'column',
-          },
           body: {
             flex: 1,
             padding: 0,
             overflow: 'hidden',
             minHeight: 0,
+            height: 'calc(100vh - 108px)',
           },
         }}
         destroyOnHidden
