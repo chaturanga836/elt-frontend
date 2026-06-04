@@ -1,5 +1,12 @@
 import { buildBoundaryNodeConfig } from './boundaryHooks';
 
+/** Coerce React Flow / JSON values to a pipeline task_id (or null). */
+export function coerceOptionalTaskId(value: unknown): number | null {
+  if (value == null || value === '') return null;
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : null;
+}
+
 /** Build persisted node_config for pipeline save payloads. */
 export function buildPipelineNodeConfig(
   data: Record<string, unknown>,
@@ -16,7 +23,7 @@ export function buildPipelineNodeConfig(
     };
   }
   if (nodeType === 0 || nodeType === 2) {
-    return buildBoundaryNodeConfig(data, nodeType === 2);
+    return { ...buildBoundaryNodeConfig(data, nodeType === 2) };
   }
   const existing = (data.node_config as Record<string, unknown>) || {};
   return { ...existing };

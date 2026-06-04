@@ -12,7 +12,8 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { PipelineCreatePayload } from '@/types/pipetypes';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
-import { buildPipelineNodeConfig } from '@/types/pipelineNodeConfig';
+import { buildPipelineNodeConfig, coerceOptionalTaskId } from '@/types/pipelineNodeConfig';
+import type { PipelineTask } from '@/types/pipetypes';
 import {
   PIPELINE_NAME_PLACEHOLDER,
   isPipelineNameValid,
@@ -160,7 +161,7 @@ const payload: PipelineCreatePayload = {
       viewport: getViewport()
     },
     // Execution order follows left-to-right canvas layout (Start → REST → Task → End)
-    tasks: sortedNodes.map((node, index) => {
+    tasks: sortedNodes.map((node, index): PipelineTask => {
       const leftParentId = index > 0 ? sortedNodes[index - 1].id : null;
       const rightParentId =
         index < sortedNodes.length - 1 ? sortedNodes[index + 1].id : null;
@@ -185,8 +186,8 @@ const payload: PipelineCreatePayload = {
         name: label,
         node_type: nodeType,
         task_id: isBoundary
-          ? (nodeConfig.hook_task_id ?? null)
-          : (node.data?.task_id as number) ?? null,
+          ? coerceOptionalTaskId(nodeConfig.hook_task_id)
+          : coerceOptionalTaskId(nodeData.task_id),
         node_config: nodeConfig,
         left_depend: leftParentId,
         right_depend: rightParentId,

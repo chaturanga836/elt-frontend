@@ -17,6 +17,7 @@ export interface InputMapping {
 export interface PipelineTask {
   id?: number | undefined;
   pipeline_id? : number;
+  name?: string;
   task_id?: number | null;
   node_type: TaskType;
   node_uuid: string;
