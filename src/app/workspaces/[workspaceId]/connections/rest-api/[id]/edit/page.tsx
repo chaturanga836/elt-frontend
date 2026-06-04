@@ -29,7 +29,22 @@ export default function EditRestPage() {
         const data = await connectionService.getRestConnection(connectionId, workspaceId);
         if (cancelled) return;
         if (data.group_id) {
-          setGroupContext(data.group_id, data.group_name || null);
+          try {
+            const group = await connectionService.getRestGroup(data.group_id, workspaceId);
+            if (!cancelled) {
+              setGroupContext(
+                data.group_id,
+                group.name || data.group_name || null,
+                group.base_url || null,
+                group.auth_type ?? 0,
+                group.auth_config || {},
+              );
+            }
+          } catch {
+            if (!cancelled) {
+              setGroupContext(data.group_id, data.group_name || null);
+            }
+          }
         }
         loadFromEndpoint(data);
       } catch {

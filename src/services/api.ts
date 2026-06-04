@@ -1,6 +1,7 @@
 // src/services/api.ts
 import axios from 'axios';
 import { notification } from '@/lib/antd/static'; // Using the bridge we set up
+import { formatErrorDetail, getApiErrorMessage } from '@/lib/formatApiError';
 import {
   ensureValidAccessToken,
   refreshManualAccessToken,
@@ -72,12 +73,17 @@ api.interceptors.response.use(
         description = 'Cannot reach the backend. Check your internet or CORS settings.';
       } else {
         message = `Error ${status}`;
-        description = error.response.data?.detail || error.response.data?.message || error.message;
+        const data = error.response.data as { detail?: unknown; message?: string } | undefined;
+        description =
+          (data?.detail != null ? formatErrorDetail(data.detail) : '') ||
+          data?.message ||
+          error.message ||
+          'An unexpected error occurred.';
       }
 
       notification.error({
-        title:message,
-        description,
+        title: message,
+        description: String(description),
         placement: 'topRight',
       });
 

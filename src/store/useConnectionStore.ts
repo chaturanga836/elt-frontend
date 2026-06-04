@@ -191,10 +191,15 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
         const rawParams = (data.params as KeyValuePair[]) || [];
         const effectiveUrl = (data.effective_url as string) || (data.url as string) || "";
         const url = stripQuery(effectiveUrl || (groupId ? "" : path));
-        const params =
+        const params = (
             rawParams.length > 0
                 ? rawParams
-                : [{ uiId: generateId(), id: null, key: "", value: "", enabled: true }];
+                : [{ uiId: generateId(), id: null, key: "", value: "", enabled: true }]
+        ).map((p) => ({
+            ...p,
+            uiId: p.uiId || generateId(),
+            enabled: p.enabled ?? true,
+        }));
 
         set({
             id: (data.id as number) ?? null,
@@ -208,10 +213,19 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
                 ({ 1: "GET", 2: "POST", 3: "PUT", 4: "DELETE", 5: "PATCH" } as Record<number, HttpMethod>)[
                     data.method as number
                 ] || "GET",
-            headers: (data.headers as KeyValuePair[]) || [],
-            variables: (data.variables as KeyValuePair[])?.length
+            headers: ((data.headers as KeyValuePair[]) || []).map((h) => ({
+                ...h,
+                uiId: h.uiId || generateId(),
+                enabled: h.enabled ?? true,
+            })),
+            variables: ((data.variables as KeyValuePair[])?.length
                 ? (data.variables as KeyValuePair[])
-                : [{ uiId: generateId(), id: null, key: "", value: "", enabled: true }],
+                : [{ uiId: generateId(), id: null, key: "", value: "", enabled: true }]
+            ).map((v) => ({
+                ...v,
+                uiId: v.uiId || generateId(),
+                enabled: v.enabled ?? true,
+            })),
             authType,
             basicAuth: authType === "basic" ? { ...new BasicAuthDefaults(), ...authConfig } : new BasicAuthDefaults(),
             bearerTokenAuth:

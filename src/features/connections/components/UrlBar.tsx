@@ -10,6 +10,7 @@ import { connectionService } from '@/services/connection.service';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { TestResponse } from './ResponsePanel';
 import { buildUrlWithParams } from '@/lib/urlSync';
+import { getApiErrorMessage } from '@/lib/formatApiError';
 
 const methodColorMap: Record<HttpMethod, string> = {
   GET: "text-green-600",
@@ -40,6 +41,7 @@ export default function UrlBar({ onTestResult }: UrlBarProps = {}) {
     if (!displayUrl) return message.warning("Please enter a URL first");
 
     setTesting(true);
+    onTestResult?.(null);
     try {
       const result = await connectionService.testConnection(store, workspaceId);
       onTestResult?.(result);
@@ -50,8 +52,8 @@ export default function UrlBar({ onTestResult }: UrlBarProps = {}) {
         message.error(`Failed: ${result.status_code}`);
       }
     } catch (error: unknown) {
-      const err = error as { message?: string };
-      message.error(err.message || "Network error occurred");
+      onTestResult?.(null);
+      message.error(getApiErrorMessage(error, 'Connection test failed'));
     } finally {
       setTesting(false);
     }

@@ -1,6 +1,34 @@
 import { ConnectionCategory } from "@/types/connection";
 import { extractRelativePath, stripQuery } from "@/lib/urlSync";
+import { generateId } from "@/lib/generateId";
 import api from "./api";
+
+type KvRow = { uiId?: string; id?: number | null; key?: string; value?: string; enabled?: boolean };
+
+function withUiIds(rows: KvRow[]): KvRow[] {
+    return rows.map((r) => ({
+        ...r,
+        uiId: r.uiId || generateId(),
+        enabled: r.enabled ?? true,
+    }));
+}
+
+/** Flat JSON bodies (e.g. scraper) should not send an empty editor `content` wrapper. */
+function normalizeJsonBody(bodyData: Record<string, unknown>): Record<string, unknown> {
+    if (!bodyData || typeof bodyData !== "object") return {};
+    const { content, ...rest } = bodyData;
+    if (rest.url != null || rest.extract != null) {
+        return rest;
+    }
+    if (typeof content === "string" && content.trim()) {
+        try {
+            return JSON.parse(content) as Record<string, unknown>;
+        } catch {
+            return { content };
+        }
+    }
+    return bodyData;
+}
 
 function wsParams(workspaceId: number) {
     return { params: { workspace_id: workspaceId } };
@@ -53,16 +81,21 @@ export const connectionService = {
         const urlBase = stripQuery(store.url || "");
         const endpointPath = store.groupId ? extractRelativePath(urlBase, store.groupBaseUrl) : "";
 
+        const bodyMethod = BODY_METHOD_MAP[store.body?.activeType?.toLowerCase()] || 1;
+        const rawBody = (store.body?.bodyData || {}) as Record<string, unknown>;
+        const body =
+            bodyMethod === 3 ? normalizeJsonBody(rawBody) : rawBody;
+
         const payload: Record<string, unknown> = {
             name: store.connectionName || "Untitled Connection",
             url: urlBase,
             method: METHOD_MAP[store.method?.toUpperCase()] || 1,
             auth_type: AUTH_MAP[store.authType?.toLowerCase()] || 0,
-            body_method: BODY_METHOD_MAP[store.body?.activeType?.toLowerCase()] || 1,
-            body: store.body?.bodyData || {},
-            headers: store.headers.filter((h: any) => h.key),
-            params: store.params.filter((p: any) => p.key),
-            variables: store.variables.filter((v: any) => v.key),
+            body_method: bodyMethod,
+            body,
+            headers: withUiIds(store.headers.filter((h: KvRow) => h.key)),
+            params: withUiIds(store.params.filter((p: KvRow) => p.key)),
+            variables: withUiIds(store.variables.filter((v: KvRow) => v.key)),
             pagination: store.pagination || { strategy: "none", config: {} },
             auth_config: getAuthConfig(),
             fetch_settings: store.fetchSettings || { retries: 3, timeout: 30 },

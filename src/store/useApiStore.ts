@@ -2,6 +2,7 @@
 import { create } from "zustand";
 import { useConnectionStore } from "./useConnectionStore";
 import { connectionService } from "@/services/connection.service";
+import { getApiErrorMessage } from "@/lib/formatApiError";
 
 interface ApiState {
     isSaving: boolean;
@@ -34,9 +35,10 @@ export const useApiStore = create<ApiState>((set) => ({
             }
 
             set({ isSaving: false, lastSaved: new Date() });
-        } catch (err: any) {
-            set({ isSaving: false, error: err.message });
-            throw err; // Let the UI handle the notification
+        } catch (err: unknown) {
+            const msg = getApiErrorMessage(err, 'Failed to save connection');
+            set({ isSaving: false, error: msg });
+            throw new Error(msg);
         }
     },
 

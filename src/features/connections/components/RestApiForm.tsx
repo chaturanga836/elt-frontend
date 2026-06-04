@@ -10,6 +10,7 @@ import { useConnectionStore } from '@/store/useConnectionStore';
 import { Alert, Button, Input, message } from 'antd';
 import { useApiStore } from '@/store/useApiStore';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { getApiErrorMessage } from '@/lib/formatApiError';
 
 interface RestApiFormProps {
   onSaved?: () => void;
@@ -35,8 +36,8 @@ export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
       await saveCurrentConnection(workspaceId);
       message.success(connectionId ? "Connection updated" : "Connection saved");
       onSaved?.();
-    } catch (error: any) {
-      message.error(error.message || "Failed to save connection");
+    } catch (error: unknown) {
+      message.error(getApiErrorMessage(error, 'Failed to save connection'));
     }
   };
 

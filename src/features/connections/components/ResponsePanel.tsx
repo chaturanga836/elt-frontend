@@ -64,7 +64,14 @@ function formatData(data: any, format: string): string {
 export default function ResponsePanel({ response }: ResponsePanelProps) {
   if (!response) return null;
 
-  const formattedBody = formatData(response.data, response.response_format);
+  const statusCode = Number(response.status_code) || 0;
+  const responseTimeMs = Number(response.response_time_ms) || 0;
+  const responseFormat = response.response_format || 'text';
+  const responseHeaders = response.response_headers ?? {};
+  const curlCommand = typeof response.curl === 'string' ? response.curl : '';
+  const responseSize = Number(response.response_size) || 0;
+
+  const formattedBody = formatData(response.data, responseFormat);
 
   const tabItems = [
     {
@@ -75,11 +82,11 @@ export default function ResponsePanel({ response }: ResponsePanelProps) {
       children: (
         <div className="relative">
           <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
-            <Tag className="text-[10px]">{response.response_format.toUpperCase()}</Tag>
+            <Tag className="text-[10px]">{responseFormat.toUpperCase()}</Tag>
             <CopyButton text={formattedBody} />
           </div>
           <pre className="bg-[#1e1e1e] text-[#d4d4d4] rounded-lg p-4 text-xs font-mono overflow-auto max-h-80 leading-5">
-            {response.response_format === 'json' ? (
+            {responseFormat === 'json' ? (
               <JsonHighlight json={formattedBody} />
             ) : (
               formattedBody
@@ -96,10 +103,10 @@ export default function ResponsePanel({ response }: ResponsePanelProps) {
       children: (
         <div className="relative">
           <div className="absolute top-2 right-2 z-10">
-            <CopyButton text={response.curl} />
+            <CopyButton text={curlCommand} />
           </div>
           <pre className="bg-[#1e1e1e] text-[#d4d4d4] rounded-lg p-4 text-xs font-mono overflow-auto max-h-60 leading-5 whitespace-pre-wrap">
-            {response.curl}
+            {curlCommand}
           </pre>
         </div>
       ),
@@ -111,7 +118,7 @@ export default function ResponsePanel({ response }: ResponsePanelProps) {
       ),
       children: (
         <div className="bg-[#1e1e1e] rounded-lg p-4 overflow-auto max-h-60">
-          {Object.entries(response.response_headers).map(([key, value]) => (
+          {Object.entries(responseHeaders).map(([key, value]) => (
             <div key={key} className="flex gap-3 py-1 border-b border-white/5 last:border-0">
               <span className="text-[#569cd6] text-xs font-mono font-medium min-w-[160px]">{key}</span>
               <span className="text-[#ce9178] text-xs font-mono break-all">{value}</span>
@@ -128,16 +135,16 @@ export default function ResponsePanel({ response }: ResponsePanelProps) {
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-muted/30">
         <div className="flex items-center gap-3">
           <Text className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Response</Text>
-          <StatusBadge code={response.status_code} />
+          <StatusBadge code={statusCode} />
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Clock size={12} />
-            <span className="text-[11px] font-mono">{response.response_time_ms} ms</span>
+            <span className="text-[11px] font-mono">{responseTimeMs} ms</span>
           </div>
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Database size={12} />
-            <span className="text-[11px] font-mono">{formatBytes(response.response_size)}</span>
+            <span className="text-[11px] font-mono">{formatBytes(responseSize)}</span>
           </div>
         </div>
       </div>
