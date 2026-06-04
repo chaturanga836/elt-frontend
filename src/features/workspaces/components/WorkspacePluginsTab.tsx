@@ -55,7 +55,7 @@ export default function WorkspacePluginsTab({ workspaceId }: Props) {
         message: enabled ? 'Plugin enabled' : 'Plugin disabled',
         description:
           res.scraper_api_key && pluginKey === SCRAPING_PLUGIN_KEY
-            ? 'Copy your scraper API key below — it is only shown once.'
+            ? 'Copy your scraper API key below. REST group Scrape URL was (re)created — key is shown once.'
             : undefined,
       });
       await refresh();
