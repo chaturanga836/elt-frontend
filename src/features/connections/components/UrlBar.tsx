@@ -22,7 +22,7 @@ const methodColorMap: Record<HttpMethod, string> = {
 const methods: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 
 interface UrlBarProps {
-  onTestResult?: (result: TestResponse) => void;
+  onTestResult?: (result: TestResponse | null) => void;
 }
 
 export default function UrlBar({ onTestResult }: UrlBarProps = {}) {
