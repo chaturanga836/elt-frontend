@@ -1,7 +1,7 @@
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import { Node, Edge, useReactFlow } from '@xyflow/react';
-import { Button, Space, Input } from 'antd';
+import { Button, Input } from 'antd';
 import { PlusOutlined, SaveOutlined, EditOutlined, ApiOutlined } from '@ant-design/icons';
 import { usePipelineStore } from "@/store/usePipeStore";
 import PipelineCanvasInner from './PipelineCanvasInner';
@@ -19,6 +19,7 @@ import {
   isPipelineNameValid,
   pipelineNameValidationMessage,
 } from '@/lib/validatePipelineName';
+import styles from '../pipeline-editor.module.css';
 
 export default function PipelineCanvas() {
   const workspaceId = useWorkspaceId();
@@ -66,7 +67,9 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' = 'taskNode') => {
     type: nodeType,
     position: { x: newX, y: 200 },
     data: { 
-      label: nodeType === 'restNode' ? `REST ${taskNodes.length + 1}` : `Task ${taskNodes.length + 1}`, 
+      label: nodeType === 'restNode'
+        ? `Connection ${taskNodes.length + 1}`
+        : `Script ${taskNodes.length + 1}`, 
       node_uuid: `task_${uuidv4()}`,
       id: undefined 
     }
@@ -215,33 +218,21 @@ const payload: PipelineCreatePayload = {
   };
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{
-        padding: '10px 20px',
-        background: '#fff',
-        borderBottom: '1px solid #f0f0f0',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        zIndex: 100,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-      }}>
-        <Space size="middle">
+    <>
+      <header className={styles.toolbar}>
+        <div className={styles.toolbarLeft}>
           <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => clickAddNode('taskNode')}
           >
-            Add Task
+            Add Script Node
           </Button>
-          <Button
-            icon={<ApiOutlined />}
-            onClick={() => clickAddNode('restNode')}
-          >
-            Add REST Endpoint
+          <Button icon={<ApiOutlined />} onClick={() => clickAddNode('restNode')}>
+            Add Connection Node
           </Button>
 
-          <div style={{ width: '1px', height: '24px', background: '#f0f0f0', margin: '0 8px' }} />
+          <div style={{ width: 1, height: 24, background: '#f0f0f0', margin: '0 4px' }} />
 
           <Input
             prefix={<EditOutlined style={{ color: '#bfbfbf' }} />}
@@ -251,32 +242,33 @@ const payload: PipelineCreatePayload = {
             status={name && !isPipelineNameValid(name) ? 'error' : undefined}
             variant="borderless"
             style={{
-              fontSize: '15px',
+              fontSize: 15,
               fontWeight: 600,
-              width: '250px',
+              width: 250,
+              maxWidth: 'min(250px, 40vw)',
               backgroundColor: '#f5f5f5',
-              borderRadius: '6px'
+              borderRadius: 6,
             }}
           />
-        </Space>
+        </div>
 
-        <Space>
+        <div className={styles.toolbarRight}>
           <Button
             type="primary"
             icon={<SaveOutlined />}
             loading={isSaving}
             disabled={!isPipelineNameValid(name)}
             onClick={handleSave}
-            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', borderRadius: '6px' }}
+            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', borderRadius: 6 }}
           >
             Save Pipeline
           </Button>
-        </Space>
-      </div>
+        </div>
+      </header>
 
-      <div style={{ flexGrow: 1 }}>
+      <div className={styles.canvasArea}>
         <PipelineCanvasInner />
       </div>
-    </div>
+    </>
   );
 }

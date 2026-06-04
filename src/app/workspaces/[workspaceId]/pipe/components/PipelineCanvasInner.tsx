@@ -14,6 +14,7 @@ import CodeEdge from './CodeEdge';
 import StartNode from "./StartNode";
 import EndNode from "./EndNode";
 import RestEndpointNode from "./RestEndpointNode";
+import { rebuildChainEdges } from '@/lib/pipelineChain';
 
 const GRID_SIZE_X = 200;
 const GRID_SIZE_Y = 20;
@@ -31,14 +32,20 @@ const edgeTypes = { //code: CodeEdge
 
 const PipelineCanvasInner = () => {
   // Pull deleteNodes from the store
-  const { 
-    nodes, 
-    edges, 
-    onNodesChange, 
-    onEdgesChange, 
-    onConnect, 
-    deleteNodes 
+  const {
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    deleteNodes,
+    setEdges,
+    getNodes,
   } = usePipelineStore();
+
+  const handleNodeDragStop = () => {
+    setEdges(rebuildChainEdges(getNodes()));
+  };
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -48,7 +55,7 @@ const PipelineCanvasInner = () => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        // Add this line to handle the 'Delete' or 'Backspace' keys
+        onNodeDragStop={handleNodeDragStop}
         onNodesDelete={deleteNodes} 
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}

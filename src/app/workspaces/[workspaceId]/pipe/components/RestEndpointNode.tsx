@@ -109,7 +109,7 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
           <Avatar size={22} shape="square" icon={<ApiOutlined />} style={{ backgroundColor: '#13c2c2' }} />
           <div style={{ minWidth: 0 }}>
             <Text strong style={{ fontSize: 11 }} ellipsis>
-              {selected?.name || 'Select REST Endpoint'}
+              {selected?.name || 'Select connection'}
             </Text>
             <div style={{ lineHeight: 1.2 }}>
               <Text type="secondary" style={{ fontSize: 10 }} ellipsis>
@@ -123,7 +123,7 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
       <Handle type="source" position={Position.Right} style={{ background: '#13c2c2' }} />
 
       <Modal
-        title="REST API node"
+        title="Connection node"
         open={open}
         onCancel={() => setOpen(false)}
         onOk={onOk}

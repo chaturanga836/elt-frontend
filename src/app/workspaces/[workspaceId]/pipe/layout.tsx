@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
+import styles from './pipeline-editor.module.css';
 
 export default function PipeLayout({
   children,
@@ -12,7 +13,7 @@ export default function PipeLayout({
 }) {
   return (
     <ReactFlowProvider>
-      <div className="pipeline-system-wrapper">
+      <div className={styles.root}>
         {children}
         {modal}
       </div>

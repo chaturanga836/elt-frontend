@@ -4,6 +4,8 @@ export interface BoundaryHookConfig {
   hook_task_id?: number | null;
   hook_when?: HookWhen;
   label?: string;
+  /** Optional JSON passed into the first step when the pipeline is run standalone. */
+  start_input?: unknown;
   /** Task-node sync settings — see types/syncConfig.ts */
   sync?: import('./syncConfig').NodeSyncConfig;
 }

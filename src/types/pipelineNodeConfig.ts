@@ -23,7 +23,14 @@ export function buildPipelineNodeConfig(
     };
   }
   if (nodeType === 0 || nodeType === 2) {
-    return { ...buildBoundaryNodeConfig(data, nodeType === 2) };
+    const boundary = { ...buildBoundaryNodeConfig(data, nodeType === 2) };
+    if (nodeType === 0) {
+      const existing = (data.node_config as Record<string, unknown>) || {};
+      if (existing.start_input !== undefined) {
+        boundary.start_input = existing.start_input;
+      }
+    }
+    return boundary;
   }
   const existing = (data.node_config as Record<string, unknown>) || {};
   return { ...existing };

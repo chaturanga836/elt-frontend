@@ -45,7 +45,7 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
         {!selected ? (
           <Flex align="center" gap={4} justify="center" style={{ width: '100%' }}>
             <PlusOutlined style={{ fontSize: 10, color: '#8c8c8c' }} />
-            <Text style={{ fontSize: 10, color: '#8c8c8c' }}>Select Task</Text>
+            <Text style={{ fontSize: 10, color: '#8c8c8c' }}>Select script</Text>
           </Flex>
         ) : (
           <Flex align="center" gap={6} style={{ width: '100%' }}>
