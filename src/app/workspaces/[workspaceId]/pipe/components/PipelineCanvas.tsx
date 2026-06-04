@@ -12,7 +12,7 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { PipelineCreatePayload } from '@/types/pipetypes';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
-import { buildBoundaryNodeConfig } from '@/types/boundaryHooks';
+import { buildPipelineNodeConfig } from '@/types/pipelineNodeConfig';
 import {
   PIPELINE_NAME_PLACEHOLDER,
   isPipelineNameValid,
@@ -41,7 +41,9 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' = 'taskNode') => {
   // 1. Safely match types using string literals from your active data log
   const startNode = currentNodes.find(n => n.type === 'startNode');
   const endNode = currentNodes.find(n => n.type === 'endNode');
-  const taskNodes = currentNodes.filter(n => n.type === 'taskNode');
+  const taskNodes = currentNodes.filter(
+    (n) => n.type === 'taskNode' || n.type === 'restNode',
+  );
 
   // 2. Find the reference x-coordinate
   const referenceNode = taskNodes.length > 0 
@@ -110,6 +112,38 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' = 'taskNode') => {
 
     const trimmedName = name!.trim();
 
+    const sortedNodes = [...nodes].sort((a, b) => a.position.x - b.position.x);
+
+    const hasRestNode = sortedNodes.some((n) => n.type === 'restNode');
+    const hasScraperParseTask = sortedNodes.some((n) => {
+      if (n.type !== 'taskNode') return false;
+      const cfg = (n.data as Record<string, unknown>)?.config as { name?: string } | undefined;
+      const taskName = (cfg?.name || (n.data as Record<string, unknown>)?.label || '') as string;
+      return /parse\s+scraper|scraper\s+response/i.test(taskName);
+    });
+    if (hasScraperParseTask && !hasRestNode) {
+      return notification.warning({
+        message: 'Scraper pipeline incomplete',
+        description:
+          'This task only parses scraper output. Add REST Endpoint between Start and the parse task, select your Scrape URL connection, then save.',
+      });
+    }
+
+    const restWithoutConnection = sortedNodes.filter(
+      (n) =>
+        n.type === 'restNode' &&
+        !(n.data as Record<string, unknown>)?.rest_connection_id &&
+        !((n.data as Record<string, unknown>)?.node_config as Record<string, unknown>)
+          ?.rest_connection_id,
+    );
+    if (restWithoutConnection.length > 0) {
+      return notification.warning({
+        message: 'REST endpoint not configured',
+        description:
+          'Open each REST node and select your saved Scrape URL connection before saving.',
+      });
+    }
+
     setIsSaving(true);
     const pipelineId = getId();
     const targetUuid = getCurrentUuid() || uuid || routePipelineUuid || uuidv4();
@@ -121,24 +155,21 @@ const payload: PipelineCreatePayload = {
     org_id: 1,
     workspace_id: workspaceId,
     canvas_structure: {
-      nodes: nodes,
+      nodes: sortedNodes,
       edges: edges,
       viewport: getViewport()
     },
-    // 2. Map React Flow nodes smoothly into your binary routing matrix schema
-    tasks: nodes.map((node, index) => {
-      // Find all inward targeted connections for this specific node element
-      const parentEdges = edges.filter((edge) => edge.target === node.id);
-      
-      // Pull IDs for dependencies (falls back to null if no connection exists)
-      const leftParentId = nodes[index -1]?.id || null;
-      const rightParentId = nodes[index + 1]?.id || null;
+    // Execution order follows left-to-right canvas layout (Start → REST → Task → End)
+    tasks: sortedNodes.map((node, index) => {
+      const leftParentId = index > 0 ? sortedNodes[index - 1].id : null;
+      const rightParentId =
+        index < sortedNodes.length - 1 ? sortedNodes[index + 1].id : null;
 
       const nodeType = mapNodeTypeToInt(node.type);
       const isBoundary = nodeType === 0 || nodeType === 2;
-      const nodeConfig = buildBoundaryNodeConfig(
+      const nodeConfig = buildPipelineNodeConfig(
         node.data as Record<string, unknown>,
-        nodeType === 2,
+        nodeType,
       );
 
       const nodeData = node.data as Record<string, unknown>;

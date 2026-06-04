@@ -11,7 +11,8 @@ export interface UrlViolation {
   endCol: number;
 }
 
-const URL_REGEX = /https?:\/\/[^\s"'`)\]}>,:;]+/gi;
+// Colon must be allowed so host:port URLs (e.g. http://172.17.0.1:8088) are not truncated.
+const URL_REGEX = /https?:\/\/[^\s"'`)\]}>,;]+/gi;
 
 const ALWAYS_ALLOWED_REGEX = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|::1)(:\d+)?(\/.*)?$/i;
 

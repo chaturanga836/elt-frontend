@@ -166,9 +166,12 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
       name: connection.name,
       source_type: connection.source_type,
       prototype_id: connection.prototype_id || null,
-      url: connection.url || null,
     };
-    return `\n# Connection Reference\n# Use this object to resolve credentials/runtime details in your backend worker.\nconnection_ref = ${JSON.stringify(payload, null, 2)}\n`;
+    return (
+      `\n# Connection reference (metadata only — no HTTP from task scripts)\n` +
+      `# For scraper/REST calls: add a REST Endpoint node on the pipeline canvas.\n` +
+      `connection_ref = ${JSON.stringify(payload, null, 2)}\n`
+    );
   };
 
   const insertSnippetInEditor = (snippet: string) => {
