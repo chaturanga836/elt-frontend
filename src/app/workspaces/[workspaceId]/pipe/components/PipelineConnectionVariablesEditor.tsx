@@ -56,7 +56,9 @@ export default function PipelineConnectionVariablesEditor({
       </div>
       <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 12 }}>
         Values apply only to this connection node on this pipeline. The saved REST connection
-        is not modified. Use {'{{input.path}}'} to read from the previous step.
+        is not modified. For Scrape URL, set <Text code>url</Text> to the page to fetch (auth
+        uses the connection bearer token — you do not need to paste the API key here). Use{' '}
+        {'{{input.path}}'} when the previous step supplies data.
       </Text>
 
       {rows.map((row) => (

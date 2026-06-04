@@ -52,7 +52,8 @@ export function rowsFromRuntimeEffective(
   extractTemplateKeys(effective?.body, keys);
   extractTemplateKeys(effective?.params, keys);
 
-  return [...keys].sort().map((key) => ({
+  const sorted = [...keys].sort();
+  return sorted.map((key) => ({
     uiId: generateId(),
     key,
     value: valueByKey.get(key) ?? '',
