@@ -218,7 +218,7 @@ const payload: PipelineCreatePayload = {
   };
 
   return (
-    <>
+    <div className={styles.editorShell}>
       <header className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
           <Button
@@ -269,6 +269,6 @@ const payload: PipelineCreatePayload = {
       <div className={styles.canvasArea}>
         <PipelineCanvasInner />
       </div>
-    </>
+    </div>
   );
 }

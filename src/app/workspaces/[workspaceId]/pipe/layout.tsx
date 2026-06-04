@@ -13,7 +13,7 @@ export default function PipeLayout({
 }) {
   return (
     <ReactFlowProvider>
-      <div className={styles.root}>
+      <div className={styles.pipeLayout}>
         {children}
         {modal}
       </div>

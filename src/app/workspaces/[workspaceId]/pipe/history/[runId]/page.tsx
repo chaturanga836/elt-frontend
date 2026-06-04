@@ -17,7 +17,14 @@ export default function PipelineRunDetailPage() {
     const runId = Number(params.runId);
 
     return (
-        <div style={{ padding: '24px' }}>
+        <div
+            style={{
+                padding: '24px',
+                paddingBottom: 48,
+                minHeight: '100%',
+                boxSizing: 'border-box',
+            }}
+        >
             <Button
                 type="link"
                 icon={<ArrowLeftOutlined />}
