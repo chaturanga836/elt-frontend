@@ -9,6 +9,10 @@ import { TaskService } from '@/services/task.service';
 import { ExternalLinkService } from '@/services/external-link.service';
 import { connectionService } from '@/services/connection.service';
 import { detectExternalUrls, UrlViolation } from '@/lib/validateExternalUrls';
+import {
+  buildParseScraperTaskScript,
+  isScrapeUrlConnection,
+} from '@/lib/scraperTaskScript';
 import Link from 'next/link';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
@@ -201,8 +205,28 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
   };
 
   const handleInsertConnection = (connection: ConnectionRecord) => {
-    insertSnippetInEditor(buildConnectionSnippet(connection));
     setIsConnectionModalOpen(false);
+
+    if (isScrapeUrlConnection(connection)) {
+      const script = buildParseScraperTaskScript(connection.id, connection.name);
+      const editor = editorRef.current;
+      if (editor) {
+        editor.setValue(script);
+        setTaskData((prev) => ({ ...prev, script }));
+        validateCode(script);
+      } else {
+        setTaskData((prev) => ({ ...prev, script }));
+        validateCode(script);
+      }
+      api.info({
+        message: 'Scrape URL parse template inserted',
+        description:
+          'On the pipeline: Add REST Endpoint → select Scrape URL → place before this task. Remove any connection_ref block.',
+      });
+      return;
+    }
+
+    insertSnippetInEditor(buildConnectionSnippet(connection));
     api.success({
       message: 'Connection inserted',
       description: `"${connection.name}" reference added to script.`,
