@@ -16,8 +16,9 @@ import {
     PipelineRunDetail,
     PipelineNodeLog,
 } from '@/services/pipe.service';
-import { formatJsonBlock, statusTag } from './runDetailUtils';
+import { statusTag } from './runDetailUtils';
 import RunReportPanel from '@/features/reports/components/RunReportPanel';
+import RunPayloadJsonBlock from './RunPayloadJsonBlock';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -123,34 +124,25 @@ export default function RunDetailView({ runId }: RunDetailViewProps) {
                 <div>
                     <Text strong>Node UUID:</Text> <Text code>{log.node_uuid}</Text>
                 </div>
-                {log.stdout_logs && (
-                    <div>
-                        <Text strong>Stdout</Text>
-                        <pre style={{ background: '#f5f5f5', padding: 12, borderRadius: 6, overflow: 'auto', maxHeight: 200 }}>
-                            {log.stdout_logs}
-                        </pre>
-                    </div>
-                )}
-                <div>
-                    <Text strong>Input</Text>
-                    <pre style={{ background: '#f5f5f5', padding: 12, borderRadius: 6, overflow: 'auto', maxHeight: 240 }}>
-                        {formatJsonBlock(log.input_data)}
-                    </pre>
-                </div>
-                <div>
-                    <Text strong>Output</Text>
-                    <pre style={{ background: '#f5f5f5', padding: 12, borderRadius: 6, overflow: 'auto', maxHeight: 240 }}>
-                        {formatJsonBlock(log.output_data)}
-                    </pre>
-                </div>
-                {log.error_traceback && (
-                    <div>
-                        <Text strong type="danger">Error</Text>
-                        <pre style={{ background: '#fff1f0', padding: 12, borderRadius: 6, overflow: 'auto', maxHeight: 280 }}>
-                            {log.error_traceback}
-                        </pre>
-                    </div>
-                )}
+                {log.stdout_logs ? (
+                    <RunPayloadJsonBlock
+                        label="Stdout"
+                        data={log.stdout_logs}
+                        language="plaintext"
+                        inlineMaxHeight={200}
+                        emptyText="(empty)"
+                    />
+                ) : null}
+                <RunPayloadJsonBlock label="Input" data={log.input_data} />
+                <RunPayloadJsonBlock label="Output" data={log.output_data} />
+                {log.error_traceback ? (
+                    <RunPayloadJsonBlock
+                        label="Error"
+                        data={log.error_traceback}
+                        language="plaintext"
+                        inlineMaxHeight={280}
+                    />
+                ) : null}
             </Space>
         ),
     }));
