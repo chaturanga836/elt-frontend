@@ -30,7 +30,7 @@ const { Title } = Typography;
 
 interface PipelineRun {
     id: number;
-    pipeline_uuid: string;
+    pipeline_name?: string | null;
     status: number;
     error_summary: string | null;
     started_at: string;
@@ -46,18 +46,18 @@ export default function HistoryComponent() {
 
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-    const [pipelineUuid, setPipelineUuid] = useState<string>('');
+    const [pipelineName, setPipelineName] = useState<string>('');
     const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined);
     const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
 
     const buildFetchParams = useCallback((): PipelineRunHistoryParams => ({
         page,
         limit: pageSize,
-        pipeline_uuid: pipelineUuid || undefined,
+        pipeline_name: pipelineName || undefined,
         status: statusFilter,
         start_date: dateRange?.[0]?.startOf('day').toISOString(),
         end_date: dateRange?.[1]?.endOf('day').toISOString(),
-    }), [page, pageSize, pipelineUuid, statusFilter, dateRange]);
+    }), [page, pageSize, pipelineName, statusFilter, dateRange]);
 
     const fetchHistory = useCallback(async () => {
         setLoading(true);
@@ -92,10 +92,12 @@ export default function HistoryComponent() {
             width: 90,
         },
         {
-            title: 'Pipeline UUID',
-            dataIndex: 'pipeline_uuid',
-            key: 'pipeline_uuid',
+            title: 'Pipeline',
+            dataIndex: 'pipeline_name',
+            key: 'pipeline_name',
             ellipsis: true,
+            render: (text: string | null | undefined) =>
+                text?.trim() ? text : <span style={{ color: '#ccc' }}>—</span>,
         },
         {
             title: 'Status',
@@ -147,9 +149,9 @@ export default function HistoryComponent() {
             <Card style={{ marginBottom: '16px' }} size="small">
                 <Space wrap size="middle">
                     <Input
-                        placeholder="Search Pipeline UUID"
-                        value={pipelineUuid}
-                        onChange={(e) => { setPipelineUuid(e.target.value); setPage(1); }}
+                        placeholder="Search pipeline name"
+                        value={pipelineName}
+                        onChange={(e) => { setPipelineName(e.target.value); setPage(1); }}
                         style={{ width: 240 }}
                         allowClear
                     />

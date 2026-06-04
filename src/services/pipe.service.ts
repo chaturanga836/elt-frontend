@@ -22,6 +22,7 @@ export interface PipelineFilterParams {
 // 1. Explicitly structure incoming log details matching your FastAPI backend
 export interface PipelineRunHistoryParams {
   pipeline_uuid?: string;
+  pipeline_name?: string;
   status?: number;
   start_date?: string; // ISO String format
   end_date?: string;   // ISO String format
@@ -47,6 +48,7 @@ export interface PipelineRunDetail {
   run: {
     id: number;
     pipeline_uuid: string;
+    pipeline_name?: string | null;
     pipeline_id: number;
     org_id: number;
     workspace_id: number;

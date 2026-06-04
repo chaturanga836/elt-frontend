@@ -81,14 +81,14 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
   // --- Initial State ---
   nodes: DEFAULT_NODES,
   edges: INITIAL_EDGES,
-  name: 'Untitled Pipeline',
+  name: null,
   uuid: null,
   id: null,
 
   resetPipeline: () => set({ 
     nodes: DEFAULT_NODES, 
     edges: INITIAL_EDGES, 
-    name: 'Untitled Pipeline',
+    name: null,
     id: null,
     uuid: null
   }),

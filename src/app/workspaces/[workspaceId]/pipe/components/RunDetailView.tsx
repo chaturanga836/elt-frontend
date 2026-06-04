@@ -159,8 +159,8 @@ export default function RunDetailView({ runId }: RunDetailViewProps) {
         <Space direction="vertical" style={{ width: '100%' }} size="large">
             <Descriptions column={1} size="small" bordered>
                 <Descriptions.Item label="Run ID">{runDetail.run.id}</Descriptions.Item>
-                <Descriptions.Item label="Pipeline UUID">
-                    {runDetail.run.pipeline_uuid}
+                <Descriptions.Item label="Pipeline">
+                    {runDetail.run.pipeline_name?.trim() || '—'}
                 </Descriptions.Item>
                 <Descriptions.Item label="Status">
                     {statusTag(runDetail.run.status)}

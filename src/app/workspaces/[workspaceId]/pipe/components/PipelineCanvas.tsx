@@ -13,6 +13,11 @@ import { useParams } from 'next/navigation';
 import { PipelineCreatePayload } from '@/types/pipetypes';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { buildBoundaryNodeConfig } from '@/types/boundaryHooks';
+import {
+  PIPELINE_NAME_PLACEHOLDER,
+  isPipelineNameValid,
+  pipelineNameValidationMessage,
+} from '@/lib/validatePipelineName';
 
 export default function PipelineCanvas() {
   const workspaceId = useWorkspaceId();
@@ -98,9 +103,12 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' = 'taskNode') => {
   };
 
   const handleSave = async () => {
-    if (!name?.trim()) {
-      return notification.warning({ message: 'Name required', description: 'Please name your pipeline.' });
+    const nameError = pipelineNameValidationMessage(name);
+    if (nameError) {
+      return notification.warning({ message: 'Invalid pipeline name', description: nameError });
     }
+
+    const trimmedName = name!.trim();
 
     setIsSaving(true);
     const pipelineId = getId();
@@ -109,7 +117,7 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' = 'taskNode') => {
 const payload: PipelineCreatePayload = {
     ...(pipelineId && { id: pipelineId }),
     pipeline_uuid: targetUuid,
-    name: name ?? "Untitled Pipeline",
+    name: trimmedName,
     org_id: 1,
     workspace_id: workspaceId,
     canvas_structure: {
@@ -207,7 +215,8 @@ const payload: PipelineCreatePayload = {
             prefix={<EditOutlined style={{ color: '#bfbfbf' }} />}
             value={name ?? ''}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Enter Pipeline Name"
+            placeholder={PIPELINE_NAME_PLACEHOLDER}
+            status={name && !isPipelineNameValid(name) ? 'error' : undefined}
             variant="borderless"
             style={{
               fontSize: '15px',
@@ -224,6 +233,7 @@ const payload: PipelineCreatePayload = {
             type="primary"
             icon={<SaveOutlined />}
             loading={isSaving}
+            disabled={!isPipelineNameValid(name)}
             onClick={handleSave}
             style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', borderRadius: '6px' }}
           >
