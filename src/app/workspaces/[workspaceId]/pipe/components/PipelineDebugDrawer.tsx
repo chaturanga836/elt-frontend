@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Drawer, Space, Spin, Tag, Typography } from 'antd';
 import { CaretRightOutlined, ReloadOutlined } from '@ant-design/icons';
 import {
@@ -38,6 +38,27 @@ const INITIAL_DEBUG_STATE: DebugState = {
   atEnd: false,
 };
 
+const DEBUG_DRAWER_HEIGHT_KEY = 'elt.pipelineDebugDrawerHeight';
+const DEFAULT_HEIGHT_RATIO = 0.42;
+const MIN_DRAWER_HEIGHT_PX = 160;
+const MAX_DRAWER_HEIGHT_RATIO = 0.88;
+
+function clampDrawerHeight(height: number): number {
+  if (typeof window === 'undefined') return height;
+  const maxHeight = Math.floor(window.innerHeight * MAX_DRAWER_HEIGHT_RATIO);
+  return Math.min(maxHeight, Math.max(MIN_DRAWER_HEIGHT_PX, height));
+}
+
+function readStoredDrawerHeight(): number {
+  if (typeof window === 'undefined') return 320;
+  const stored = sessionStorage.getItem(DEBUG_DRAWER_HEIGHT_KEY);
+  const parsed = stored ? Number(stored) : NaN;
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return clampDrawerHeight(parsed);
+  }
+  return clampDrawerHeight(Math.floor(window.innerHeight * DEFAULT_HEIGHT_RATIO));
+}
+
 function payloadBeforeStep(stepLogs: PipelineDebugStepResult[], targetStep: number): unknown {
   if (targetStep <= 0) return null;
   const prev = stepLogs.find((log) => log.step_index === targetStep - 1);
@@ -72,6 +93,10 @@ export default function PipelineDebugDrawer({
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [drawerHeight, setDrawerHeight] = useState(readStoredDrawerHeight);
+  const resizingRef = useRef(false);
+  const resizeStartYRef = useRef(0);
+  const resizeStartHeightRef = useRef(0);
 
   const resetDebug = useCallback(() => {
     setDebugState(INITIAL_DEBUG_STATE);
@@ -84,6 +109,75 @@ export default function PipelineDebugDrawer({
     if (!open) return;
     resetDebug();
   }, [open, resetDebug]);
+
+  useEffect(() => {
+    sessionStorage.setItem(DEBUG_DRAWER_HEIGHT_KEY, String(drawerHeight));
+  }, [drawerHeight]);
+
+  useEffect(() => {
+    const stopResizing = () => {
+      if (!resizingRef.current) return;
+      resizingRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    const onPointerMove = (clientY: number) => {
+      if (!resizingRef.current) return;
+      const delta = resizeStartYRef.current - clientY;
+      setDrawerHeight(
+        clampDrawerHeight(resizeStartHeightRef.current + delta),
+      );
+    };
+
+    const onMouseMove = (event: MouseEvent) => {
+      onPointerMove(event.clientY);
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (!resizingRef.current) return;
+      event.preventDefault();
+      onPointerMove(event.touches[0]?.clientY ?? resizeStartYRef.current);
+    };
+
+    const onWindowResize = () => {
+      setDrawerHeight((height) => clampDrawerHeight(height));
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', stopResizing);
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', stopResizing);
+    window.addEventListener('resize', onWindowResize);
+
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', stopResizing);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', stopResizing);
+      window.removeEventListener('resize', onWindowResize);
+      stopResizing();
+    };
+  }, []);
+
+  const beginResize = (clientY: number) => {
+    resizingRef.current = true;
+    resizeStartYRef.current = clientY;
+    resizeStartHeightRef.current = drawerHeight;
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  const handleResizeMouseDown = (event: React.MouseEvent) => {
+    event.preventDefault();
+    beginResize(event.clientY);
+  };
+
+  const handleResizeTouchStart = (event: React.TouchEvent) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    beginResize(touch.clientY);
+  };
 
   useEffect(() => {
     if (!open || !pipelineUuid) return;
@@ -192,14 +286,27 @@ export default function PipelineDebugDrawer({
 
   return (
     <Drawer
-      title="Pipeline step debug"
+      title={
+        <div className={styles.debugDrawerTitleWrap}>
+          <div
+            className={styles.debugDrawerResizeHandle}
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Resize debug panel"
+            onMouseDown={handleResizeMouseDown}
+            onTouchStart={handleResizeTouchStart}
+          />
+          <span>Pipeline step debug</span>
+        </div>
+      }
       placement="bottom"
-      height="42vh"
+      height={drawerHeight}
       open={open}
       onClose={onClose}
       destroyOnHidden
       className={styles.debugDrawer}
       styles={{
+        header: { position: 'relative' },
         body: { padding: '12px 20px', overflow: 'auto' },
       }}
     >

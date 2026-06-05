@@ -67,6 +67,40 @@
   max-width: 100% !important;
 }
 
+.debugDrawerTitleWrap {
+  position: relative;
+  padding-top: 10px;
+}
+
+.debugDrawerResizeHandle {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(120px, 40%);
+  height: 12px;
+  cursor: ns-resize;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.debugDrawerResizeHandle::before {
+  content: '';
+  width: 48px;
+  height: 4px;
+  border-radius: 999px;
+  background: #d9d9d9;
+  transition: background-color 0.15s ease;
+}
+
+.debugDrawerResizeHandle:hover::before,
+.debugDrawerResizeHandle:active::before {
+  background: #8c8c8c;
+}
+
 .debugDrawerToolbar {
   display: flex;
   align-items: center;
