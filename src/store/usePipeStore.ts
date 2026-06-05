@@ -1,16 +1,15 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  Connection, 
-  Edge, 
-  Node, 
-  OnNodesChange, 
-  OnEdgesChange, 
-  OnConnect, 
-  applyNodeChanges, 
-  applyEdgeChanges, 
-  addEdge 
+import {
+  Edge,
+  Node,
+  OnNodesChange,
+  OnEdgesChange,
+  OnConnect,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from '@xyflow/react';
+import { rebuildChainEdges } from '@/lib/pipelineChain';
 
 const GRID_SIZE_X = 200;
 
@@ -123,15 +122,9 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
     set({ edges: applyEdgeChanges(changes, get().edges) });
   },
 
-  onConnect: (connection) => {
-    const edges = get().edges;
-    const newEdge: Edge = {
-      ...connection,
-      id: `e-${connection.source}-${connection.target}`,
-      animated: true,
-      style: { strokeWidth: 2 }
-    };
-    set({ edges: addEdge(newEdge, edges) });
+  onConnect: () => {
+    // Linear pipelines: order is left → right; rebuild instead of branching edges.
+    set({ edges: rebuildChainEdges(get().nodes) });
   },
 
   // --- Core API Data Synchronization Setters ---
@@ -208,22 +201,22 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
     });
   },
 
-  setPipeline: (id, uuid, nodes, edges, name) => {
-    set({ id, uuid, nodes, edges, name });
+  setPipeline: (id, uuid, nodes, _edges, name) => {
+    set({ id, uuid, nodes, edges: rebuildChainEdges(nodes), name });
   },
 
   deleteNodes: (nodesToDelete: Node[]) => {
-    set((state) => ({
-      nodes: state.nodes.filter((node) => {
-        // FIXED: Enforce type matches on string variants '0' and '2'
-        const isProtected = node.type === '0' || node.type === '2' || node.id === 'start' || node.id === 'end';
-        return isProtected || !nodesToDelete.some((n) => n.id === node.id);
-      }),
-      edges: state.edges.filter(
-        (edge) =>
-          !nodesToDelete.some((n) => n.id === edge.source || n.id === edge.target)
-      ),
-    }));
+    const nodes = get().nodes.filter((node) => {
+      const isProtected =
+        node.type === '0' ||
+        node.type === '2' ||
+        node.type === 'startNode' ||
+        node.type === 'endNode' ||
+        node.id === 'start' ||
+        node.id === 'end';
+      return isProtected || !nodesToDelete.some((n) => n.id === node.id);
+    });
+    set({ nodes, edges: rebuildChainEdges(nodes) });
   },
 
   updateNodePosition: (nodeId, position) => {

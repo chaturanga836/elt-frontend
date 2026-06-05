@@ -150,16 +150,16 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
         size="small"
         hoverable
         style={{
-          width: 220,
+          width: 148,
           borderRadius: 6,
           border: selected ? '1px solid #13c2c2' : '1px dashed #d9d9d9',
           cursor: 'pointer',
         }}
-        styles={{ body: { padding: '8px' } }}
+        styles={{ body: { padding: '4px 8px' } }}
         onClick={openModal}
       >
         <Flex align="center" gap={8}>
-          <Avatar size={22} shape="square" icon={<ApiOutlined />} style={{ backgroundColor: '#13c2c2' }} />
+          <Avatar size={20} shape="square" icon={<ApiOutlined />} style={{ backgroundColor: '#13c2c2' }} />
           <div style={{ minWidth: 0 }}>
             <Text strong style={{ fontSize: 11 }} ellipsis>
               {selected?.name || 'Select connection'}

@@ -58,7 +58,8 @@ const PipelineCanvasInner = () => {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeDragStop={handleNodeDragStop}
-        onNodesDelete={deleteNodes} 
+        onNodesDelete={deleteNodes}
+        nodesConnectable={false}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         snapToGrid={true}

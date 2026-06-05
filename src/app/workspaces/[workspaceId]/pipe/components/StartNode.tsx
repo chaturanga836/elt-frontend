@@ -45,11 +45,11 @@ const StartNode = ({ id, data }: { id: string; data: Record<string, unknown> }) 
       <Card
         size="small"
         style={{
-          width: 200,
+          width: 148,
           background: '#f6ffed',
           border: selected ? '1px solid #52c41a' : '1px dashed #b7eb8f',
         }}
-        styles={{ body: { padding: '8px' } }}
+        styles={{ body: { padding: '4px 8px' } }}
       >
         <Flex align="center" gap={6} className="mb-2">
           <Avatar

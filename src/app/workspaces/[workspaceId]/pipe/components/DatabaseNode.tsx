@@ -134,17 +134,17 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
         size="small"
         hoverable
         style={{
-          width: 220,
+          width: 148,
           borderRadius: 6,
           border: selected ? '1px solid #722ed1' : '1px dashed #d9d9d9',
           cursor: 'pointer',
         }}
-        styles={{ body: { padding: '8px' } }}
+        styles={{ body: { padding: '4px 8px' } }}
         onClick={openModal}
       >
         <Flex align="center" gap={8}>
           <Avatar
-            size={22}
+            size={20}
             shape="square"
             icon={<DatabaseOutlined />}
             style={{ backgroundColor: '#722ed1' }}

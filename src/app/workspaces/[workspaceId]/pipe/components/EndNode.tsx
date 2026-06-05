@@ -18,11 +18,11 @@ const EndNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =>
       <Card
         size="small"
         style={{
-          width: 200,
+          width: 148,
           background: '#fff1f0',
           border: selected ? '1px solid #f5222d' : '1px dashed #ffa39e',
         }}
-        styles={{ body: { padding: '8px' } }}
+        styles={{ body: { padding: '4px 8px' } }}
       >
         <Flex align="center" gap={6} className="mb-2">
           <Avatar
