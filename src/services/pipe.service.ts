@@ -1,4 +1,4 @@
-import { PipelineCreatePayload } from '@/types/pipetypes';
+import { CanvasStructure, PipelineCreatePayload } from '@/types/pipetypes';
 import api from './api';
 
 export interface PipelineTask {
@@ -113,7 +113,7 @@ export const PipelineService = {
         id: number;
         pipeline_uuid: string;
         name: string;
-        canvas_structure?: { nodes?: unknown[]; edges?: unknown[] };
+        canvas_structure?: CanvasStructure;
       };
       nodes: Array<{
         node_uuid: string;

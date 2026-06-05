@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { useParams } from 'next/navigation';
+import type { Edge } from '@xyflow/react';
 import { Spin } from 'antd';
 import PipelineCanvas from '../components/PipelineCanvas';
 import { usePipelineStore } from '@/store/usePipeStore';
@@ -34,9 +35,9 @@ export default function Home() {
         const apiNodes = res.nodes || [];
         const pipeId = pipeline.id;
         const uuid = pipeline.pipeline_uuid;
-        const canvas = pipeline.canvas_structure || {};
-        const canvasNodes = canvas.nodes || [];
-        const initialEdges = canvas.edges || [];
+        const canvas = pipeline.canvas_structure;
+        const canvasNodes = canvas?.nodes ?? [];
+        const initialEdges: Edge[] = canvas?.edges ?? [];
 
         const taskIds = [
           ...new Set(
