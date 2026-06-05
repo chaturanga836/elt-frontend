@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useMemo } from 'react';
 import { usePipelineStore } from "@/store/usePipeStore";
 import { 
   Background, 
@@ -49,6 +50,18 @@ const PipelineCanvasInner = () => {
     setEdges(rebuildChainEdges(getNodes()));
   };
 
+  const chainKey = useMemo(
+    () =>
+      nodes
+        .map((n) => `${n.id}:${Math.round(n.position.x)}:${Math.round(n.position.y)}`)
+        .join('|'),
+    [nodes],
+  );
+
+  useEffect(() => {
+    setEdges(rebuildChainEdges(nodes));
+  }, [chainKey, nodes, setEdges]);
+
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <ReactFlow
@@ -59,7 +72,6 @@ const PipelineCanvasInner = () => {
         onConnect={onConnect}
         onNodeDragStop={handleNodeDragStop}
         onNodesDelete={deleteNodes}
-        nodesConnectable={false}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         snapToGrid={true}

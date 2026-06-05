@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Editor, OnMount } from '@monaco-editor/react';
 import { Input, Button, Card, Space, Breadcrumb, notification, Alert, Modal, List, Tag, Typography } from 'antd';
 import { SaveOutlined, ArrowLeftOutlined, CodeOutlined, WarningOutlined, LinkOutlined } from '@ant-design/icons';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { TaskService } from '@/services/task.service';
 import { ExternalLinkService } from '@/services/external-link.service';
 import { connectionService } from '@/services/connection.service';
@@ -16,6 +16,7 @@ import {
 import Link from 'next/link';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
+import { stashPipelineTaskPick } from '@/lib/pipelineTaskPick';
 
 type ConnectionRecord = {
   id: number;
@@ -35,6 +36,10 @@ const SOURCE_LABELS: Record<string, string> = {
 export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
   const workspaceId = useWorkspaceId();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromPipeline = searchParams.get('from') === 'pipeline';
+  const pipelineNodeId = searchParams.get('nodeId');
+  const pipelineReturnUrl = searchParams.get('returnUrl');
   const { Text } = Typography;
   const isEditMode = taskId != null && taskId > 0;
   const [loading, setLoading] = useState(false);
@@ -270,11 +275,20 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
           description: 'Task saved successfully.',
         });
       } else {
-        await TaskService.createTask(payload);
+        const created = await TaskService.createTask(payload);
         api.success({
           message: 'Task Created',
           description: 'Task created successfully.',
         });
+        if (fromPipeline && pipelineNodeId && created?.id) {
+          stashPipelineTaskPick({ nodeId: pipelineNodeId, task: created });
+          if (pipelineReturnUrl) {
+            router.push(pipelineReturnUrl);
+          } else {
+            router.back();
+          }
+          return;
+        }
       }
       router.push(workspacePath(workspaceId, 'task'));
     } catch (err: any) {

@@ -1,7 +1,7 @@
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import { Node, Edge, useReactFlow } from '@xyflow/react';
-import { Button, Input } from 'antd';
+import { Button, Input, Typography } from 'antd';
 import { PlusOutlined, SaveOutlined, EditOutlined, ApiOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { usePipelineStore } from "@/store/usePipeStore";
 import PipelineCanvasInner from './PipelineCanvasInner';
@@ -20,6 +20,8 @@ import {
   pipelineNameValidationMessage,
 } from '@/lib/validatePipelineName';
 import styles from '../pipeline-editor.module.css';
+
+const { Text } = Typography;
 
 export default function PipelineCanvas() {
   const workspaceId = useWorkspaceId();
@@ -252,6 +254,10 @@ const payload: PipelineCreatePayload = {
           <Button icon={<DatabaseOutlined />} onClick={() => clickAddNode('dbNode')}>
             Add Database Node
           </Button>
+
+          <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+            Drag nodes left → right to set run order
+          </Text>
 
           <div style={{ width: 1, height: 24, background: '#f0f0f0', margin: '0 4px' }} />
 

@@ -29,6 +29,9 @@ export interface TaskPickerModalProps {
   onSelect: (task: TaskResponse) => void;
   selectedId?: number | string | null;
   showCreateButton?: boolean;
+  /** When set, "Create" returns to this pipeline node after save. */
+  pipelineNodeId?: string;
+  pipelineReturnUrl?: string;
 }
 
 /**
@@ -41,6 +44,8 @@ export default function TaskPickerModal({
   onSelect,
   selectedId,
   showCreateButton = true,
+  pipelineNodeId,
+  pipelineReturnUrl,
 }: TaskPickerModalProps) {
   const workspaceId = useWorkspaceId();
   const router = useRouter();
@@ -103,10 +108,24 @@ export default function TaskPickerModal({
             type="dashed"
             block
             icon={<PlusOutlined />}
-            onClick={() => router.push(workspacePath(workspaceId, 'task/new'))}
+            onClick={() => {
+              onClose();
+              const params = new URLSearchParams();
+              if (pipelineNodeId) {
+                params.set('from', 'pipeline');
+                params.set('nodeId', pipelineNodeId);
+                if (pipelineReturnUrl) {
+                  params.set('returnUrl', pipelineReturnUrl);
+                }
+              }
+              const qs = params.toString();
+              router.push(
+                `${workspacePath(workspaceId, 'task/new')}${qs ? `?${qs}` : ''}`,
+              );
+            }}
             style={{ height: 40 }}
           >
-            Create new task
+            Create new script
           </Button>
         )}
 

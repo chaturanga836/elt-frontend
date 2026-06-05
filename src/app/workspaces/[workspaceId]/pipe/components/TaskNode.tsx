@@ -1,19 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
+import { useParams, usePathname } from 'next/navigation';
 import { Card, Avatar, Typography, Flex } from 'antd';
 import { SettingOutlined, PlusOutlined } from '@ant-design/icons';
 import { usePipelineStore } from '@/store/usePipeStore';
 import { TaskResponse } from '@/services/task.service';
 import TaskPickerModal from '@/features/orchestration/TaskPickerModal';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { workspacePath } from '@/lib/paths';
+import { consumePipelineTaskPick } from '@/lib/pipelineTaskPick';
 
 const { Text } = Typography;
 
 const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) => {
+  const workspaceId = useWorkspaceId();
+  const params = useParams();
+  const pathname = usePathname();
+  const pipelineSegment = params?.id;
+  const pipelineReturnUrl =
+    typeof pipelineSegment === 'string' && pipelineSegment !== 'new'
+      ? workspacePath(workspaceId, `pipe/${pipelineSegment}`)
+      : workspacePath(workspaceId, 'pipe/new');
+
   const [pickerOpen, setPickerOpen] = useState(false);
   const updateNodeData = usePipelineStore((state) => state.updateNodeData);
   const selected = (data.config as TaskResponse | null) || null;
+
+  useEffect(() => {
+    const task = consumePipelineTaskPick(id);
+    if (task) {
+      updateNodeData(id, { config: task, task_id: task.id });
+    }
+  }, [id, pathname, updateNodeData]);
 
   const onSelect = (item: TaskResponse) => {
     updateNodeData(id, {
@@ -65,11 +85,13 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
       <Handle type="source" position={Position.Right} style={{ background: '#1890ff' }} />
 
       <TaskPickerModal
-        title="Select pipeline task"
+        title="Select script"
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         selectedId={selected?.id}
         onSelect={onSelect}
+        pipelineNodeId={id}
+        pipelineReturnUrl={pipelineReturnUrl}
       />
     </div>
   );
