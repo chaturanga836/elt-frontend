@@ -14,6 +14,7 @@ import CodeEdge from './CodeEdge';
 import StartNode from "./StartNode";
 import EndNode from "./EndNode";
 import RestEndpointNode from "./RestEndpointNode";
+import DatabaseNode from "./DatabaseNode";
 import { rebuildChainEdges } from '@/lib/pipelineChain';
 
 const GRID_SIZE_X = 200;
@@ -23,6 +24,7 @@ const GRID_SIZE_Y = 20;
 const nodeTypes = { 
   taskNode: TaskNode,
   restNode: RestEndpointNode,
+  dbNode: DatabaseNode,
   startNode: StartNode,
   endNode: EndNode 
 };

@@ -10,7 +10,7 @@ export function coerceOptionalTaskId(value: unknown): number | null {
 /** Build persisted node_config for pipeline save payloads. */
 export function buildPipelineNodeConfig(
   data: Record<string, unknown>,
-  nodeType: 0 | 1 | 2 | 3,
+  nodeType: 0 | 1 | 2 | 3 | 4,
 ): Record<string, unknown> {
   if (nodeType === 3) {
     const existing = (data.node_config as Record<string, unknown>) || {};
@@ -20,6 +20,16 @@ export function buildPipelineNodeConfig(
       ...existing,
       ...(restConnectionId != null ? { rest_connection_id: restConnectionId } : {}),
       label: (existing.label as string) || (data.label as string) || 'REST Endpoint',
+    };
+  }
+  if (nodeType === 4) {
+    const existing = (data.node_config as Record<string, unknown>) || {};
+    const connectionId = existing.connection_id ?? data.connection_id;
+    return {
+      ...existing,
+      ...(connectionId != null ? { connection_id: connectionId } : {}),
+      source_type: 'db',
+      label: (existing.label as string) || (data.label as string) || 'Database',
     };
   }
   if (nodeType === 0 || nodeType === 2) {

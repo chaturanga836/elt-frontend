@@ -2,7 +2,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Node, Edge, useReactFlow } from '@xyflow/react';
 import { Button, Input } from 'antd';
-import { PlusOutlined, SaveOutlined, EditOutlined, ApiOutlined } from '@ant-design/icons';
+import { PlusOutlined, SaveOutlined, EditOutlined, ApiOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { usePipelineStore } from "@/store/usePipeStore";
 import PipelineCanvasInner from './PipelineCanvasInner';
 import { notification } from '@/lib/antd/static';
@@ -37,14 +37,14 @@ export default function PipelineCanvas() {
   const { getViewport } = useReactFlow();
 
 
-const clickAddNode = (nodeType: 'taskNode' | 'restNode' = 'taskNode') => {
+const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode') => {
   const currentNodes = getNodes();
 
   // 1. Safely match types using string literals from your active data log
   const startNode = currentNodes.find(n => n.type === 'startNode');
   const endNode = currentNodes.find(n => n.type === 'endNode');
   const taskNodes = currentNodes.filter(
-    (n) => n.type === 'taskNode' || n.type === 'restNode',
+    (n) => n.type === 'taskNode' || n.type === 'restNode' || n.type === 'dbNode',
   );
 
   // 2. Find the reference x-coordinate
@@ -69,7 +69,9 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' = 'taskNode') => {
     data: { 
       label: nodeType === 'restNode'
         ? `Connection ${taskNodes.length + 1}`
-        : `Script ${taskNodes.length + 1}`, 
+        : nodeType === 'dbNode'
+          ? `Database ${taskNodes.length + 1}`
+          : `Script ${taskNodes.length + 1}`, 
       node_uuid: `task_${uuidv4()}`,
       id: undefined 
     }
@@ -100,11 +102,12 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' = 'taskNode') => {
   setEdges(newEdges);
 };
 
-  const mapNodeTypeToInt = (typeString: string | undefined): 0 | 1 | 2 | 3 => {
+  const mapNodeTypeToInt = (typeString: string | undefined): 0 | 1 | 2 | 3 | 4 => {
     if (typeString === 'startNode') return 0;
     if (typeString === 'taskNode') return 1;
     if (typeString === 'endNode') return 2;
     if (typeString === 'restNode') return 3;
+    if (typeString === 'dbNode') return 4;
     return 1; // Default fallback to execution node (taskNode)
   };
 
@@ -145,6 +148,21 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' = 'taskNode') => {
         message: 'REST endpoint not configured',
         description:
           'Open each REST node and select your saved Scrape URL connection before saving.',
+      });
+    }
+
+    const dbWithoutConnection = sortedNodes.filter(
+      (n) =>
+        n.type === 'dbNode' &&
+        !(n.data as Record<string, unknown>)?.connection_id &&
+        !((n.data as Record<string, unknown>)?.node_config as Record<string, unknown>)
+          ?.connection_id,
+    );
+    if (dbWithoutConnection.length > 0) {
+      return notification.warning({
+        message: 'Database node not configured',
+        description:
+          'Open each Database node and select your saved DB connection before saving.',
       });
     }
 
@@ -230,6 +248,9 @@ const payload: PipelineCreatePayload = {
           </Button>
           <Button icon={<ApiOutlined />} onClick={() => clickAddNode('restNode')}>
             Add Connection Node
+          </Button>
+          <Button icon={<DatabaseOutlined />} onClick={() => clickAddNode('dbNode')}>
+            Add Database Node
           </Button>
 
           <div style={{ width: 1, height: 24, background: '#f0f0f0', margin: '0 4px' }} />
