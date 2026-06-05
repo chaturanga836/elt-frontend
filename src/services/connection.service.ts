@@ -19,19 +19,19 @@ function withUiIds(rows: KvRow[]): KvRow[] {
     return rows.map(trimKvRow).filter((r) => r.key);
 }
 
-/** Flat JSON bodies (e.g. scraper) should not send an empty editor `content` wrapper. */
+/** Prefer JSON editor `content`; fall back to flat template fields (legacy scraper body). */
 function normalizeJsonBody(bodyData: Record<string, unknown>): Record<string, unknown> {
     if (!bodyData || typeof bodyData !== "object") return {};
     const { content, ...rest } = bodyData;
-    if (rest.url != null || rest.extract != null) {
-        return rest;
-    }
     if (typeof content === "string" && content.trim()) {
         try {
             return JSON.parse(content) as Record<string, unknown>;
         } catch {
             return { content };
         }
+    }
+    if (rest.url != null || rest.extract != null) {
+        return rest;
     }
     return bodyData;
 }

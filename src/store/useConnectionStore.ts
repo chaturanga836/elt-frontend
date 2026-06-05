@@ -201,6 +201,28 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
             enabled: p.enabled ?? true,
         }));
 
+        const templateKey = (data.template_key as string) || "";
+        let endpointVariables = ((data.variables as KeyValuePair[]) || []).map((v) => ({
+            ...v,
+            uiId: v.uiId || generateId(),
+            enabled: v.enabled ?? true,
+        }));
+        if (templateKey === "scrape" && !endpointVariables.some((v) => v.key === "url")) {
+            endpointVariables = [
+                ...endpointVariables,
+                {
+                    uiId: generateId(),
+                    id: null,
+                    key: "url",
+                    value: "https://example.com",
+                    enabled: true,
+                },
+            ];
+        }
+        if (!endpointVariables.length) {
+            endpointVariables = [{ uiId: generateId(), id: null, key: "", value: "", enabled: true }];
+        }
+
         set({
             id: (data.id as number) ?? null,
             groupId,
@@ -218,14 +240,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
                 uiId: h.uiId || generateId(),
                 enabled: h.enabled ?? true,
             })),
-            variables: ((data.variables as KeyValuePair[])?.length
-                ? (data.variables as KeyValuePair[])
-                : [{ uiId: generateId(), id: null, key: "", value: "", enabled: true }]
-            ).map((v) => ({
-                ...v,
-                uiId: v.uiId || generateId(),
-                enabled: v.enabled ?? true,
-            })),
+            variables: endpointVariables,
             authType,
             basicAuth: authType === "basic" ? { ...new BasicAuthDefaults(), ...authConfig } : new BasicAuthDefaults(),
             bearerTokenAuth:
@@ -245,7 +260,19 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
             store.setBodyType(bodyType);
             const bodyPayload = data.body as Record<string, unknown> | undefined;
             if (bodyPayload && Object.keys(bodyPayload).length) {
-                store.updateBodyContent(bodyPayload as Partial<IFormData & IRawBody & IGraphQL>);
+                if (bodyType === "json" || bodyType === "xml") {
+                    const editorContent =
+                        typeof bodyPayload.content === "string" ? bodyPayload.content.trim() : "";
+                    if (editorContent) {
+                        store.updateBodyContent(bodyPayload as Partial<IFormData & IRawBody & IGraphQL>);
+                    } else {
+                        store.updateBodyContent({
+                            content: JSON.stringify(bodyPayload, null, 2),
+                        });
+                    }
+                } else {
+                    store.updateBodyContent(bodyPayload as Partial<IFormData & IRawBody & IGraphQL>);
+                }
             }
         }
     },
