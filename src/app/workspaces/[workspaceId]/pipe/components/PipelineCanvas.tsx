@@ -1,6 +1,6 @@
 'use client';
 import { v4 as uuidv4 } from 'uuid';
-import { Node, Edge, useReactFlow } from '@xyflow/react';
+import { Node, useReactFlow } from '@xyflow/react';
 import { Button, Input, Typography } from 'antd';
 import { PlusOutlined, SaveOutlined, EditOutlined, ApiOutlined, DatabaseOutlined, BugOutlined, ReloadOutlined } from '@ant-design/icons';
 import { usePipelineStore } from "@/store/usePipeStore";
@@ -20,6 +20,11 @@ import {
   isPipelineNameValid,
   pipelineNameValidationMessage,
 } from '@/lib/validatePipelineName';
+import {
+  insertNodeBeforeTarget,
+  isCompleteLinearChain,
+  orderNodesFromEdges,
+} from '@/lib/pipelineChain';
 import styles from '../pipeline-editor.module.css';
 
 const { Text } = Typography;
@@ -29,7 +34,7 @@ export default function PipelineCanvas() {
   const params = useParams();
   const {
     nodes, edges, name, uuid, setName, setNodes, setEdges, setUuid,
-    setId, getId, getCurrentUuid, getNodes, updateNodePosition
+    setId, getId, getCurrentUuid, getNodes, getEdges, updateNodePosition
   } = usePipelineStore();
 
   const [isSaving, setIsSaving] = useState(false);
@@ -58,67 +63,40 @@ export default function PipelineCanvas() {
 
 const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode') => {
   const currentNodes = getNodes();
-
-  // 1. Safely match types using string literals from your active data log
-  const startNode = currentNodes.find(n => n.type === 'startNode');
-  const endNode = currentNodes.find(n => n.type === 'endNode');
+  const currentEdges = getEdges();
+  const endNode = currentNodes.find((n) => n.type === 'endNode');
   const taskNodes = currentNodes.filter(
     (n) => n.type === 'taskNode' || n.type === 'restNode' || n.type === 'dbNode',
   );
+  const orderedNodes = orderNodesFromEdges(currentNodes, currentEdges);
+  const predecessor = orderedNodes.length >= 2 ? orderedNodes[orderedNodes.length - 2] : orderedNodes[0];
+  const newX = (predecessor?.position.x ?? 0) + 200;
 
-  // 2. Find the reference x-coordinate
-  const referenceNode = taskNodes.length > 0 
-    ? taskNodes.reduce((prev, curr) => (prev.position.x > curr.position.x ? prev : curr))
-    : startNode;
-
-  const newX = (referenceNode?.position.x ?? 0) + 200;
-  
-  // 3. Shift the end node if it collides with the prospective new node coordinate
   if (endNode && newX >= endNode.position.x) {
     updateNodePosition(endNode.id, { x: newX + 200, y: endNode.position.y });
   }
 
   const newTrackingId = uuidv4().substring(0, 8);
-
-  // 4. Force strict explicit typing onto the new object declaration
   const newNode: Node = {
     id: newTrackingId,
     type: nodeType,
     position: { x: newX, y: 200 },
-    data: { 
-      label: nodeType === 'restNode'
-        ? `Connection ${taskNodes.length + 1}`
-        : nodeType === 'dbNode'
-          ? `Database ${taskNodes.length + 1}`
-          : `Script ${taskNodes.length + 1}`, 
+    data: {
+      label:
+        nodeType === 'restNode'
+          ? `Connection ${taskNodes.length + 1}`
+          : nodeType === 'dbNode'
+            ? `Database ${taskNodes.length + 1}`
+            : `Script ${taskNodes.length + 1}`,
       node_uuid: `task_${uuidv4()}`,
-      id: undefined 
-    }
+      id: undefined,
+    },
   };
 
-  // 5. Combine and sort your data array explicitly across the X-axis positions
-  const allNodesSorted: Node[] = [...currentNodes, newNode].sort(
-    (a, b) => a.position.x - b.position.x
-  );
-
-  // 6. Regenerate visual edge connections using the freshly sorted spatial index sequence
-  const newEdges: Edge[] = [];
-  for (let i = 0; i < allNodesSorted.length - 1; i++) {
-    const sourceNode = allNodesSorted[i];
-    const targetNode = allNodesSorted[i + 1];
-
-    newEdges.push({
-      id: `e-${sourceNode.id}-${targetNode.id}`,
-      source: sourceNode.id,
-      target: targetNode.id,
-      animated: true,
-      style: { strokeWidth: 2 }
-    });
+  setNodes([...currentNodes, newNode]);
+  if (endNode) {
+    setEdges(insertNodeBeforeTarget(currentEdges, newTrackingId, endNode.id));
   }
-
-  // 7. Fire atomic store setters
-  setNodes(allNodesSorted);
-  setEdges(newEdges);
 };
 
   const mapNodeTypeToInt = (typeString: string | undefined): 0 | 1 | 2 | 3 | 4 => {
@@ -138,10 +116,18 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode')
 
     const trimmedName = name!.trim();
 
-    const sortedNodes = [...nodes].sort((a, b) => a.position.x - b.position.x);
+    if (!isCompleteLinearChain(nodes, edges)) {
+      return notification.warning({
+        message: 'Pipeline links incomplete',
+        description:
+          'Connect every node in one path from Start to End. Select a link and press Delete to remove it, then drag handles to reconnect.',
+      });
+    }
 
-    const hasRestNode = sortedNodes.some((n) => n.type === 'restNode');
-    const hasScraperParseTask = sortedNodes.some((n) => {
+    const orderedNodes = orderNodesFromEdges(nodes, edges);
+
+    const hasRestNode = nodes.some((n) => n.type === 'restNode');
+    const hasScraperParseTask = nodes.some((n) => {
       if (n.type !== 'taskNode') return false;
       const cfg = (n.data as Record<string, unknown>)?.config as { name?: string } | undefined;
       const taskName = (cfg?.name || (n.data as Record<string, unknown>)?.label || '') as string;
@@ -155,7 +141,7 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode')
       });
     }
 
-    const restWithoutConnection = sortedNodes.filter(
+    const restWithoutConnection = nodes.filter(
       (n) =>
         n.type === 'restNode' &&
         !(n.data as Record<string, unknown>)?.rest_connection_id &&
@@ -170,7 +156,7 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode')
       });
     }
 
-    const dbWithoutConnection = sortedNodes.filter(
+    const dbWithoutConnection = nodes.filter(
       (n) =>
         n.type === 'dbNode' &&
         !(n.data as Record<string, unknown>)?.connection_id &&
@@ -196,15 +182,14 @@ const payload: PipelineCreatePayload = {
     org_id: 1,
     workspace_id: workspaceId,
     canvas_structure: {
-      nodes: sortedNodes,
-      edges: edges,
-      viewport: getViewport()
+      nodes,
+      edges,
+      viewport: getViewport(),
     },
-    // Execution order follows left-to-right canvas layout (Start → REST → Task → End)
-    tasks: sortedNodes.map((node, index): PipelineTask => {
-      const leftParentId = index > 0 ? sortedNodes[index - 1].id : null;
+    tasks: orderedNodes.map((node, index): PipelineTask => {
+      const leftParentId = index > 0 ? orderedNodes[index - 1].id : null;
       const rightParentId =
-        index < sortedNodes.length - 1 ? sortedNodes[index + 1].id : null;
+        index < orderedNodes.length - 1 ? orderedNodes[index + 1].id : null;
 
       const nodeType = mapNodeTypeToInt(node.type);
       const isBoundary = nodeType === 0 || nodeType === 2;
@@ -273,7 +258,7 @@ const payload: PipelineCreatePayload = {
           </Button>
 
           <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
-            Drag nodes left → right to set run order
+            Connect edges to set run order (Delete removes a link)
           </Text>
 
           <div style={{ width: 1, height: 24, background: '#f0f0f0', margin: '0 4px' }} />

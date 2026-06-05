@@ -1,66 +1,59 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
-import { usePipelineStore } from "@/store/usePipeStore";
-import { 
-  Background, 
-  Controls, 
-  ReactFlow, 
-  ConnectionLineType, 
-  BackgroundVariant 
-} from "@xyflow/react";
+import { useCallback } from 'react';
+import { usePipelineStore } from '@/store/usePipeStore';
+import {
+  Background,
+  Controls,
+  ReactFlow,
+  ConnectionLineType,
+  BackgroundVariant,
+  type Connection,
+  type Edge,
+} from '@xyflow/react';
 import TaskNode from './TaskNode';
- // Import these
-import CodeEdge from './CodeEdge';
-import StartNode from "./StartNode";
-import EndNode from "./EndNode";
-import RestEndpointNode from "./RestEndpointNode";
-import DatabaseNode from "./DatabaseNode";
-import { rebuildChainEdges } from '@/lib/pipelineChain';
+import StartNode from './StartNode';
+import EndNode from './EndNode';
+import RestEndpointNode from './RestEndpointNode';
+import DatabaseNode from './DatabaseNode';
+import { isValidPipelineConnection } from '@/lib/pipelineChain';
 
 const GRID_SIZE_X = 200;
 const GRID_SIZE_Y = 20;
 
-// Update nodeTypes to include the new permanent nodes
-const nodeTypes = { 
+const nodeTypes = {
   taskNode: TaskNode,
   restNode: RestEndpointNode,
   dbNode: DatabaseNode,
   startNode: StartNode,
-  endNode: EndNode 
+  endNode: EndNode,
 };
 
-const edgeTypes = { //code: CodeEdge 
-};
+const edgeTypes = {};
 
 const PipelineCanvasInner = () => {
-  // Pull deleteNodes from the store
   const {
     nodes,
     edges,
     onNodesChange,
     onEdgesChange,
     onConnect,
+    reconnectChainEdge,
     deleteNodes,
-    setEdges,
-    getNodes,
   } = usePipelineStore();
 
-  const handleNodeDragStop = () => {
-    setEdges(rebuildChainEdges(getNodes()));
-  };
-
-  const chainKey = useMemo(
-    () =>
-      nodes
-        .map((n) => `${n.id}:${Math.round(n.position.x)}:${Math.round(n.position.y)}`)
-        .join('|'),
+  const isValidConnection = useCallback(
+    (connection: Connection | Edge) =>
+      isValidPipelineConnection(nodes, connection),
     [nodes],
   );
 
-  useEffect(() => {
-    setEdges(rebuildChainEdges(nodes));
-  }, [chainKey, nodes, setEdges]);
+  const handleReconnect = useCallback(
+    (oldEdge: Edge, connection: Connection) => {
+      reconnectChainEdge(oldEdge, connection);
+    },
+    [reconnectChainEdge],
+  );
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -70,7 +63,8 @@ const PipelineCanvasInner = () => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onNodeDragStop={handleNodeDragStop}
+        onReconnect={handleReconnect}
+        isValidConnection={isValidConnection}
         onNodesDelete={deleteNodes}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -78,22 +72,22 @@ const PipelineCanvasInner = () => {
         snapGrid={[GRID_SIZE_X, GRID_SIZE_Y]}
         connectionLineType={ConnectionLineType.Step}
         connectionLineStyle={{ stroke: '#1890ff', strokeWidth: 2 }}
+        edgesReconnectable
         fitView
-        // Accessibility: ensure users know they can delete tasks but not boundaries
-        deleteKeyCode={["Backspace", "Delete"]}
+        deleteKeyCode={['Backspace', 'Delete']}
       >
-        <Background 
-          id="stages" 
-          variant={BackgroundVariant.Lines} 
-          gap={[GRID_SIZE_X, 10000]} 
-          color="#ccc" 
+        <Background
+          id="stages"
+          variant={BackgroundVariant.Lines}
+          gap={[GRID_SIZE_X, 10000]}
+          color="#ccc"
           size={1.5}
         />
-        <Background 
-          id="lanes" 
-          variant={BackgroundVariant.Lines} 
-          gap={[10000, GRID_SIZE_Y]} 
-          color="#f0f0f0" 
+        <Background
+          id="lanes"
+          variant={BackgroundVariant.Lines}
+          gap={[10000, GRID_SIZE_Y]}
+          color="#f0f0f0"
           size={1}
         />
         <Controls />

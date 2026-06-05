@@ -80,3 +80,31 @@
   flex-direction: column;
   gap: 8px;
 }
+
+.debugStepStrip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.debugStepStripLabel {
+  font-size: 12px;
+}
+
+.debugStepStripItems {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.debugStepTag,
+.debugStepTagClickable {
+  margin: 0;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.debugStepTagClickable {
+  cursor: pointer;
+}
