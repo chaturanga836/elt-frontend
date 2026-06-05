@@ -89,9 +89,8 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
   );
 
   useEffect(() => {
-    if (!open) return;
     void loadConnectionList();
-  }, [open, loadConnectionList]);
+  }, [loadConnectionList]);
 
   const openModal = () => {
     const connId = selectedId;
@@ -141,6 +140,11 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
   };
 
   const enabledVarCount = varRows.filter((r) => r.enabled && r.key.trim()).length;
+  const displayName =
+    selected?.name ||
+    nodeConfig.label ||
+    (data.label as string | undefined) ||
+    (selectedId ? `Connection #${selectedId}` : 'Select connection');
 
   return (
     <div className="rest-endpoint-node">
@@ -162,7 +166,7 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
           <Avatar size={20} shape="square" icon={<ApiOutlined />} style={{ backgroundColor: '#13c2c2' }} />
           <div style={{ minWidth: 0 }}>
             <Text strong style={{ fontSize: 11 }} ellipsis>
-              {selected?.name || 'Select connection'}
+              {displayName}
             </Text>
             <div style={{ lineHeight: 1.2 }}>
               <Text type="secondary" style={{ fontSize: 10 }} ellipsis>

@@ -6,7 +6,7 @@ import { useParams, usePathname } from 'next/navigation';
 import { Card, Avatar, Typography, Flex } from 'antd';
 import { SettingOutlined, PlusOutlined } from '@ant-design/icons';
 import { usePipelineStore } from '@/store/usePipeStore';
-import { TaskResponse } from '@/services/task.service';
+import { TaskResponse, TaskService } from '@/services/task.service';
 import TaskPickerModal from '@/features/orchestration/TaskPickerModal';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
@@ -34,6 +34,24 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
       updateNodeData(id, { config: task, task_id: task.id });
     }
   }, [id, pathname, updateNodeData]);
+
+  useEffect(() => {
+    const taskId = data.task_id as number | undefined;
+    if (!taskId || data.config) return;
+
+    let cancelled = false;
+    void TaskService.getTask(taskId)
+      .then((task) => {
+        if (!cancelled) {
+          updateNodeData(id, { config: task, task_id: task.id });
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, data.task_id, data.config, updateNodeData]);
 
   const onSelect = (item: TaskResponse) => {
     updateNodeData(id, {

@@ -108,7 +108,20 @@ export const PipelineService = {
   },
 
   getPipeline: async (uuid: string) => {
-    const response = await api.get(`/pipelines/${uuid}`);
+    const response = await api.get<{
+      pipeline: {
+        id: number;
+        pipeline_uuid: string;
+        name: string;
+        canvas_structure?: { nodes?: unknown[]; edges?: unknown[] };
+      };
+      nodes: Array<{
+        node_uuid: string;
+        node_type: number;
+        node_config?: Record<string, unknown>;
+        task_id?: number | null;
+      }>;
+    }>(`/pipelines/${uuid}`);
     return response.data;
   },
 

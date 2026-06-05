@@ -67,9 +67,8 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
   }, [workspaceId]);
 
   useEffect(() => {
-    if (!open) return;
     void loadConnectionList();
-  }, [open, loadConnectionList]);
+  }, [loadConnectionList]);
 
   const openModal = () => {
     form.setFieldsValue({
@@ -125,6 +124,11 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
   };
 
   const opLabel = nodeConfig.operation === 'read' ? 'Read' : 'Write';
+  const displayName =
+    selected?.name ||
+    nodeConfig.label ||
+    (data.label as string | undefined) ||
+    (selectedId ? `Connection #${selectedId}` : 'Select database');
 
   return (
     <div className="database-node">
@@ -151,7 +155,7 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
           />
           <div style={{ minWidth: 0 }}>
             <Text strong style={{ fontSize: 11 }} ellipsis>
-              {selected?.name || 'Select database'}
+              {displayName}
             </Text>
             <div style={{ lineHeight: 1.2 }}>
               <Text type="secondary" style={{ fontSize: 10 }} ellipsis>
