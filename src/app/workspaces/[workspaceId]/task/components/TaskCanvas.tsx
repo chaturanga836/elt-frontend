@@ -248,6 +248,14 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
     );
   });
 
+  const handleCancel = () => {
+    if (fromPipeline && pipelineReturnUrl) {
+      router.push(pipelineReturnUrl);
+      return;
+    }
+    router.back();
+  };
+
   const handleSave = async () => {
     if (!taskData.name) {
       return notification.error({ message: 'Task name is required' });
@@ -269,11 +277,20 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
       };
 
       if (isEditMode && taskId) {
-        await TaskService.updateTask(taskId, payload);
+        const updated = await TaskService.updateTask(taskId, payload);
         api.success({
           message: 'Task Updated',
           description: 'Task saved successfully.',
         });
+        if (fromPipeline && pipelineNodeId && updated?.id) {
+          stashPipelineTaskPick({ nodeId: pipelineNodeId, task: updated });
+          if (pipelineReturnUrl) {
+            router.push(pipelineReturnUrl);
+          } else {
+            router.back();
+          }
+          return;
+        }
       } else {
         const created = await TaskService.createTask(payload);
         api.success({
@@ -329,7 +346,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
             </h2>
           </Space>
           <Space>
-            <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>Cancel</Button>
+            <Button icon={<ArrowLeftOutlined />} onClick={handleCancel}>Cancel</Button>
             <Button
               type="primary"
               icon={<SaveOutlined />}

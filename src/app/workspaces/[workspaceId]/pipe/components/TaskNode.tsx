@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { useParams, usePathname } from 'next/navigation';
-import { Card, Avatar, Typography, Flex } from 'antd';
-import { SettingOutlined, PlusOutlined } from '@ant-design/icons';
+import { useParams, usePathname, useRouter } from 'next/navigation';
+import { Card, Avatar, Typography, Flex, Button } from 'antd';
+import { SettingOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons';
 import { usePipelineStore } from '@/store/usePipeStore';
 import { TaskResponse, TaskService } from '@/services/task.service';
 import TaskPickerModal from '@/features/orchestration/TaskPickerModal';
@@ -16,6 +16,7 @@ const { Text } = Typography;
 
 const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) => {
   const workspaceId = useWorkspaceId();
+  const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
   const pipelineSegment = params?.id;
@@ -61,6 +62,17 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
     setPickerOpen(false);
   };
 
+  const openScriptEditor = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!selected?.id) return;
+    const params = new URLSearchParams({
+      from: 'pipeline',
+      nodeId: id,
+      returnUrl: pipelineReturnUrl,
+    });
+    router.push(`${workspacePath(workspaceId, `task/${selected.id}`)}?${params.toString()}`);
+  };
+
   return (
     <div className="custom-node">
       <Handle type="target" position={Position.Left} style={{ background: '#1890ff' }} />
@@ -86,16 +98,24 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
             <Text style={{ fontSize: 10, color: '#8c8c8c' }}>Select script</Text>
           </Flex>
         ) : (
-          <Flex align="center" gap={6} style={{ width: '100%' }}>
+          <Flex align="center" gap={4} style={{ width: '100%' }}>
             <Avatar
               size={20}
               shape="square"
               icon={<SettingOutlined />}
               style={{ backgroundColor: '#1890ff', flexShrink: 0 }}
             />
-            <Text strong style={{ fontSize: 10 }} ellipsis>
+            <Text strong style={{ fontSize: 10, flex: 1, minWidth: 0 }} ellipsis>
               {selected.name}
             </Text>
+            <Button
+              type="text"
+              size="small"
+              icon={<EditOutlined style={{ fontSize: 11 }} />}
+              onClick={openScriptEditor}
+              title="Edit script"
+              style={{ flexShrink: 0, width: 20, height: 20, minWidth: 20, padding: 0 }}
+            />
           </Flex>
         )}
       </Card>

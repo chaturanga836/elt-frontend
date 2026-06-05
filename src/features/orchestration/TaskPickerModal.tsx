@@ -13,7 +13,7 @@ import {
   Divider,
   Pagination,
 } from 'antd';
-import { SearchOutlined, PlusOutlined, CheckCircleFilled } from '@ant-design/icons';
+import { SearchOutlined, PlusOutlined, CheckCircleFilled, EditOutlined } from '@ant-design/icons';
 import { TaskService, TaskResponse } from '@/services/task.service';
 import { useDebouncedFetch } from '@/features/connections/hooks/useDebouncedFetch';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
@@ -102,6 +102,32 @@ export default function TaskPickerModal({
           onChange={handleSearch}
           allowClear
         />
+
+        {selectedId ? (
+          <Button
+            type="primary"
+            block
+            icon={<EditOutlined />}
+            onClick={() => {
+              onClose();
+              const params = new URLSearchParams();
+              if (pipelineNodeId) {
+                params.set('from', 'pipeline');
+                params.set('nodeId', pipelineNodeId);
+                if (pipelineReturnUrl) {
+                  params.set('returnUrl', pipelineReturnUrl);
+                }
+              }
+              const qs = params.toString();
+              router.push(
+                `${workspacePath(workspaceId, `task/${selectedId}`)}${qs ? `?${qs}` : ''}`,
+              );
+            }}
+            style={{ height: 40 }}
+          >
+            Edit assigned script
+          </Button>
+        ) : null}
 
         {showCreateButton && (
           <Button
