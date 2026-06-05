@@ -61,3 +61,22 @@
   overflow: hidden;
   position: relative;
 }
+
+.debugDrawer :global(.ant-drawer-content-wrapper) {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.debugDrawerToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.debugOutput {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

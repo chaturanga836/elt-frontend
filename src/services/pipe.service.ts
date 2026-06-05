@@ -61,6 +61,41 @@ export interface PipelineRunDetail {
   node_logs: PipelineNodeLog[];
 }
 
+export interface PipelineDebugStepPlan {
+  total_steps: number;
+  steps: Array<{
+    step_index: number;
+    node_uuid: string;
+    node_name: string;
+    node_type: number | null;
+    kind: string;
+  }>;
+}
+
+export interface PipelineDebugStepResult {
+  step_index: number;
+  total_steps: number;
+  is_last: boolean;
+  node_uuid: string;
+  node_name: string;
+  node_type: number | null;
+  status: number;
+  skipped: boolean;
+  input_data: Record<string, unknown> | null;
+  output_data: Record<string, unknown> | null;
+  stdout_logs: string | null;
+  error_traceback: string | null;
+  execution_time_ms: number | null;
+  next_payload: unknown;
+  step_succeeded: boolean;
+}
+
+export interface PipelineDebugStepRequest {
+  step_index: number;
+  current_payload?: unknown;
+  prior_run_succeeded?: boolean;
+}
+
 export const PipelineService = {
   savePipeline: async (payload: PipelineCreatePayload) => {
     const response = await api.post('/pipelines/', payload);
@@ -99,6 +134,24 @@ export const PipelineService = {
 
   getPipelineRunDetail: async (runId: number): Promise<PipelineRunDetail> => {
     const response = await api.get(`/sync/runs/${runId}`);
+    return response.data;
+  },
+
+  getDebugSteps: async (
+    uuid: string,
+    priorRunSucceeded = true,
+  ): Promise<PipelineDebugStepPlan> => {
+    const response = await api.get(`/sync/debug-steps/${uuid}`, {
+      params: { prior_run_succeeded: priorRunSucceeded },
+    });
+    return response.data;
+  },
+
+  runDebugStep: async (
+    uuid: string,
+    body: PipelineDebugStepRequest,
+  ): Promise<PipelineDebugStepResult> => {
+    const response = await api.post(`/sync/debug-step/${uuid}`, body);
     return response.data;
   },
 };

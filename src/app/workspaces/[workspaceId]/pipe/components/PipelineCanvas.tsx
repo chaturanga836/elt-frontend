@@ -2,9 +2,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Node, Edge, useReactFlow } from '@xyflow/react';
 import { Button, Input, Typography } from 'antd';
-import { PlusOutlined, SaveOutlined, EditOutlined, ApiOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { PlusOutlined, SaveOutlined, EditOutlined, ApiOutlined, DatabaseOutlined, BugOutlined, ReloadOutlined } from '@ant-design/icons';
 import { usePipelineStore } from "@/store/usePipeStore";
 import PipelineCanvasInner from './PipelineCanvasInner';
+import PipelineDebugDrawer from './PipelineDebugDrawer';
 import { notification } from '@/lib/antd/static';
 import '@xyflow/react/dist/style.css';
 import { PipelineService } from '@/services/pipe.service';
@@ -32,8 +33,24 @@ export default function PipelineCanvas() {
   } = usePipelineStore();
 
   const [isSaving, setIsSaving] = useState(false);
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [debugSessionKey, setDebugSessionKey] = useState(0);
   const routePipelineUuid =
     typeof params?.id === 'string' && params.id !== 'new' ? params.id : null;
+  const debugPipelineUuid = getCurrentUuid() || uuid || routePipelineUuid;
+
+  const openDebugPanel = () => {
+    setDebugSessionKey((k) => k + 1);
+    setDebugOpen(true);
+  };
+
+  const resetDebugSession = () => {
+    setDebugSessionKey((k) => k + 1);
+  };
+
+  const closeDebugPanel = () => {
+    setDebugOpen(false);
+  };
   
   // Requires ReactFlowProvider from pipe/layout.tsx
   const { getViewport } = useReactFlow();
@@ -281,6 +298,22 @@ const payload: PipelineCreatePayload = {
 
         <div className={styles.toolbarRight}>
           <Button
+            size="small"
+            icon={<BugOutlined />}
+            type={debugOpen ? 'primary' : 'default'}
+            onClick={openDebugPanel}
+          >
+           Open Debug
+          </Button>
+          <Button
+            size="small"
+            icon={<ReloadOutlined />}
+            disabled={!debugOpen}
+            onClick={resetDebugSession}
+          >
+            Reset
+          </Button>
+          <Button
             type="primary"
             icon={<SaveOutlined />}
             loading={isSaving}
@@ -296,6 +329,13 @@ const payload: PipelineCreatePayload = {
       <div className={styles.canvasArea}>
         <PipelineCanvasInner />
       </div>
+
+      <PipelineDebugDrawer
+        key={debugSessionKey}
+        open={debugOpen}
+        pipelineUuid={debugPipelineUuid}
+        onClose={closeDebugPanel}
+      />
     </div>
   );
 }
