@@ -6,6 +6,21 @@ export type PipelineVariableDef = {
   description?: string;
 };
 
+/** Maps a script input name to a field on the previous node's output payload. */
+export type PipelineInputVariableDef = {
+  key: string;
+  source_path: string;
+  description?: string;
+  enabled?: boolean;
+};
+
+export const DEFAULT_TASK_OUTPUT_VARIABLES: PipelineVariableDef[] = [
+  {
+    key: 'result',
+    description: 'Primary return value from main(input_data)',
+  },
+];
+
 export type UpstreamOutputField = {
   path: string;
   label: string;
@@ -91,22 +106,54 @@ function taskOutputFields(node: Node): UpstreamOutputField[] {
   const data = (node.data || {}) as Record<string, unknown>;
   const config = (data.node_config as Record<string, unknown>) || {};
   const declared = config.output_variables as PipelineVariableDef[] | undefined;
-  if (declared?.length) {
-    return declared
-      .filter((v) => v.key?.trim())
-      .map((v) => ({
-        path: v.key.trim(),
-        label: v.key.trim(),
-        description: v.description || 'Script return field',
-      }));
+  const merged = mergeTaskOutputVariables(declared);
+  if (merged.length) {
+    return merged.map((v) => ({
+      path: v.key.trim(),
+      label: v.key.trim(),
+      description: v.description || 'Script return field',
+    }));
   }
-  return [
-    {
-      path: 'result',
-      label: 'result',
-      description: 'Define output variables on the script node, or use any key from the script return dict',
-    },
-  ];
+  return DEFAULT_TASK_OUTPUT_VARIABLES.map((v) => ({
+    path: v.key,
+    label: v.key,
+    description: v.description,
+  }));
+}
+
+export function mergeTaskOutputVariables(
+  saved: PipelineVariableDef[] | undefined,
+): PipelineVariableDef[] {
+  const seen = new Set<string>();
+  const merged: PipelineVariableDef[] = [];
+  for (const item of [...DEFAULT_TASK_OUTPUT_VARIABLES, ...(saved || [])]) {
+    const key = item.key?.trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push({
+      key,
+      ...(item.description ? { description: item.description } : {}),
+    });
+  }
+  return merged;
+}
+
+export function defaultInputVariablesFromUpstream(
+  fields: UpstreamOutputField[],
+): PipelineInputVariableDef[] {
+  return fields.map((field) => ({
+    key: field.path,
+    source_path: field.path,
+    description: field.description,
+    enabled: true,
+  }));
+}
+
+export function buildDefaultTaskNodeVariables(upstreamFields: UpstreamOutputField[]) {
+  return {
+    input_variables: defaultInputVariablesFromUpstream(upstreamFields),
+    output_variables: [...DEFAULT_TASK_OUTPUT_VARIABLES],
+  };
 }
 
 export function restNodeOutputFields(): UpstreamOutputField[] {

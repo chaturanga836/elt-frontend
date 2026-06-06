@@ -1,26 +1,47 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { useParams, usePathname, useRouter, useSelectedLayoutSegment } from 'next/navigation';
 import { Card, Avatar, Typography, Flex, Button, Modal } from 'antd';
-import { SettingOutlined, PlusOutlined, EditOutlined, NodeIndexOutlined } from '@ant-design/icons';
+import {
+  SettingOutlined,
+  PlusOutlined,
+  EditOutlined,
+  NodeIndexOutlined,
+  SwapOutlined,
+} from '@ant-design/icons';
 import { usePipelineStore } from '@/store/usePipeStore';
+import { resolvePipelineEdges } from '@/lib/pipelineChain';
+import {
+  buildDefaultTaskNodeVariables,
+  getImmediateUpstreamOutputFields,
+  mergeTaskOutputVariables,
+  type PipelineInputVariableDef,
+  type PipelineVariableDef,
+} from '@/lib/pipelineNodeVariables';
 import { TaskResponse, TaskService } from '@/services/task.service';
 import TaskPickerModal from '@/features/orchestration/TaskPickerModal';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
 import { consumePipelineTaskPick } from '@/lib/pipelineTaskPick';
-import type { PipelineVariableDef } from '@/lib/pipelineNodeVariables';
-import PipelineNodeOutputVariablesEditor, {
-  rowsFromOutputVariables,
-  toOutputVariablePayload,
+import PipelineScriptVariablesEditor, {
+  rowsFromInputVariables,
+  rowsFromTaskOutputVariables,
+  toInputVariablePayload,
+  toTaskOutputVariablePayload,
+  type InputVarRow,
   type OutputVarRow,
-} from './PipelineNodeOutputVariablesEditor';
+} from './PipelineScriptVariablesEditor';
 import PipelineNodeDeleteButton from './PipelineNodeDeleteButton';
 import styles from '../pipeline-editor.module.css';
 
 const { Text } = Typography;
+
+type TaskNodeConfig = {
+  input_variables?: PipelineInputVariableDef[];
+  output_variables?: PipelineVariableDef[];
+};
 
 const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) => {
   const workspaceId = useWorkspaceId();
@@ -35,17 +56,39 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
       : workspacePath(workspaceId, 'pipe/new');
 
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [outputsOpen, setOutputsOpen] = useState(false);
+  const [variablesOpen, setVariablesOpen] = useState(false);
+  const [inputRows, setInputRows] = useState<InputVarRow[]>([]);
   const [outputRows, setOutputRows] = useState<OutputVarRow[]>([]);
   const updateNodeData = usePipelineStore((state) => state.updateNodeData);
-  const nodeConfig = (data.node_config as { output_variables?: PipelineVariableDef[] }) || {};
-  const outputVarCount =
-    nodeConfig.output_variables?.filter((v) => v.key?.trim()).length ?? 0;
+  const nodes = usePipelineStore((state) => state.nodes);
+  const edges = usePipelineStore((state) => state.edges);
+  const nodeConfig = (data.node_config as TaskNodeConfig) || {};
+  const outputVarCount = mergeTaskOutputVariables(nodeConfig.output_variables).length;
+  const inputVarCount =
+    nodeConfig.input_variables?.filter((v) => v.enabled !== false && v.key?.trim()).length ?? 0;
   const selected = (data.config as TaskResponse | null) || null;
   const nodeLabel =
     selected?.name ||
     (typeof data.label === 'string' ? data.label : undefined) ||
     'Script node';
+
+  const { predecessor, fields: upstreamOutputs } = useMemo(() => {
+    const resolvedEdges = resolvePipelineEdges(nodes, edges);
+    return getImmediateUpstreamOutputFields(nodes, resolvedEdges, id);
+  }, [nodes, edges, id]);
+
+  const upstreamNodeLabel = useMemo(() => {
+    if (!predecessor) return undefined;
+    const predData = (predecessor.data || {}) as Record<string, unknown>;
+    const predConfig = (predData.node_config as Record<string, unknown>) || {};
+    return (
+      (predData.label as string) ||
+      (predConfig.label as string) ||
+      ((predData.config as { name?: string } | null)?.name ?? '') ||
+      predecessor.type ||
+      'Previous node'
+    );
+  }, [predecessor]);
 
   useEffect(() => {
     const task = consumePipelineTaskPick(id);
@@ -72,40 +115,67 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
     };
   }, [id, data.task_id, data.config, updateNodeData]);
 
+  const seedVariablesIfEmpty = (existing: TaskNodeConfig) => {
+    if (existing.input_variables?.length || existing.output_variables?.length) {
+      return existing;
+    }
+    if (!upstreamOutputs.length) return existing;
+    return {
+      ...existing,
+      ...buildDefaultTaskNodeVariables(upstreamOutputs),
+    };
+  };
+
   const onSelect = (item: TaskResponse) => {
+    const nextConfig = seedVariablesIfEmpty(nodeConfig);
     updateNodeData(id, {
       config: item,
       task_id: item.id,
+      node_config: nextConfig,
     });
     setPickerOpen(false);
+  };
+
+  const openScriptPicker = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPickerOpen(true);
   };
 
   const openScriptEditor = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!selected?.id) return;
-    const params = new URLSearchParams({
+    const query = new URLSearchParams({
       from: 'pipeline',
       nodeId: id,
       returnUrl: pipelineReturnUrl,
     });
-    router.push(`${workspacePath(workspaceId, `task/${selected.id}`)}?${params.toString()}`);
+    router.push(`${workspacePath(workspaceId, `task/${selected.id}`)}?${query.toString()}`);
   };
 
-  const openOutputVariables = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setOutputRows(rowsFromOutputVariables(nodeConfig.output_variables));
-    setOutputsOpen(true);
+  const openVariablesModal = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setInputRows(rowsFromInputVariables(nodeConfig.input_variables, upstreamOutputs));
+    setOutputRows(rowsFromTaskOutputVariables(nodeConfig.output_variables));
+    setVariablesOpen(true);
   };
 
-  const saveOutputVariables = () => {
-    const output_variables = toOutputVariablePayload(outputRows);
+  const saveVariables = () => {
     updateNodeData(id, {
       node_config: {
         ...nodeConfig,
-        output_variables,
+        input_variables: toInputVariablePayload(inputRows),
+        output_variables: toTaskOutputVariablePayload(outputRows),
       },
     });
-    setOutputsOpen(false);
+    setVariablesOpen(false);
+  };
+
+  const handleCardClick = () => {
+    if (!selected) {
+      setPickerOpen(true);
+      return;
+    }
+    openVariablesModal();
   };
 
   return (
@@ -117,8 +187,8 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
         size="small"
         hoverable
         style={{
-          width: 120,
-          height: 45,
+          width: 148,
+          minHeight: 45,
           borderRadius: 6,
           display: 'flex',
           alignItems: 'center',
@@ -126,7 +196,7 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
           cursor: 'pointer',
         }}
         styles={{ body: { padding: '4px 8px', width: '100%' } }}
-        onClick={() => setPickerOpen(true)}
+        onClick={handleCardClick}
       >
         {!selected ? (
           <Flex align="center" gap={4} justify="center" style={{ width: '100%' }}>
@@ -145,18 +215,26 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
               <Text strong style={{ fontSize: 10, display: 'block' }} ellipsis>
                 {selected.name}
               </Text>
-              {outputVarCount > 0 ? (
-                <Text type="secondary" style={{ fontSize: 9, lineHeight: 1.2 }}>
-                  {outputVarCount} output{outputVarCount === 1 ? '' : 's'}
-                </Text>
-              ) : null}
+              <Text type="secondary" style={{ fontSize: 9, lineHeight: 1.2 }} ellipsis>
+                {inputVarCount > 0
+                  ? `${inputVarCount} in · ${outputVarCount} out`
+                  : `${outputVarCount} output${outputVarCount === 1 ? '' : 's'}`}
+              </Text>
             </div>
             <Button
               type="text"
               size="small"
+              icon={<SwapOutlined style={{ fontSize: 11 }} />}
+              onClick={openScriptPicker}
+              title="Change script"
+              style={{ flexShrink: 0, width: 20, height: 20, minWidth: 20, padding: 0 }}
+            />
+            <Button
+              type="text"
+              size="small"
               icon={<NodeIndexOutlined style={{ fontSize: 11 }} />}
-              onClick={openOutputVariables}
-              title="Output variables"
+              onClick={openVariablesModal}
+              title="Input / output variables"
               style={{ flexShrink: 0, width: 20, height: 20, minWidth: 20, padding: 0 }}
             />
             <Button
@@ -164,7 +242,7 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
               size="small"
               icon={<EditOutlined style={{ fontSize: 11 }} />}
               onClick={openScriptEditor}
-              title="Edit script"
+              title="Edit script code"
               style={{ flexShrink: 0, width: 20, height: 20, minWidth: 20, padding: 0 }}
             />
           </Flex>
@@ -174,7 +252,7 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
       <Handle type="source" position={Position.Right} style={{ background: '#1890ff' }} />
 
       <TaskPickerModal
-        title="Select script"
+        title={selected ? 'Change script' : 'Select script'}
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         selectedId={selected?.id}
@@ -184,15 +262,22 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
       />
 
       <Modal
-        title="Script output variables"
-        open={outputsOpen}
-        onCancel={() => setOutputsOpen(false)}
-        onOk={saveOutputVariables}
+        title="Script variables"
+        open={variablesOpen}
+        onCancel={() => setVariablesOpen(false)}
+        onOk={saveVariables}
         okText="Save"
-        width={560}
+        width={640}
         destroyOnHidden
       >
-        <PipelineNodeOutputVariablesEditor rows={outputRows} onChange={setOutputRows} />
+        <PipelineScriptVariablesEditor
+          inputRows={inputRows}
+          onInputChange={setInputRows}
+          outputRows={outputRows}
+          onOutputChange={setOutputRows}
+          upstreamNodeLabel={upstreamNodeLabel}
+          upstreamOutputs={upstreamOutputs}
+        />
       </Modal>
     </div>
   );
