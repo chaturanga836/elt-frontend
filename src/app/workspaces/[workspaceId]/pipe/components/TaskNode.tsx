@@ -11,6 +11,8 @@ import TaskPickerModal from '@/features/orchestration/TaskPickerModal';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
 import { consumePipelineTaskPick } from '@/lib/pipelineTaskPick';
+import PipelineNodeDeleteButton from './PipelineNodeDeleteButton';
+import styles from '../pipeline-editor.module.css';
 
 const { Text } = Typography;
 
@@ -28,6 +30,10 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
   const [pickerOpen, setPickerOpen] = useState(false);
   const updateNodeData = usePipelineStore((state) => state.updateNodeData);
   const selected = (data.config as TaskResponse | null) || null;
+  const nodeLabel =
+    selected?.name ||
+    (typeof data.label === 'string' ? data.label : undefined) ||
+    'Script node';
 
   useEffect(() => {
     const task = consumePipelineTaskPick(id);
@@ -74,7 +80,8 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
   };
 
   return (
-    <div className="custom-node">
+    <div className={`custom-node ${styles.pipelineNodeWrap}`}>
+      <PipelineNodeDeleteButton nodeId={id} nodeLabel={nodeLabel} />
       <Handle type="target" position={Position.Left} style={{ background: '#1890ff' }} />
 
       <Card

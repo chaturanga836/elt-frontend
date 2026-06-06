@@ -142,3 +142,32 @@
 .debugStepTagClickable {
   cursor: pointer;
 }
+
+.pipelineNodeWrap {
+  position: relative;
+}
+
+.pipelineNodeDeleteBtn {
+  position: absolute !important;
+  top: -8px;
+  right: -8px;
+  z-index: 5;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  background: #fff !important;
+  border: 1px solid #ffa39e !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  opacity: 0.85;
+}
+
+.pipelineNodeDeleteBtn:hover {
+  opacity: 1;
+  background: #fff1f0 !important;
+}
+
+.pipelineNodeDeleteBtn :global(.anticon) {
+  font-size: 10px;
+}

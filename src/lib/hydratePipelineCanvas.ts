@@ -8,6 +8,22 @@ export type PipelineApiNode = {
   task_id?: number | null;
 };
 
+/** Middle nodes are removed only via the confirm button — not keyboard Delete. */
+export function applyPipelineNodeDeletePolicy(nodes: Node[]): Node[] {
+  return nodes.map((node) => {
+    if (
+      node.type === 'taskNode' ||
+      node.type === 'restNode' ||
+      node.type === 'dbNode' ||
+      node.type === 'startNode' ||
+      node.type === 'endNode'
+    ) {
+      return { ...node, deletable: false };
+    }
+    return node;
+  });
+}
+
 /** Merge persisted pipe-node rows into React Flow canvas nodes for edit mode. */
 export function mergePipelineCanvasNodes(
   canvasNodes: Node[],

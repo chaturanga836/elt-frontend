@@ -8,6 +8,8 @@ import { usePipelineStore } from '@/store/usePipeStore';
 import { connectionService } from '@/services/connection.service';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspaceTenantId } from '@/lib/tenantScope';
+import PipelineNodeDeleteButton from './PipelineNodeDeleteButton';
+import styles from '../pipeline-editor.module.css';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -209,7 +211,8 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
     (selectedId ? `Connection #${selectedId}` : 'Select database');
 
   return (
-    <div className="database-node">
+    <div className={`database-node ${styles.pipelineNodeWrap}`}>
+      <PipelineNodeDeleteButton nodeId={id} nodeLabel={displayName} />
       <Handle type="target" position={Position.Left} style={{ background: '#722ed1' }} />
 
       <Card

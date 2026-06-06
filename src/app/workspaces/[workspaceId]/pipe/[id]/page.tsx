@@ -9,7 +9,7 @@ import PipelineCanvas from '../components/PipelineCanvas';
 import { usePipelineStore } from '@/store/usePipeStore';
 import { PipelineService } from '@/services/pipe.service';
 import { TaskService } from '@/services/task.service';
-import { mergePipelineCanvasNodes } from '@/lib/hydratePipelineCanvas';
+import { mergePipelineCanvasNodes, applyPipelineNodeDeletePolicy } from '@/lib/hydratePipelineCanvas';
 
 
 export default function Home() {
@@ -53,7 +53,9 @@ export default function Home() {
           tasks.filter((t) => t != null).map((t) => [t!.id, t!]),
         );
 
-        const initialNodes = mergePipelineCanvasNodes(canvasNodes, apiNodes, taskById);
+        const initialNodes = applyPipelineNodeDeletePolicy(
+          mergePipelineCanvasNodes(canvasNodes, apiNodes, taskById),
+        );
 
         setPipeline(pipeId, uuid, initialNodes, initialEdges, pipeline.name);
         setId(pipeId);

@@ -16,6 +16,7 @@ import {
   removeNodeFromChain,
   resolvePipelineEdges,
 } from '@/lib/pipelineChain';
+import { applyPipelineNodeDeletePolicy } from '@/lib/hydratePipelineCanvas';
 
 const GRID_SIZE_X = 200;
 
@@ -195,7 +196,7 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
     set({
       id,
       uuid,
-      nodes,
+      nodes: applyPipelineNodeDeletePolicy(nodes),
       edges: resolvePipelineEdges(nodes, edges),
       name,
     });

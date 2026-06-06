@@ -39,7 +39,6 @@ const PipelineCanvasInner = () => {
     onEdgesChange,
     onConnect,
     reconnectChainEdge,
-    deleteNodes,
   } = usePipelineStore();
 
   const isValidConnection = useCallback(
@@ -65,7 +64,6 @@ const PipelineCanvasInner = () => {
         onConnect={onConnect}
         onReconnect={handleReconnect}
         isValidConnection={isValidConnection}
-        onNodesDelete={deleteNodes}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         snapToGrid={true}

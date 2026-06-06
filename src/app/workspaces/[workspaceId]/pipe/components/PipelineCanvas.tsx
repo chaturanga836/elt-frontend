@@ -81,6 +81,7 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode')
     id: newTrackingId,
     type: nodeType,
     position: { x: newX, y: 200 },
+    deletable: false,
     data: {
       label:
         nodeType === 'restNode'

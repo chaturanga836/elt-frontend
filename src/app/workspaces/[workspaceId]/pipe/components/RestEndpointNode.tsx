@@ -22,6 +22,8 @@ import {
   rowsFromSavedPipelineVariables,
   toPipelineVariablePayload,
 } from '@/lib/pipelineConnectionVariables';
+import PipelineNodeDeleteButton from './PipelineNodeDeleteButton';
+import styles from '../pipeline-editor.module.css';
 
 const { Text } = Typography;
 
@@ -169,7 +171,8 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
     (selectedId ? `Connection #${selectedId}` : 'Select connection');
 
   return (
-    <div className="rest-endpoint-node">
+    <div className={`rest-endpoint-node ${styles.pipelineNodeWrap}`}>
+      <PipelineNodeDeleteButton nodeId={id} nodeLabel={displayName} />
       <Handle type="target" position={Position.Left} style={{ background: '#13c2c2' }} />
 
       <Card
