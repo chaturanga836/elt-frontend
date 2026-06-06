@@ -75,7 +75,9 @@ export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
 
   return (
     <React.Fragment>
-      <div className={`${onSaved ? 'min-h-0' : 'min-h-screen'} bg-background flex flex-col`}>
+      <div
+        className={`${onSaved || fromPipeline ? 'min-h-0 h-full' : 'min-h-screen'} bg-background flex flex-col`}
+      >
         <header className="border-b border-border bg-card px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap size={20} className="text-primary" />

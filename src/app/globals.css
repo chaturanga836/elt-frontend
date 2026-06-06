@@ -76,4 +76,11 @@ body {
     height: 100vh !important;
     width: 100vw !important;
     box-shadow: none !important; /* Optional: cleaner look for fullscreen */
+    overflow: hidden !important;
+}
+
+/* Drawers / dropdowns opened from inside the fullscreen pipeline intercept modal */
+.fullscreen-modal-container ~ .ant-drawer.ant-drawer-open,
+.fullscreen-modal-container ~ div .ant-drawer.ant-drawer-open {
+    z-index: 11000 !important;
 }
