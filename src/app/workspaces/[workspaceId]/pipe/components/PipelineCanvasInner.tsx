@@ -84,6 +84,8 @@ const PipelineCanvasInner = () => {
         edgesReconnectable
         fitView
         deleteKeyCode={['Backspace', 'Delete']}
+        disableKeyboardA11y
+        nodesFocusable={false}
       >
         <Background
           id="stages"

@@ -192,7 +192,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
   const handleEditorMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
-    configurePythonEditor(editor, monaco);
+    configurePythonEditor(editor);
     editor.setValue(scriptRef.current);
     validateCode(scriptRef.current);
     window.setTimeout(() => editor.focus(), 0);

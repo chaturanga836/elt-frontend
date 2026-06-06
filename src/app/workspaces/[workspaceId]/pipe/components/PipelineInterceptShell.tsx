@@ -1,7 +1,16 @@
 'use client';
 
-import { useEffect, useLayoutEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { usePipeModalLock } from '@/app/workspaces/[workspaceId]/pipe/PipeModalContext';
+
+function blurPipelineFocus() {
+  const active = document.activeElement;
+  if (!(active instanceof HTMLElement)) return;
+  if (active.closest('.fullscreen-modal-container')) return;
+  if (active.closest('.react-flow')) {
+    active.blur();
+  }
+}
 
 /** Fullscreen overlay shell — avoids Ant Modal focus-trap fighting Monaco Tab/arrows. */
 export default function PipelineInterceptShell({
@@ -15,6 +24,7 @@ export default function PipelineInterceptShell({
 
   useLayoutEffect(() => {
     lock();
+    blurPipelineFocus();
     return () => {
       unlock();
     };
@@ -38,10 +48,6 @@ export default function PipelineInterceptShell({
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
-
-  const stopKeyBubble = (e: ReactKeyboardEvent) => {
-    e.stopPropagation();
-  };
 
   return (
     <div
@@ -78,8 +84,6 @@ export default function PipelineInterceptShell({
           background: '#fff',
           overflow: 'hidden',
         }}
-        onKeyDown={stopKeyBubble}
-        onKeyUp={stopKeyBubble}
       >
         {children}
       </div>
