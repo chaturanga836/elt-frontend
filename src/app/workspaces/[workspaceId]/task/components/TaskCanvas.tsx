@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Editor, OnMount } from '@monaco-editor/react';
 import { Input, Button, Card, Space, Breadcrumb, notification, Alert, Modal, List, Tag, Typography } from 'antd';
 import { SaveOutlined, ArrowLeftOutlined, CodeOutlined, WarningOutlined, LinkOutlined } from '@ant-design/icons';
@@ -17,6 +17,10 @@ import Link from 'next/link';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
 import { stashPipelineTaskPick } from '@/lib/pipelineTaskPick';
+import {
+  PYTHON_EDITOR_OPTIONS,
+  configurePythonEditor,
+} from '@/lib/monaco/pythonEditorOptions';
 
 type ConnectionRecord = {
   id: number;
@@ -59,6 +63,8 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
   const [connections, setConnections] = useState<ConnectionRecord[]>([]);
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
+  const scriptRef = useRef(taskData.script);
+  scriptRef.current = taskData.script;
 
   const [api, contextHolder] = notification.useNotification();
 
@@ -128,7 +134,21 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
   const validateCode = useCallback(
     (code: string) => {
       const found = detectExternalUrls(code, allowedUrls);
-      setViolations(found);
+
+      setViolations((prev) => {
+        if (
+          prev.length === found.length &&
+          prev.every(
+            (v, i) =>
+              v.url === found[i]?.url &&
+              v.line === found[i]?.line &&
+              v.startCol === found[i]?.startCol,
+          )
+        ) {
+          return prev;
+        }
+        return found;
+      });
 
       if (editorRef.current && monacoRef.current) {
         const monaco = monacoRef.current;
@@ -151,22 +171,31 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
     [allowedUrls],
   );
 
+  const debouncedValidate = useMemo(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    return (code: string) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => validateCode(code), 250);
+    };
+  }, [validateCode]);
+
   useEffect(() => {
-    if (taskData.script) {
-      validateCode(taskData.script);
-    }
-  }, [allowedUrls, validateCode, taskData.script]);
+    const code = editorRef.current?.getValue() ?? scriptRef.current;
+    validateCode(code);
+  }, [allowedUrls, validateCode]);
 
   const handleEditorMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
+    configurePythonEditor(editor);
     validateCode(taskData.script);
+    editor.focus();
   };
 
   const handleEditorChange = (value: string | undefined) => {
-    const code = value || '';
-    setTaskData({ ...taskData, script: code });
-    validateCode(code);
+    const code = value ?? '';
+    setTaskData((prev) => ({ ...prev, script: code }));
+    debouncedValidate(code);
   };
 
   const buildConnectionSnippet = (connection: ConnectionRecord) => {
@@ -424,21 +453,20 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
             }
             styles={{ body: { flex: 1, padding: 0, overflow: 'hidden' } }}
           >
-            <Editor
-              height="100%"
-              defaultLanguage="python"
-              theme="vs-dark"
-              value={taskData.script}
-              onChange={handleEditorChange}
-              onMount={handleEditorMount}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 14,
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-              }}
-            />
+            <div
+              style={{ height: '100%', minHeight: 400 }}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              <Editor
+                height="100%"
+                defaultLanguage="python"
+                theme="vs-dark"
+                value={taskData.script}
+                onChange={handleEditorChange}
+                onMount={handleEditorMount}
+                options={PYTHON_EDITOR_OPTIONS}
+              />
+            </div>
           </Card>
         </div>
         </>
