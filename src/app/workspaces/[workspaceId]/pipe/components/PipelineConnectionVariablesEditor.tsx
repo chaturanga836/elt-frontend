@@ -42,7 +42,7 @@ export default function PipelineConnectionVariablesEditor({
 
   const mapOptions = upstreamOutputs.map((field) => ({
     value: field.path,
-    label: field.label,
+    label: `${field.label} → {{${field.path}}}`,
     title: field.description,
   }));
 
@@ -67,7 +67,7 @@ export default function PipelineConnectionVariablesEditor({
           }}
         >
           <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>
-            Previous node outputs
+            Script / previous node outputs
             {upstreamNodeLabel ? ` — ${upstreamNodeLabel}` : ''}
           </Text>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -78,8 +78,9 @@ export default function PipelineConnectionVariablesEditor({
             ))}
           </div>
           <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 8 }}>
-            Map each connection input variable below to one of these outputs. Values are saved as{' '}
-            {'{{input.path}}'} templates resolved at run time.
+            For each connection variable below, pick a script output (e.g.{' '}
+            <Text code>result</Text>) or type <Text code>{'{{result}}'}</Text>. At run time
+            the value comes from the previous step.
           </Text>
         </div>
       ) : null}
@@ -93,7 +94,7 @@ export default function PipelineConnectionVariablesEditor({
         }}
       >
         <Text strong style={{ fontSize: 13 }}>
-          Input variables (connection)
+          Connection input variables
         </Text>
         <Button
           type="link"
@@ -105,11 +106,28 @@ export default function PipelineConnectionVariablesEditor({
           Reset to connection defaults
         </Button>
       </div>
-      <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 12 }}>
-        Values apply only to this connection node on this pipeline. The saved REST connection is
-        not modified. For Scrape URL, set <Text code>url</Text> to the page to fetch. Map from
-        previous node outputs or enter a literal value.
-      </Text>
+
+      {rows.length > 0 ? (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: upstreamOutputs.length
+              ? '28px 100px 1fr 1fr 32px'
+              : '28px 100px 1fr 32px',
+            gap: '4px 8px',
+            marginBottom: 8,
+            alignItems: 'center',
+            fontSize: 11,
+            color: '#8c8c8c',
+          }}
+        >
+          <span />
+          <span>Connection key</span>
+          {upstreamOutputs.length > 0 ? <span>Map from output</span> : null}
+          <span>Value (literal or {'{{result}}'})</span>
+          <span />
+        </div>
+      ) : null}
 
       {rows.map((row) => {
         const mappedPath = parseInputTemplateValue(row.value);
@@ -117,11 +135,13 @@ export default function PipelineConnectionVariablesEditor({
           <div
             key={row.uiId}
             style={{
-              display: 'flex',
-              gap: 8,
+              display: 'grid',
+              gridTemplateColumns: upstreamOutputs.length
+                ? '28px 100px 1fr 1fr 32px'
+                : '28px 100px 1fr 32px',
+              gap: '4px 8px',
               marginBottom: 8,
               alignItems: 'center',
-              flexWrap: 'wrap',
             }}
           >
             <Switch
@@ -134,17 +154,17 @@ export default function PipelineConnectionVariablesEditor({
               placeholder="key"
               value={row.key}
               onChange={(e) => update(row.uiId, { key: e.target.value })}
-              style={{ width: 100, flexShrink: 0 }}
+              style={{ width: '100%' }}
               disabled={!row.enabled}
             />
             {upstreamOutputs.length > 0 ? (
               <Select
                 allowClear
-                placeholder="Map from output"
+                placeholder="e.g. result"
                 value={mappedPath}
                 onChange={(path) => handleMapFromUpstream(row.uiId, path ?? null)}
                 options={mapOptions}
-                style={{ width: 160, flexShrink: 0 }}
+                style={{ width: '100%' }}
                 disabled={!row.enabled}
                 optionFilterProp="label"
                 showSearch
@@ -152,11 +172,15 @@ export default function PipelineConnectionVariablesEditor({
             ) : null}
             <Input
               placeholder={
-                row.defaultValue ? `default: ${row.defaultValue}` : 'value or {{input.path}}'
+                row.defaultValue
+                  ? `default: ${row.defaultValue}`
+                  : mappedPath
+                    ? `{{${mappedPath}}}`
+                    : 'literal or {{result}}'
               }
               value={row.value}
               onChange={(e) => update(row.uiId, { value: e.target.value })}
-              style={{ flex: 1, minWidth: 140 }}
+              style={{ width: '100%' }}
               disabled={!row.enabled}
             />
             <Button

@@ -2,7 +2,7 @@ import type {
   PipelineInputVariableDef,
   PipelineVariableDef,
 } from '@/lib/pipelineNodeVariables';
-import { mergeTaskOutputVariables, parseInputTemplateValue } from '@/lib/pipelineNodeVariables';
+import { mergeTaskOutputVariables, parseInputTemplateValue, formatInputTemplate } from '@/lib/pipelineNodeVariables';
 
 export type VariableBindingRow = {
   key: string;
@@ -136,7 +136,7 @@ export function buildConnectionVariableBindings(
     }
     rows.push({
       key: item.key.trim(),
-      source: templatePath ? `{{input.${templatePath}}}` : mapping || '(literal)',
+      source: templatePath ? formatInputTemplate(templatePath) : mapping || '(literal)',
       value: resolved,
     });
   }

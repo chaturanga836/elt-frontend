@@ -30,15 +30,26 @@ export type UpstreamOutputField = {
 };
 
 const INPUT_TEMPLATE_RE = /^\{\{input\.([^}]+)\}\}$/;
+const SHORT_TEMPLATE_RE = /^\{\{([^}]+)\}\}$/;
 
+/** Pipeline mapping template, e.g. {{result}} from previous script output. */
 export function formatInputTemplate(path: string): string {
+  return `{{${path}}}`;
+}
+
+export function formatInputTemplateLong(path: string): string {
   return `{{input.${path}}}`;
 }
 
 export function parseInputTemplateValue(value: string): string | null {
   const trimmed = value.trim();
-  const match = trimmed.match(INPUT_TEMPLATE_RE);
-  return match ? match[1] : null;
+  const longMatch = trimmed.match(INPUT_TEMPLATE_RE);
+  if (longMatch) return longMatch[1];
+  const shortMatch = trimmed.match(SHORT_TEMPLATE_RE);
+  if (shortMatch && !shortMatch[1].startsWith('input.')) {
+    return shortMatch[1];
+  }
+  return null;
 }
 
 function nodeLabel(node: Node): string {
