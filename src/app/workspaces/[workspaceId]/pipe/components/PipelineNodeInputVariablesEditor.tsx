@@ -59,7 +59,8 @@ export default function PipelineNodeInputVariablesEditor({
 
       <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 12 }}>
         These fields are available on <Text code>input_data</Text> when the script runs. Use{' '}
-        <Text code>input_data.get(&apos;data&apos;)</Text> (or the source path) in your script.
+        <Text code>input_data.get(&apos;data&apos;)</Text> or{' '}
+        <Text code>input_data.data</Text> for the response body from a connection node.
       </Text>
 
       {rows.map((row, index) => (
