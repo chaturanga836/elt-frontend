@@ -212,6 +212,14 @@ export const connectionService = {
         return response.data;
     },
 
+    getConnectionTables: async (connectionId: number, workspaceId: number) => {
+        const response = await api.get(
+            `/connections/${connectionId}/tables`,
+            wsParams(workspaceId),
+        );
+        return response.data as { tables: string[] };
+    },
+
     deleteGenericConnection: async (connectionId: number, workspaceId: number) => {
         const response = await api.delete(
             `/connections/${connectionId}`,

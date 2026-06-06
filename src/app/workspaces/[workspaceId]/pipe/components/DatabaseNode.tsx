@@ -28,6 +28,7 @@ type NodeConfig = {
   source_type?: string;
   prototype_id?: string;
   operation?: DbOperation | 'write';
+  allowed_tables?: string[];
   table?: string;
   query?: string;
   script?: string;
@@ -75,9 +76,13 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
   const selectedId =
     (data.connection_id as number | undefined) ?? nodeConfig.connection_id;
   const savedOperation = normalizeOperation(nodeConfig);
+  const savedAllowedTables = nodeConfig.allowed_tables || [];
 
   const [open, setOpen] = useState(false);
   const [listLoading, setListLoading] = useState(false);
+  const [tablesLoading, setTablesLoading] = useState(false);
+  const [tablesError, setTablesError] = useState<string | null>(null);
+  const [connectionTables, setConnectionTables] = useState<string[]>([]);
   const [items, setItems] = useState<DbConnectionSummary[]>([]);
   const [form] = Form.useForm();
 
@@ -87,6 +92,8 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
   );
 
   const operation = (Form.useWatch('operation', form) ?? savedOperation) as DbOperation;
+  const watchedConnectionId = Form.useWatch('connection_id', form);
+  const watchedAllowedTables = (Form.useWatch('allowed_tables', form) as string[] | undefined) ?? [];
 
   const loadConnectionList = useCallback(async () => {
     setListLoading(true);
@@ -101,15 +108,49 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
     }
   }, [workspaceId]);
 
+  const loadTablesForConnection = useCallback(
+    async (connectionId: number | undefined) => {
+      if (!connectionId) {
+        setConnectionTables([]);
+        setTablesError(null);
+        return;
+      }
+      setTablesLoading(true);
+      setTablesError(null);
+      try {
+        const res = await connectionService.getConnectionTables(connectionId, workspaceId);
+        setConnectionTables(res.tables || []);
+      } catch (err: unknown) {
+        setConnectionTables([]);
+        const message =
+          err && typeof err === 'object' && 'response' in err
+            ? String((err as { response?: { data?: { detail?: string } } }).response?.data?.detail)
+            : 'Failed to load tables';
+        setTablesError(message || 'Failed to load tables');
+      } finally {
+        setTablesLoading(false);
+      }
+    },
+    [workspaceId],
+  );
+
   useEffect(() => {
     void loadConnectionList();
   }, [loadConnectionList]);
 
+  useEffect(() => {
+    if (!open) return;
+    void loadTablesForConnection(
+      watchedConnectionId != null ? Number(watchedConnectionId) : undefined,
+    );
+  }, [open, watchedConnectionId, loadTablesForConnection]);
+
   const openModal = () => {
     form.setFieldsValue({
       connection_id: selectedId,
+      allowed_tables: savedAllowedTables,
       operation: savedOperation,
-      table: nodeConfig.table || '',
+      table: nodeConfig.table || undefined,
       query: nodeConfig.query || 'SELECT 1',
       script:
         nodeConfig.script ||
@@ -129,6 +170,7 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
     const values = await form.validateFields();
     const connection_id = Number(values.connection_id);
     const conn = items.find((c) => c.id === connection_id);
+    const allowed_tables = (values.allowed_tables as string[] | undefined) || [];
 
     let column_map: Record<string, string> | undefined;
     const rawMap = (values.column_map_json || '').trim();
@@ -150,6 +192,7 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
       source_type: 'db',
       prototype_id: conn?.prototype_id || nodeConfig.prototype_id,
       operation: op,
+      allowed_tables,
       input_path,
       params_path,
       tenant_id: workspaceTenantId(workspaceId),
@@ -197,6 +240,10 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
   };
 
   const opLabel = OPERATION_LABELS[savedOperation] || 'Insert';
+  const tablesSummary =
+    savedAllowedTables.length > 0
+      ? `${savedAllowedTables.length} table${savedAllowedTables.length === 1 ? '' : 's'}`
+      : 'no tables';
   const opDetail =
     savedOperation === 'read'
       ? 'SQL query'
@@ -209,6 +256,14 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
     nodeConfig.label ||
     (data.label as string | undefined) ||
     (selectedId ? `Connection #${selectedId}` : 'Select database');
+
+  const tableOptions = useMemo(() => {
+    const names = new Set([...connectionTables, ...watchedAllowedTables, ...savedAllowedTables]);
+    return Array.from(names)
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b))
+      .map((name) => ({ value: name, label: name }));
+  }, [connectionTables, watchedAllowedTables, savedAllowedTables]);
 
   return (
     <div className={`database-node ${styles.pipelineNodeWrap}`}>
@@ -240,8 +295,13 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
             </Text>
             <div style={{ lineHeight: 1.2 }}>
               <Text type="secondary" style={{ fontSize: 10 }} ellipsis>
-                {selected ? `${opLabel} → ${opDetail}` : '—'}
+                {selected ? `${opLabel} · ${tablesSummary}` : '—'}
               </Text>
+              {selected ? (
+                <Text type="secondary" style={{ fontSize: 10, display: 'block' }} ellipsis>
+                  {opDetail}
+                </Text>
+              ) : null}
             </div>
           </div>
         </Flex>
@@ -271,6 +331,14 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
         <Alert
           type="info"
           showIcon
+          title="Allowed tables"
+          description="Select which tables this node may read or write. SQL is only executed if every referenced table is in this list."
+          style={{ marginBottom: 16 }}
+        />
+
+        <Alert
+          type="info"
+          showIcon
           title="Previous node data (optional)"
           description='Use input path for row payloads (e.g. records) and params path for SQL bind parameters (e.g. params). In SQL, reference values with {{input.field}}.'
           style={{ marginBottom: 16 }}
@@ -291,6 +359,39 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
               }))}
               showSearch
               optionFilterProp="label"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Allowed tables"
+            name="allowed_tables"
+            rules={[
+              {
+                required: true,
+                type: 'array',
+                min: 1,
+                message: 'Select at least one table',
+              },
+            ]}
+            extra={
+              tablesLoading
+                ? 'Loading tables from connection…'
+                : tablesError
+                  ? tablesError
+                  : connectionTables.length === 0 && watchedConnectionId
+                    ? 'No tables found or connection could not be introspected.'
+                    : undefined
+            }
+            validateStatus={tablesError ? 'warning' : undefined}
+          >
+            <Select
+              mode="multiple"
+              loading={tablesLoading}
+              placeholder="Select tables this node can access"
+              options={tableOptions}
+              showSearch
+              optionFilterProp="label"
+              disabled={!watchedConnectionId}
             />
           </Form.Item>
 
@@ -326,7 +427,7 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
               label="SQL query"
               name="query"
               rules={[{ required: true, message: 'Query is required' }]}
-              tooltip="Use :param_name for bind params and {{input.field}} for template values"
+              tooltip="Use :param_name for bind params and {{input.field}} for template values. Only allowed tables may appear in FROM/JOIN."
             >
               <TextArea
                 rows={5}
@@ -340,7 +441,7 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
               label="SQL script"
               name="script"
               rules={[{ required: true, message: 'SQL script is required' }]}
-              tooltip="Flexible SQL — SELECT returns rows; INSERT/UPDATE/DELETE returns affected row count"
+              tooltip="Flexible SQL — only allowed tables may be referenced"
             >
               <TextArea
                 rows={8}
@@ -357,7 +458,20 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
                 name="table"
                 rules={[{ required: true, message: 'Table name is required' }]}
               >
-                <Input placeholder="e.g. scraped_pages" />
+                <Select
+                  placeholder="Select target table"
+                  options={tableOptions.filter((opt) =>
+                    watchedAllowedTables.includes(opt.value),
+                  )}
+                  showSearch
+                  optionFilterProp="label"
+                  disabled={watchedAllowedTables.length === 0}
+                  notFoundContent={
+                    watchedAllowedTables.length === 0
+                      ? 'Select allowed tables first'
+                      : 'No matching table'
+                  }
+                />
               </Form.Item>
 
               {operation === 'update' && (
