@@ -14,15 +14,14 @@ export default function PipeLayout({
   modal: React.ReactNode;
 }) {
   const modalSegment = useSelectedLayoutSegment('modal');
-  const modalActive = modalSegment != null;
 
   return (
     <ReactFlowProvider>
-      <PipeModalProvider active={modalActive}>
+      <PipeModalProvider segmentActive={modalSegment != null}>
         <div className={styles.pipeLayout}>
           <div
-            className={modalActive ? styles.pipeLayoutBackground : undefined}
-            aria-hidden={modalActive || undefined}
+            className={modalSegment != null ? styles.pipeLayoutBackground : undefined}
+            aria-hidden={modalSegment != null || undefined}
           >
             {children}
           </div>

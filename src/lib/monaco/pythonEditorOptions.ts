@@ -26,27 +26,3 @@ export const PYTHON_EDITOR_OPTIONS = {
     horizontalScrollbarSize: 10,
   },
 };
-
-type MonacoKeyEvent = {
-  browserEvent?: KeyboardEvent;
-};
-
-type MonacoEditor = {
-  updateOptions: (options: typeof PYTHON_EDITOR_OPTIONS) => void;
-  getModel: () => { updateOptions: (options: Record<string, unknown>) => void } | null;
-  onKeyDown: (listener: (e: MonacoKeyEvent) => void) => void;
-  focus: () => void;
-};
-
-export function configurePythonEditor(editor: MonacoEditor): void {
-  editor.updateOptions(PYTHON_EDITOR_OPTIONS);
-  editor.getModel()?.updateOptions({
-    insertSpaces: true,
-    tabSize: 4,
-    indentSize: 4,
-  });
-  // Stop keys from reaching React Flow (capture/bubble on document) — use the DOM event.
-  editor.onKeyDown((e) => {
-    e.browserEvent?.stopPropagation();
-  });
-}

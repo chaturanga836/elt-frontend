@@ -56,6 +56,15 @@ const PipelineCanvasInner = () => {
     [reconnectChainEdge],
   );
 
+  if (modalActive) {
+    return (
+      <div
+        style={{ width: '100%', height: '100%', position: 'relative' }}
+        aria-hidden
+      />
+    );
+  }
+
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <ReactFlow
@@ -68,10 +77,6 @@ const PipelineCanvasInner = () => {
         isValidConnection={isValidConnection}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        nodesFocusable={!modalActive}
-        edgesFocusable={!modalActive}
-        elementsSelectable={!modalActive}
-        tabIndex={modalActive ? -1 : 0}
         snapToGrid={true}
         snapGrid={[GRID_SIZE_X, GRID_SIZE_Y]}
         connectionLineType={ConnectionLineType.Step}

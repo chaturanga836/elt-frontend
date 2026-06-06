@@ -19,8 +19,11 @@ import { workspacePath } from '@/lib/paths';
 import { stashPipelineTaskPick } from '@/lib/pipelineTaskPick';
 import {
   PYTHON_EDITOR_OPTIONS,
-  configurePythonEditor,
 } from '@/lib/monaco/pythonEditorOptions';
+import {
+  configurePythonEditor,
+  useMonacoKeyboardGuard,
+} from '@/lib/monaco/configurePythonEditor';
 
 type ConnectionRecord = {
   id: number;
@@ -65,6 +68,8 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
   const monacoRef = useRef<any>(null);
   const scriptRef = useRef(taskData.script);
   scriptRef.current = taskData.script;
+
+  useMonacoKeyboardGuard(editorRef);
 
   const [api, contextHolder] = notification.useNotification();
 
@@ -193,7 +198,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
     configurePythonEditor(editor);
     editor.setValue(scriptRef.current);
     validateCode(scriptRef.current);
-    editor.focus();
+    window.setTimeout(() => editor.focus(), 0);
   };
 
   const handleEditorChange = (value: string | undefined) => {
@@ -458,6 +463,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
               </Space>
             }
             styles={{ body: { flex: 1, padding: 0, overflow: 'hidden', minHeight: 400 } }}
+            onClick={() => editorRef.current?.focus()}
           >
             <Editor
               key={isEditMode ? `task-${taskId}` : 'task-new'}
@@ -468,6 +474,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
               onChange={handleEditorChange}
               onMount={handleEditorMount}
               options={PYTHON_EDITOR_OPTIONS}
+              keepCurrentModel
             />
           </Card>
         </div>
