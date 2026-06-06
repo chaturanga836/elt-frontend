@@ -1,47 +1,33 @@
-'use client';
-
-import { useEffect } from 'react';
-import type { RefObject } from 'react';
 import { PYTHON_EDITOR_OPTIONS } from '@/lib/monaco/pythonEditorOptions';
 
+type MonacoKeyCode = {
+  Tab: number;
+};
+
+type MonacoApi = {
+  KeyCode: MonacoKeyCode;
+};
+
 type MonacoEditorLike = {
-  getContainerDomNode: () => HTMLElement;
   focus: () => void;
   trigger: (source: string, handlerId: string) => void;
   updateOptions: (options: typeof PYTHON_EDITOR_OPTIONS) => void;
   getModel: () => { updateOptions: (options: Record<string, unknown>) => void } | null;
-  onDidFocusEditorWidget: (listener: () => void) => void;
-  onDidDispose: (listener: () => void) => void;
+  getDomNode: () => HTMLElement | null;
+  onKeyDown: (
+    listener: (e: {
+      keyCode: number;
+      shiftKey: boolean;
+      browserEvent?: KeyboardEvent;
+    }) => void,
+  ) => { dispose: () => void };
 };
 
-export function useMonacoKeyboardGuard(editorRef: RefObject<MonacoEditorLike | null>) {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const editor = editorRef.current;
-      if (!editor) return;
-
-      const root = editor.getContainerDomNode();
-      const target = e.target as Node | null;
-      if (!target || !root.contains(target)) return;
-
-      e.stopPropagation();
-      if (typeof e.stopImmediatePropagation === 'function') {
-        e.stopImmediatePropagation();
-      }
-
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        editor.focus();
-        editor.trigger('keyboard', e.shiftKey ? 'outdent' : 'indent');
-      }
-    };
-
-    window.addEventListener('keydown', handler, true);
-    return () => window.removeEventListener('keydown', handler, true);
-  }, [editorRef]);
-}
-
-export function configurePythonEditor(editor: MonacoEditorLike): void {
+/**
+ * Keyboard isolation for Monaco inside the pipeline canvas.
+ * Bubble-phase stopPropagation lets Monaco handle keys first, then blocks React Flow.
+ */
+export function configurePythonEditor(editor: MonacoEditorLike, monaco: MonacoApi): void {
   editor.updateOptions(PYTHON_EDITOR_OPTIONS);
   editor.getModel()?.updateOptions({
     insertSpaces: true,
@@ -49,15 +35,20 @@ export function configurePythonEditor(editor: MonacoEditorLike): void {
     indentSize: 4,
   });
 
-  const focusText = () => {
-    editor.focus();
-  };
+  const domNode = editor.getDomNode();
+  if (domNode) {
+    const stopBubble = (e: Event) => {
+      e.stopPropagation();
+    };
+    domNode.addEventListener('keydown', stopBubble, false);
+    domNode.addEventListener('keyup', stopBubble, false);
+  }
 
-  editor.onDidFocusEditorWidget(focusText);
-
-  const container = editor.getContainerDomNode();
-  container.addEventListener('mousedown', focusText);
-  editor.onDidDispose(() => {
-    container.removeEventListener('mousedown', focusText);
+  editor.onKeyDown((e) => {
+    if (e.keyCode !== monaco.KeyCode.Tab) return;
+    const browserEvent = e.browserEvent;
+    if (!browserEvent) return;
+    browserEvent.preventDefault();
+    editor.trigger('keyboard', e.shiftKey ? 'outdent' : 'indent');
   });
 }

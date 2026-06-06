@@ -16,18 +16,18 @@ export default function PipeLayout({
   const modalSegment = useSelectedLayoutSegment('modal');
 
   return (
-    <ReactFlowProvider>
-      <PipeModalProvider segmentActive={modalSegment != null}>
-        <div className={styles.pipeLayout}>
+    <PipeModalProvider segmentActive={modalSegment != null}>
+      <div className={styles.pipeLayout}>
+        <ReactFlowProvider>
           <div
             className={modalSegment != null ? styles.pipeLayoutBackground : undefined}
             aria-hidden={modalSegment != null || undefined}
           >
             {children}
           </div>
-          {modal}
-        </div>
-      </PipeModalProvider>
-    </ReactFlowProvider>
+        </ReactFlowProvider>
+        {modal}
+      </div>
+    </PipeModalProvider>
   );
 }

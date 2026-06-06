@@ -57,7 +57,7 @@ export default function PipelineCanvas() {
     setDebugOpen(false);
   };
   
-  // Requires ReactFlowProvider from pipe/layout.tsx
+  // Requires ReactFlowProvider from pipe/layout.tsx (wraps canvas only, not intercept modals)
   const { getViewport } = useReactFlow();
 
 
