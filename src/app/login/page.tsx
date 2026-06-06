@@ -58,7 +58,7 @@ export default function LoginPage() {
 
       <Drawer
         title="Sign in"
-        placement="left"
+        placement="right"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         width={400}
