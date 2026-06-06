@@ -2,12 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Card, Avatar, Typography, Flex, Modal, Select, Form, Spin, Alert } from 'antd';
+import { useParams, usePathname } from 'next/navigation';
+import { Card, Avatar, Typography, Flex, Modal, Spin, Alert } from 'antd';
 import { ApiOutlined } from '@ant-design/icons';
 import { usePipelineStore } from '@/store/usePipeStore';
 import { connectionService } from '@/services/connection.service';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspaceTenantId } from '@/lib/tenantScope';
+import { workspacePath } from '@/lib/paths';
+import RestConnectionPickerPanel from '@/features/orchestration/RestConnectionPickerPanel';
+import {
+  consumePipelineConnectionPick,
+  type PipelineRestConnectionSummary,
+} from '@/lib/pipelineConnectionPick';
 import PipelineConnectionVariablesEditor from './PipelineConnectionVariablesEditor';
 import {
   type PipelineVarRow,
@@ -18,14 +25,7 @@ import {
 
 const { Text } = Typography;
 
-type RestConnectionSummary = {
-  id: number;
-  name: string;
-  effective_url?: string | null;
-  url?: string | null;
-  method?: number;
-  group_name?: string | null;
-};
+type RestConnectionSummary = PipelineRestConnectionSummary;
 
 type NodeConfig = {
   rest_connection_id?: number;
@@ -37,6 +37,14 @@ type NodeConfig = {
 
 export default function RestEndpointNode({ id, data }: { id: string; data: Record<string, unknown> }) {
   const workspaceId = useWorkspaceId();
+  const params = useParams();
+  const pathname = usePathname();
+  const pipelineSegment = params?.id;
+  const pipelineReturnUrl =
+    typeof pipelineSegment === 'string' && pipelineSegment !== 'new'
+      ? workspacePath(workspaceId, `pipe/${pipelineSegment}`)
+      : workspacePath(workspaceId, 'pipe/new');
+
   const updateNodeData = usePipelineStore((s) => s.updateNodeData);
   const nodeConfig = (data.node_config as NodeConfig) || {};
   const selectedId =
@@ -50,8 +58,6 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
   const [varRows, setVarRows] = useState<PipelineVarRow[]>([]);
   const [baseRows, setBaseRows] = useState<PipelineVarRow[]>([]);
   const [formConnectionId, setFormConnectionId] = useState<number | undefined>(selectedId);
-
-  const [form] = Form.useForm();
 
   const selected = useMemo(
     () => items.find((c) => c.id === selectedId) || null,
@@ -92,9 +98,21 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
     void loadConnectionList();
   }, [loadConnectionList]);
 
+  useEffect(() => {
+    const picked = consumePipelineConnectionPick(id);
+    if (!picked) return;
+
+    setItems((prev) => {
+      if (prev.some((c) => c.id === picked.id)) return prev;
+      return [picked, ...prev];
+    });
+    setFormConnectionId(picked.id);
+    void loadVariablesForConnection(picked.id, nodeConfig.overrides);
+    setOpen(true);
+  }, [id, pathname, loadVariablesForConnection, nodeConfig.overrides]);
+
   const openModal = () => {
     const connId = selectedId;
-    form.setFieldsValue({ rest_connection_id: connId });
     setFormConnectionId(connId);
     if (connId) {
       void loadVariablesForConnection(connId, nodeConfig.overrides);
@@ -102,22 +120,26 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
       setVarRows([]);
       setBaseRows([]);
     }
+    void loadConnectionList();
     setOpen(true);
   };
 
-  const handleConnectionChange = (connectionId: number) => {
-    setFormConnectionId(connectionId);
-    void loadVariablesForConnection(connectionId);
+  const handlePickerSelect = (connection: RestConnectionSummary) => {
+    setFormConnectionId(connection.id);
+    void loadVariablesForConnection(connection.id);
   };
 
   const handleResetVariables = () => {
     setVarRows(baseRows.map((r) => ({ ...r, uiId: r.uiId })));
   };
 
-  const onOk = async () => {
-    const values = await form.validateFields();
-    const rest_connection_id = Number(values.rest_connection_id);
-    const conn = items.find((c) => c.id === rest_connection_id);
+  const onOk = () => {
+    const rest_connection_id = formConnectionId;
+    if (!rest_connection_id) return;
+
+    const conn =
+      items.find((c) => c.id === rest_connection_id) ||
+      ({ id: rest_connection_id, name: `Connection #${rest_connection_id}` } as RestConnectionSummary);
 
     const variables = toPipelineVariablePayload(varRows);
 
@@ -188,42 +210,37 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
         open={open}
         onCancel={() => setOpen(false)}
         onOk={onOk}
-        okButtonProps={{ loading: listLoading || detailLoading }}
+        okButtonProps={{ loading: listLoading || detailLoading, disabled: !formConnectionId }}
         width={720}
         destroyOnHidden
       >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            label="Connection"
-            name="rest_connection_id"
-            rules={[{ required: true, message: 'Select a connection' }]}
-          >
-            <Select
-              loading={listLoading}
-              placeholder="Select saved REST connection"
-              options={items.map((c) => ({
-                value: c.id,
-                label: `${c.name}${c.group_name ? ` (${c.group_name})` : ''}`,
-              }))}
-              showSearch
-              optionFilterProp="label"
-              onChange={handleConnectionChange}
-            />
-          </Form.Item>
-        </Form>
+        <RestConnectionPickerPanel
+          selectedId={formConnectionId ?? selectedId}
+          onSelect={handlePickerSelect}
+          pipelineNodeId={id}
+          pipelineReturnUrl={pipelineReturnUrl}
+          onNavigateAway={() => setOpen(false)}
+        />
 
         {!formConnectionId ? (
-          <Alert type="info" showIcon message="Select a connection to configure pipeline variables." />
+          <Alert
+            type="info"
+            showIcon
+            message="Select or create a connection to configure pipeline variables."
+            style={{ marginTop: 16 }}
+          />
         ) : detailLoading ? (
           <div style={{ textAlign: 'center', padding: 24 }}>
             <Spin />
           </div>
         ) : (
-          <PipelineConnectionVariablesEditor
-            rows={varRows}
-            onChange={setVarRows}
-            onResetToConnectionDefaults={handleResetVariables}
-          />
+          <div style={{ marginTop: 16 }}>
+            <PipelineConnectionVariablesEditor
+              rows={varRows}
+              onChange={setVarRows}
+              onResetToConnectionDefaults={handleResetVariables}
+            />
+          </div>
         )}
       </Modal>
     </div>

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Edit2, Loader2, Save, Variable, Zap } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import UrlBar from './UrlBar';
 import RequestTab from './RequestTab';
 import ResponsePanel, { TestResponse } from './ResponsePanel';
@@ -11,6 +12,7 @@ import { Alert, Button, Input, message } from 'antd';
 import { useApiStore } from '@/store/useApiStore';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { getApiErrorMessage } from '@/lib/formatApiError';
+import { stashPipelineConnectionPick } from '@/lib/pipelineConnectionPick';
 
 interface RestApiFormProps {
   onSaved?: () => void;
@@ -18,6 +20,11 @@ interface RestApiFormProps {
 
 export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
   const workspaceId = useWorkspaceId();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromPipeline = searchParams.get('from') === 'pipeline';
+  const pipelineNodeId = searchParams.get('nodeId');
+  const pipelineReturnUrl = searchParams.get('returnUrl');
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [testResponse, setTestResponse] = useState<TestResponse | null>(null);
@@ -31,10 +38,35 @@ export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
   const groupId = useConnectionStore((state) => state.groupId);
   const groupName = useConnectionStore((state) => state.groupName);
   
+  const returnToPipeline = () => {
+    if (pipelineReturnUrl) {
+      router.push(pipelineReturnUrl);
+      return;
+    }
+    router.back();
+  };
+
   const handleSave = async () => {
     try {
       await saveCurrentConnection(workspaceId);
-      message.success(connectionId ? "Connection updated" : "Connection saved");
+      message.success(connectionId ? 'Connection updated' : 'Connection saved');
+
+      if (fromPipeline && pipelineNodeId) {
+        const saved = useConnectionStore.getState();
+        const savedId = saved.id;
+        if (savedId) {
+          stashPipelineConnectionPick({
+            nodeId: pipelineNodeId,
+            connection: {
+              id: savedId,
+              name: saved.connectionName || `Connection ${savedId}`,
+            },
+          });
+          returnToPipeline();
+          return;
+        }
+      }
+
       onSaved?.();
     } catch (error: unknown) {
       message.error(getApiErrorMessage(error, 'Failed to save connection'));
@@ -47,7 +79,9 @@ export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
         <header className="border-b border-border bg-card px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap size={20} className="text-primary" />
-            <span className="font-semibold text-foreground text-sm">API Client</span>
+            <span className="font-semibold text-foreground text-sm">
+              {fromPipeline ? 'New REST connection for pipeline' : 'API Client'}
+            </span>
           </div>
 
           <div className="flex items-center gap-2 max-w-md w-full group">

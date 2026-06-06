@@ -1,11 +1,21 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Modal } from 'antd';
-import TaskCanvas from '@/app/workspaces/[workspaceId]/task/components/TaskCanvas';
+import RestApiForm from '@/features/connections/components/RestApiForm';
+import { useConnectionStore } from '@/store/useConnectionStore';
 
-export default function TaskInterceptPage() {
+export default function RestConnectionCreateInterceptPage() {
   const router = useRouter();
+  const reset = useConnectionStore((s) => s.reset);
+
+  useEffect(() => {
+    reset();
+    return () => {
+      reset();
+    };
+  }, [reset]);
 
   const handleClose = () => {
     router.back();
@@ -13,20 +23,18 @@ export default function TaskInterceptPage() {
 
   return (
     <Modal
-      open={true}
+      open
       onCancel={handleClose}
       footer={null}
       width="100vw"
       centered
-      // This is the most common fix for "invisible" parallel route modals
       getContainer={() => document.body}
       className="fullscreen-modal"
       wrapClassName="fullscreen-modal-container"
       transitionName=""
       maskTransitionName=""
-    // ... rest of your props
     >
-      <TaskCanvas />
+      <RestApiForm />
     </Modal>
   );
 }
