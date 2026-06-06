@@ -35,6 +35,17 @@ export function resolvePipelineEdges(nodes: Node[], edges: Edge[] | undefined | 
   return rebuildChainEdgesFromPositions(nodes);
 }
 
+/** Immediate upstream node connected to the given node (single incoming edge). */
+export function getPredecessorNode(
+  nodes: Node[],
+  edges: Edge[],
+  nodeId: string,
+): Node | undefined {
+  const incoming = edges.find((edge) => edge.target === nodeId);
+  if (!incoming) return undefined;
+  return nodes.find((node) => node.id === incoming.source);
+}
+
 /** Walk the edge chain from Start and return nodes in execution order. */
 export function orderNodesFromEdges(nodes: Node[], edges: Edge[]): Node[] {
   const start = findBoundaryNode(nodes, 'startNode');

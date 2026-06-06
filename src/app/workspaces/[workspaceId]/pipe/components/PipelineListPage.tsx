@@ -99,7 +99,7 @@ export default function PipelineListPage() {
   return (
     <div style={{ padding: '24px' }}>
       <Card title="Data Pipelines" extra={
-        <Link href={workspacePath(workspaceId, 'pipe/new')}>
+        <Link href={workspacePath(workspaceId, 'pipe/new?reset=1')}>
           <Button type="primary" icon={<PlusOutlined />}>Create Pipeline</Button>
         </Link>
       }>

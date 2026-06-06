@@ -2,15 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { useParams, usePathname, useRouter } from 'next/navigation';
-import { Card, Avatar, Typography, Flex, Button } from 'antd';
-import { SettingOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons';
+import { useParams, usePathname, useRouter, useSelectedLayoutSegment } from 'next/navigation';
+import { Card, Avatar, Typography, Flex, Button, Modal } from 'antd';
+import { SettingOutlined, PlusOutlined, EditOutlined, NodeIndexOutlined } from '@ant-design/icons';
 import { usePipelineStore } from '@/store/usePipeStore';
 import { TaskResponse, TaskService } from '@/services/task.service';
 import TaskPickerModal from '@/features/orchestration/TaskPickerModal';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
 import { consumePipelineTaskPick } from '@/lib/pipelineTaskPick';
+import type { PipelineVariableDef } from '@/lib/pipelineNodeVariables';
+import PipelineNodeOutputVariablesEditor, {
+  rowsFromOutputVariables,
+  toOutputVariablePayload,
+  type OutputVarRow,
+} from './PipelineNodeOutputVariablesEditor';
 import PipelineNodeDeleteButton from './PipelineNodeDeleteButton';
 import styles from '../pipeline-editor.module.css';
 
@@ -21,6 +27,7 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
+  const modalSegment = useSelectedLayoutSegment('modal');
   const pipelineSegment = params?.id;
   const pipelineReturnUrl =
     typeof pipelineSegment === 'string' && pipelineSegment !== 'new'
@@ -28,7 +35,12 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
       : workspacePath(workspaceId, 'pipe/new');
 
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [outputsOpen, setOutputsOpen] = useState(false);
+  const [outputRows, setOutputRows] = useState<OutputVarRow[]>([]);
   const updateNodeData = usePipelineStore((state) => state.updateNodeData);
+  const nodeConfig = (data.node_config as { output_variables?: PipelineVariableDef[] }) || {};
+  const outputVarCount =
+    nodeConfig.output_variables?.filter((v) => v.key?.trim()).length ?? 0;
   const selected = (data.config as TaskResponse | null) || null;
   const nodeLabel =
     selected?.name ||
@@ -40,7 +52,7 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
     if (task) {
       updateNodeData(id, { config: task, task_id: task.id });
     }
-  }, [id, pathname, updateNodeData]);
+  }, [id, pathname, modalSegment, updateNodeData]);
 
   useEffect(() => {
     const taskId = data.task_id as number | undefined;
@@ -79,6 +91,23 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
     router.push(`${workspacePath(workspaceId, `task/${selected.id}`)}?${params.toString()}`);
   };
 
+  const openOutputVariables = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOutputRows(rowsFromOutputVariables(nodeConfig.output_variables));
+    setOutputsOpen(true);
+  };
+
+  const saveOutputVariables = () => {
+    const output_variables = toOutputVariablePayload(outputRows);
+    updateNodeData(id, {
+      node_config: {
+        ...nodeConfig,
+        output_variables,
+      },
+    });
+    setOutputsOpen(false);
+  };
+
   return (
     <div className={`custom-node ${styles.pipelineNodeWrap}`}>
       <PipelineNodeDeleteButton nodeId={id} nodeLabel={nodeLabel} />
@@ -112,9 +141,24 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
               icon={<SettingOutlined />}
               style={{ backgroundColor: '#1890ff', flexShrink: 0 }}
             />
-            <Text strong style={{ fontSize: 10, flex: 1, minWidth: 0 }} ellipsis>
-              {selected.name}
-            </Text>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <Text strong style={{ fontSize: 10, display: 'block' }} ellipsis>
+                {selected.name}
+              </Text>
+              {outputVarCount > 0 ? (
+                <Text type="secondary" style={{ fontSize: 9, lineHeight: 1.2 }}>
+                  {outputVarCount} output{outputVarCount === 1 ? '' : 's'}
+                </Text>
+              ) : null}
+            </div>
+            <Button
+              type="text"
+              size="small"
+              icon={<NodeIndexOutlined style={{ fontSize: 11 }} />}
+              onClick={openOutputVariables}
+              title="Output variables"
+              style={{ flexShrink: 0, width: 20, height: 20, minWidth: 20, padding: 0 }}
+            />
             <Button
               type="text"
               size="small"
@@ -138,6 +182,18 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
         pipelineNodeId={id}
         pipelineReturnUrl={pipelineReturnUrl}
       />
+
+      <Modal
+        title="Script output variables"
+        open={outputsOpen}
+        onCancel={() => setOutputsOpen(false)}
+        onOk={saveOutputVariables}
+        okText="Save"
+        width={560}
+        destroyOnHidden
+      >
+        <PipelineNodeOutputVariablesEditor rows={outputRows} onChange={setOutputRows} />
+      </Modal>
     </div>
   );
 };

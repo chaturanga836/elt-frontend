@@ -12,6 +12,7 @@ import { Alert, Button, Input, message } from 'antd';
 import { useApiStore } from '@/store/useApiStore';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { getApiErrorMessage } from '@/lib/formatApiError';
+import { returnToPipeline } from '@/lib/pipelineNavigation';
 import { stashPipelineConnectionPick } from '@/lib/pipelineConnectionPick';
 
 interface RestApiFormProps {
@@ -38,12 +39,8 @@ export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
   const groupId = useConnectionStore((state) => state.groupId);
   const groupName = useConnectionStore((state) => state.groupName);
   
-  const returnToPipeline = () => {
-    if (pipelineReturnUrl) {
-      router.push(pipelineReturnUrl);
-      return;
-    }
-    router.back();
+  const returnToPipelineEditor = () => {
+    returnToPipeline(router, pipelineReturnUrl);
   };
 
   const handleSave = async () => {
@@ -62,7 +59,7 @@ export default function RestApiForm({ onSaved }: RestApiFormProps = {}) {
               name: saved.connectionName || `Connection ${savedId}`,
             },
           });
-          returnToPipeline();
+          returnToPipelineEditor();
           return;
         }
       }

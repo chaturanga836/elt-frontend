@@ -16,6 +16,7 @@ import {
 import Link from 'next/link';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
+import { returnToPipeline } from '@/lib/pipelineNavigation';
 import { stashPipelineTaskPick } from '@/lib/pipelineTaskPick';
 import {
   PYTHON_EDITOR_OPTIONS,
@@ -284,8 +285,8 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
   });
 
   const handleCancel = () => {
-    if (fromPipeline && pipelineReturnUrl) {
-      router.push(pipelineReturnUrl);
+    if (fromPipeline) {
+      returnToPipeline(router, pipelineReturnUrl);
       return;
     }
     router.back();
@@ -319,11 +320,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
         });
         if (fromPipeline && pipelineNodeId && updated?.id) {
           stashPipelineTaskPick({ nodeId: pipelineNodeId, task: updated });
-          if (pipelineReturnUrl) {
-            router.push(pipelineReturnUrl);
-          } else {
-            router.back();
-          }
+          returnToPipeline(router, pipelineReturnUrl);
           return;
         }
       } else {
@@ -334,11 +331,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
         });
         if (fromPipeline && pipelineNodeId && created?.id) {
           stashPipelineTaskPick({ nodeId: pipelineNodeId, task: created });
-          if (pipelineReturnUrl) {
-            router.push(pipelineReturnUrl);
-          } else {
-            router.back();
-          }
+          returnToPipeline(router, pipelineReturnUrl);
           return;
         }
       }
@@ -381,7 +374,9 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
             </h2>
           </Space>
           <Space>
-            <Button icon={<ArrowLeftOutlined />} onClick={handleCancel}>Cancel</Button>
+            <Button icon={<ArrowLeftOutlined />} onClick={handleCancel}>
+              {fromPipeline ? 'Back to pipeline' : 'Cancel'}
+            </Button>
             <Button
               type="primary"
               icon={<SaveOutlined />}

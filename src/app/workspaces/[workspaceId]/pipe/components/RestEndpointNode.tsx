@@ -6,6 +6,12 @@ import { useParams, usePathname } from 'next/navigation';
 import { Card, Avatar, Typography, Flex, Modal, Spin, Alert } from 'antd';
 import { ApiOutlined } from '@ant-design/icons';
 import { usePipelineStore } from '@/store/usePipeStore';
+import { resolvePipelineEdges } from '@/lib/pipelineChain';
+import {
+  getImmediateUpstreamOutputFields,
+  outputVariablesFromFields,
+  restNodeOutputFields,
+} from '@/lib/pipelineNodeVariables';
 import { connectionService } from '@/services/connection.service';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspaceTenantId } from '@/lib/tenantScope';
@@ -48,6 +54,8 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
       : workspacePath(workspaceId, 'pipe/new');
 
   const updateNodeData = usePipelineStore((s) => s.updateNodeData);
+  const nodes = usePipelineStore((s) => s.nodes);
+  const edges = usePipelineStore((s) => s.edges);
   const nodeConfig = (data.node_config as NodeConfig) || {};
   const selectedId =
     (data.rest_connection_id as number | undefined) ??
@@ -65,6 +73,24 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
     () => items.find((c) => c.id === selectedId) || null,
     [items, selectedId],
   );
+
+  const { predecessor, fields: upstreamOutputs } = useMemo(() => {
+    const resolvedEdges = resolvePipelineEdges(nodes, edges);
+    return getImmediateUpstreamOutputFields(nodes, resolvedEdges, id);
+  }, [nodes, edges, id]);
+
+  const upstreamNodeLabel = useMemo(() => {
+    if (!predecessor) return undefined;
+    const data = (predecessor.data || {}) as Record<string, unknown>;
+    const config = (data.node_config as Record<string, unknown>) || {};
+    return (
+      (data.label as string) ||
+      (config.label as string) ||
+      ((data.config as { name?: string } | null)?.name ?? '') ||
+      predecessor.type ||
+      'Previous node'
+    );
+  }, [predecessor]);
 
   const loadConnectionList = useCallback(async () => {
     setListLoading(true);
@@ -154,6 +180,7 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
           ...(nodeConfig.overrides || {}),
           variables,
         },
+        output_variables: outputVariablesFromFields(restNodeOutputFields()),
         tenant_id: workspaceTenantId(workspaceId),
         workspace_id: workspaceId,
         label: conn?.name || 'Connection',
@@ -242,6 +269,8 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
               rows={varRows}
               onChange={setVarRows}
               onResetToConnectionDefaults={handleResetVariables}
+              upstreamOutputs={upstreamOutputs}
+              upstreamNodeLabel={upstreamNodeLabel}
             />
           </div>
         )}
