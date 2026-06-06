@@ -88,6 +88,9 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
           description: task.description || '',
           script: task.script || '',
         });
+        if (editorRef.current) {
+          editorRef.current.setValue(task.script || '');
+        }
       } catch {
         if (alive) {
           notification.error({ message: 'Failed to load task' });
@@ -188,7 +191,8 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
     editorRef.current = editor;
     monacoRef.current = monaco;
     configurePythonEditor(editor);
-    validateCode(taskData.script);
+    editor.setValue(scriptRef.current);
+    validateCode(scriptRef.current);
     editor.focus();
   };
 
@@ -426,7 +430,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
                 <Input
                   placeholder="e.g., Clean Customer Data"
                   value={taskData.name}
-                  onChange={(e) => setTaskData({ ...taskData, name: e.target.value })}
+                  onChange={(e) => setTaskData((prev) => ({ ...prev, name: e.target.value }))}
                 />
               </div>
               <div>
@@ -435,7 +439,9 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
                   rows={4}
                   placeholder="What does this script do?"
                   value={taskData.description}
-                  onChange={(e) => setTaskData({ ...taskData, description: e.target.value })}
+                  onChange={(e) =>
+                    setTaskData((prev) => ({ ...prev, description: e.target.value }))
+                  }
                 />
               </div>
             </Space>
@@ -451,22 +457,18 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
                 </Button>
               </Space>
             }
-            styles={{ body: { flex: 1, padding: 0, overflow: 'hidden' } }}
+            styles={{ body: { flex: 1, padding: 0, overflow: 'hidden', minHeight: 400 } }}
           >
-            <div
-              style={{ height: '100%', minHeight: 400 }}
-              onKeyDown={(e) => e.stopPropagation()}
-            >
-              <Editor
-                height="100%"
-                defaultLanguage="python"
-                theme="vs-dark"
-                value={taskData.script}
-                onChange={handleEditorChange}
-                onMount={handleEditorMount}
-                options={PYTHON_EDITOR_OPTIONS}
-              />
-            </div>
+            <Editor
+              key={isEditMode ? `task-${taskId}` : 'task-new'}
+              height="100%"
+              defaultLanguage="python"
+              theme="vs-dark"
+              defaultValue={taskData.script}
+              onChange={handleEditorChange}
+              onMount={handleEditorMount}
+              options={PYTHON_EDITOR_OPTIONS}
+            />
           </Card>
         </div>
         </>

@@ -7,12 +7,14 @@ export const PYTHON_EDITOR_OPTIONS = {
   automaticLayout: true,
   tabSize: 4,
   indentSize: 4,
+  /** One indent mode per editor: true = Tab inserts spaces, false = Tab inserts \\t */
   insertSpaces: true,
-  detectIndentation: true,
-  autoIndent: 'advanced' as const,
+  detectIndentation: false,
+  autoIndent: 'full' as const,
   wordWrap: 'off' as const,
-  formatOnType: true,
+  formatOnType: false,
   formatOnPaste: true,
+  tabCompletion: 'off' as const,
   quickSuggestions: {
     other: true,
     comments: false,
@@ -25,10 +27,14 @@ export const PYTHON_EDITOR_OPTIONS = {
   },
 };
 
+type MonacoKeyEvent = {
+  browserEvent?: KeyboardEvent;
+};
+
 type MonacoEditor = {
   updateOptions: (options: typeof PYTHON_EDITOR_OPTIONS) => void;
   getModel: () => { updateOptions: (options: Record<string, unknown>) => void } | null;
-  onKeyDown: (listener: (e: { stopPropagation: () => void }) => void) => void;
+  onKeyDown: (listener: (e: MonacoKeyEvent) => void) => void;
   focus: () => void;
 };
 
@@ -39,6 +45,8 @@ export function configurePythonEditor(editor: MonacoEditor): void {
     tabSize: 4,
     indentSize: 4,
   });
-  // Prevent parent handlers (e.g. React Flow under pipeline modals) from swallowing Space/Tab.
-  editor.onKeyDown((e) => e.stopPropagation());
+  // Stop keys from reaching React Flow (capture/bubble on document) — use the DOM event.
+  editor.onKeyDown((e) => {
+    e.browserEvent?.stopPropagation();
+  });
 }

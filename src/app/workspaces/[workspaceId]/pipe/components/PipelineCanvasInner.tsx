@@ -17,6 +17,7 @@ import EndNode from './EndNode';
 import RestEndpointNode from './RestEndpointNode';
 import DatabaseNode from './DatabaseNode';
 import { isValidPipelineConnection } from '@/lib/pipelineChain';
+import { usePipeModalActive } from '../PipeModalContext';
 
 const GRID_SIZE_X = 200;
 const GRID_SIZE_Y = 20;
@@ -32,6 +33,7 @@ const nodeTypes = {
 const edgeTypes = {};
 
 const PipelineCanvasInner = () => {
+  const modalActive = usePipeModalActive();
   const {
     nodes,
     edges,
@@ -66,6 +68,10 @@ const PipelineCanvasInner = () => {
         isValidConnection={isValidConnection}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        nodesFocusable={!modalActive}
+        edgesFocusable={!modalActive}
+        elementsSelectable={!modalActive}
+        tabIndex={modalActive ? -1 : 0}
         snapToGrid={true}
         snapGrid={[GRID_SIZE_X, GRID_SIZE_Y]}
         connectionLineType={ConnectionLineType.Step}
