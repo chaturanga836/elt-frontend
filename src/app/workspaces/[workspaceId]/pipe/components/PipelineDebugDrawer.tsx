@@ -9,6 +9,12 @@ import {
   PipelineDebugStepResult,
 } from '@/services/pipe.service';
 import RunPayloadJsonBlock from './RunPayloadJsonBlock';
+import PipelineDebugVariableBindings from './PipelineDebugVariableBindings';
+import {
+  buildConnectionVariableBindings,
+  buildScriptInputBindings,
+  buildScriptOutputBindings,
+} from '@/lib/pipelineDebugVariables';
 import { RUN_STATUS_FAILED, RUN_STATUS_SUCCESS, statusTag } from './runDetailUtils';
 import styles from '../pipeline-editor.module.css';
 
@@ -284,6 +290,68 @@ export default function PipelineDebugDrawer({
     return map;
   }, [debugState.stepLogs]);
 
+  const latestVariableViews = useMemo(() => {
+    if (!latestLog) return null;
+    const bindings = latestLog.variable_bindings;
+    if (bindings) {
+      return {
+        connectionRows: (bindings.connection_variables || []).map((item) => ({
+          key: item.key,
+          source: item.mapping,
+          value: item.resolved_value,
+        })),
+        inputRows: (bindings.inputs || []).map((item) => ({
+          key: item.key,
+          source: item.source_path,
+          value: item.value,
+          description: item.description,
+        })),
+        outputRows: (bindings.outputs || []).map((item) => ({
+          key: item.key,
+          value: item.value,
+          description: item.description,
+        })),
+      };
+    }
+
+    const config = latestLog.node_config || {};
+    const nodeType = latestLog.node_type;
+    if (nodeType === 3) {
+      const variables = (
+        (config.overrides as { variables?: Array<{ key?: string; value?: string; enabled?: boolean }> })
+          ?.variables
+      );
+      return {
+        connectionRows: buildConnectionVariableBindings(variables, latestLog.input_data),
+        inputRows: [],
+        outputRows: buildScriptOutputBindings(
+          [
+            { key: 'status_code' },
+            { key: 'url' },
+            { key: 'data' },
+          ],
+          latestLog.output_data,
+        ),
+      };
+    }
+
+    if (nodeType === 1) {
+      return {
+        connectionRows: [],
+        inputRows: buildScriptInputBindings(
+          config.input_variables as Parameters<typeof buildScriptInputBindings>[0],
+          latestLog.input_data,
+        ),
+        outputRows: buildScriptOutputBindings(
+          config.output_variables as Parameters<typeof buildScriptOutputBindings>[0],
+          latestLog.output_data,
+        ),
+      };
+    }
+
+    return { connectionRows: [], inputRows: [], outputRows: [] };
+  }, [latestLog]);
+
   return (
     <Drawer
       title={
@@ -413,6 +481,28 @@ export default function PipelineDebugDrawer({
                 Step {latestLog.step_index} — {latestLog.node_name}
                 {latestLog.skipped ? ' (skipped)' : ''}
               </Title>
+
+              {latestVariableViews?.connectionRows.length ? (
+                <PipelineDebugVariableBindings
+                  title="Connection input variables (resolved)"
+                  rows={latestVariableViews.connectionRows}
+                />
+              ) : null}
+
+              {latestVariableViews?.inputRows.length ? (
+                <PipelineDebugVariableBindings
+                  title="Script input variables"
+                  rows={latestVariableViews.inputRows}
+                />
+              ) : null}
+
+              {latestVariableViews?.outputRows.length ? (
+                <PipelineDebugVariableBindings
+                  title="Output variables"
+                  rows={latestVariableViews.outputRows}
+                />
+              ) : null}
+
               {latestLog.stdout_logs ? (
                 <RunPayloadJsonBlock
                   label="Stdout"

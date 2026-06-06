@@ -63,7 +63,9 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
   const nodes = usePipelineStore((state) => state.nodes);
   const edges = usePipelineStore((state) => state.edges);
   const nodeConfig = (data.node_config as TaskNodeConfig) || {};
-  const outputVarCount = mergeTaskOutputVariables(nodeConfig.output_variables).length;
+  const allOutputVars = mergeTaskOutputVariables(nodeConfig.output_variables);
+  const outputVarCount = allOutputVars.length;
+  const customOutputCount = allOutputVars.filter((v) => v.key !== 'result').length;
   const inputVarCount =
     nodeConfig.input_variables?.filter((v) => v.enabled !== false && v.key?.trim()).length ?? 0;
   const selected = (data.config as TaskResponse | null) || null;
@@ -160,11 +162,16 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
   };
 
   const saveVariables = () => {
+    const input_variables = toInputVariablePayload(inputRows);
+    const output_variables = toTaskOutputVariablePayload(outputRows);
+    const latestNode = usePipelineStore.getState().nodes.find((node) => node.id === id);
+    const latestConfig = ((latestNode?.data as Record<string, unknown> | undefined)?.node_config ||
+      {}) as TaskNodeConfig;
     updateNodeData(id, {
       node_config: {
-        ...nodeConfig,
-        input_variables: toInputVariablePayload(inputRows),
-        output_variables: toTaskOutputVariablePayload(outputRows),
+        ...latestConfig,
+        input_variables,
+        output_variables,
       },
     });
     setVariablesOpen(false);
@@ -218,7 +225,9 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
               <Text type="secondary" style={{ fontSize: 9, lineHeight: 1.2 }} ellipsis>
                 {inputVarCount > 0
                   ? `${inputVarCount} in · ${outputVarCount} out`
-                  : `${outputVarCount} output${outputVarCount === 1 ? '' : 's'}`}
+                  : customOutputCount > 0
+                    ? `result + ${customOutputCount} out`
+                    : `${outputVarCount} output${outputVarCount === 1 ? '' : 's'}`}
               </Text>
             </div>
             <Button

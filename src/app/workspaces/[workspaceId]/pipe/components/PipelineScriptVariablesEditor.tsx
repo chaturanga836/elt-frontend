@@ -9,6 +9,7 @@ import PipelineNodeInputVariablesEditor, {
 } from './PipelineNodeInputVariablesEditor';
 import PipelineNodeOutputVariablesEditor, {
   type OutputVarRow,
+  rowsFromOutputVariables,
   toOutputVariablePayload,
 } from './PipelineNodeOutputVariablesEditor';
 
@@ -62,31 +63,14 @@ export function toInputVariablePayload(rows: InputVarRow[]): PipelineInputVariab
 export function rowsFromTaskOutputVariables(
   saved: PipelineVariableDef[] | undefined,
 ): OutputVarRow[] {
-  const defaultKeys = new Set(DEFAULT_TASK_OUTPUT_VARIABLES.map((v) => v.key));
-  const custom = (saved || []).filter((v) => v.key?.trim() && !defaultKeys.has(v.key.trim()));
-  if (!custom.length) {
-    return [{ uiId: generateId(), key: '', description: '' }];
-  }
-  return custom.map((v) => ({
-    uiId: generateId(),
-    key: v.key,
-    description: v.description || '',
-  }));
+  const rows = rowsFromOutputVariables(saved, DEFAULT_TASK_OUTPUT_VARIABLES);
+  const hasCustom = rows.some((row) => !row.isDefault);
+  if (hasCustom) return rows;
+  return [...rows, { uiId: generateId(), key: '', description: '', isDefault: false }];
 }
 
-export function toTaskOutputVariablePayload(
-  customRows: OutputVarRow[],
-): PipelineVariableDef[] {
-  const custom = toOutputVariablePayload(customRows);
-  const seen = new Set<string>();
-  const merged: PipelineVariableDef[] = [];
-  for (const item of [...DEFAULT_TASK_OUTPUT_VARIABLES, ...custom]) {
-    const key = item.key.trim();
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    merged.push(item);
-  }
-  return merged;
+export function toTaskOutputVariablePayload(rows: OutputVarRow[]): PipelineVariableDef[] {
+  return toOutputVariablePayload(rows);
 }
 
 export default function PipelineScriptVariablesEditor({
@@ -114,30 +98,9 @@ export default function PipelineScriptVariablesEditor({
       <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>
         Output variables
       </Text>
-      <div style={{ marginBottom: 12 }}>
-        {DEFAULT_TASK_OUTPUT_VARIABLES.map((item) => (
-          <div
-            key={item.key}
-            style={{
-              display: 'flex',
-              gap: 8,
-              marginBottom: 6,
-              alignItems: 'center',
-              opacity: 0.85,
-            }}
-          >
-            <Text code style={{ width: 120, flexShrink: 0 }}>
-              {item.key}
-            </Text>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {item.description} (default)
-            </Text>
-          </div>
-        ))}
-      </div>
-
-      <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
-        Add more keys your script returns. Downstream connection nodes can map these outputs.
+      <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 12 }}>
+        Default output <Text code>result</Text> is always included. Add more keys your script
+        returns so downstream connection nodes can map them.
       </Text>
       <PipelineNodeOutputVariablesEditor rows={outputRows} onChange={onOutputChange} />
     </div>

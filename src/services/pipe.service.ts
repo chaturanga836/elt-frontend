@@ -69,6 +69,26 @@ export interface PipelineDebugStepPlan {
     node_name: string;
     node_type: number | null;
     kind: string;
+    node_config?: Record<string, unknown>;
+  }>;
+}
+
+export interface PipelineDebugVariableBindings {
+  inputs: Array<{
+    key: string;
+    source_path?: string;
+    value: unknown;
+    description?: string;
+  }>;
+  outputs: Array<{
+    key: string;
+    value: unknown;
+    description?: string;
+  }>;
+  connection_variables: Array<{
+    key: string;
+    mapping: string;
+    resolved_value: unknown;
   }>;
 }
 
@@ -79,6 +99,7 @@ export interface PipelineDebugStepResult {
   node_uuid: string;
   node_name: string;
   node_type: number | null;
+  node_config?: Record<string, unknown>;
   status: number;
   skipped: boolean;
   input_data: Record<string, unknown> | null;
@@ -88,6 +109,7 @@ export interface PipelineDebugStepResult {
   execution_time_ms: number | null;
   next_payload: unknown;
   step_succeeded: boolean;
+  variable_bindings?: PipelineDebugVariableBindings;
 }
 
 export interface PipelineDebugStepRequest {

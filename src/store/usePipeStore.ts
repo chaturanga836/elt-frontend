@@ -178,9 +178,17 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
 
   updateNodeData: (nodeId, newData) => {
     set({
-      nodes: get().nodes.map((node) =>
-        node.id === nodeId ? { ...node, data: { ...node.data, ...newData } } : node,
-      ),
+      nodes: get().nodes.map((node) => {
+        if (node.id !== nodeId) return node;
+        const mergedData: Record<string, unknown> = { ...node.data, ...newData };
+        if (newData.node_config != null) {
+          mergedData.node_config = {
+            ...((node.data?.node_config as Record<string, unknown>) || {}),
+            ...(newData.node_config as Record<string, unknown>),
+          };
+        }
+        return { ...node, data: mergedData };
+      }),
     });
   },
 

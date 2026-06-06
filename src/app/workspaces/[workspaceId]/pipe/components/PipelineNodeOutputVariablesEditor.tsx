@@ -3,11 +3,12 @@
 import { Button, Input, Typography } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import type { PipelineVariableDef } from '@/lib/pipelineNodeVariables';
+import { DEFAULT_TASK_OUTPUT_VARIABLES } from '@/lib/pipelineNodeVariables';
 import { generateId } from '@/lib/generateId';
 
 const { Text } = Typography;
 
-type OutputVarRow = PipelineVariableDef & { uiId: string };
+type OutputVarRow = PipelineVariableDef & { uiId: string; isDefault?: boolean };
 
 type Props = {
   rows: OutputVarRow[];
@@ -16,24 +17,52 @@ type Props = {
 
 export function rowsFromOutputVariables(
   saved: PipelineVariableDef[] | undefined,
+  defaults: PipelineVariableDef[] = [],
 ): OutputVarRow[] {
-  if (!saved?.length) {
-    return [{ uiId: generateId(), key: '', description: '' }];
+  const defaultKeys = new Set(defaults.map((v) => v.key));
+  const merged = mergeSavedOutputVariables(saved, defaults);
+  if (!merged.length) {
+    return [{ uiId: generateId(), key: '', description: '', isDefault: false }];
   }
-  return saved.map((v) => ({
+  return merged.map((v) => ({
     uiId: generateId(),
     key: v.key,
     description: v.description || '',
+    isDefault: defaultKeys.has(v.key),
   }));
 }
 
+export function mergeSavedOutputVariables(
+  saved: PipelineVariableDef[] | undefined,
+  defaults: PipelineVariableDef[],
+): PipelineVariableDef[] {
+  const seen = new Set<string>();
+  const merged: PipelineVariableDef[] = [];
+  for (const item of [...defaults, ...(saved || [])]) {
+    const key = item.key?.trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push({
+      key,
+      ...(item.description ? { description: item.description } : {}),
+    });
+  }
+  return merged;
+}
+
 export function toOutputVariablePayload(rows: OutputVarRow[]): PipelineVariableDef[] {
-  return rows
-    .filter((r) => r.key.trim())
-    .map((r) => ({
-      key: r.key.trim(),
-      ...(r.description?.trim() ? { description: r.description.trim() } : {}),
-    }));
+  const seen = new Set<string>();
+  const merged: PipelineVariableDef[] = [];
+  for (const row of rows) {
+    const key = row.key.trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push({
+      key,
+      ...(row.description?.trim() ? { description: row.description.trim() } : {}),
+    });
+  }
+  return merged;
 }
 
 export default function PipelineNodeOutputVariablesEditor({ rows, onChange }: Props) {
@@ -41,12 +70,14 @@ export default function PipelineNodeOutputVariablesEditor({ rows, onChange }: Pr
     onChange(rows.map((r) => (r.uiId === uiId ? { ...r, ...patch } : r)));
 
   const remove = (uiId: string) => {
+    const target = rows.find((r) => r.uiId === uiId);
+    if (target?.isDefault) return;
     const next = rows.filter((r) => r.uiId !== uiId);
-    onChange(next.length ? next : [{ uiId: generateId(), key: '', description: '' }]);
+    onChange(next.length ? next : [{ uiId: generateId(), key: '', description: '', isDefault: false }]);
   };
 
   const add = () =>
-    onChange([...rows, { uiId: generateId(), key: '', description: '' }]);
+    onChange([...rows, { uiId: generateId(), key: '', description: '', isDefault: false }]);
 
   return (
     <div>
@@ -70,19 +101,27 @@ export default function PipelineNodeOutputVariablesEditor({ rows, onChange }: Pr
             value={row.key}
             onChange={(e) => update(row.uiId, { key: e.target.value })}
             style={{ width: 140, flexShrink: 0 }}
+            disabled={row.isDefault}
           />
           <Input
             placeholder="description (optional)"
             value={row.description}
             onChange={(e) => update(row.uiId, { description: e.target.value })}
             style={{ flex: 1 }}
+            disabled={row.isDefault}
           />
-          <Button
-            type="text"
-            icon={<DeleteOutlined />}
-            danger
-            onClick={() => remove(row.uiId)}
-          />
+          {row.isDefault ? (
+            <Text type="secondary" style={{ fontSize: 11, width: 32, flexShrink: 0 }}>
+              default
+            </Text>
+          ) : (
+            <Button
+              type="text"
+              icon={<DeleteOutlined />}
+              danger
+              onClick={() => remove(row.uiId)}
+            />
+          )}
         </div>
       ))}
 
