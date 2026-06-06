@@ -52,6 +52,42 @@ export function parseInputTemplateValue(value: string): string | null {
   return null;
 }
 
+function getPath(obj: unknown, path: string): unknown {
+  if (!path || obj == null) return undefined;
+  let cur: unknown = obj;
+  for (const part of path.split('.')) {
+    if (cur == null || typeof cur !== 'object') return undefined;
+    if (Array.isArray(cur)) {
+      const idx = Number(part);
+      if (!Number.isInteger(idx) || idx < 0 || idx >= cur.length) return undefined;
+      cur = cur[idx];
+      continue;
+    }
+    cur = (cur as Record<string, unknown>)[part];
+  }
+  return cur;
+}
+
+/** Resolve {{input.path}} and {{path}} templates against a previous-step payload. */
+export function resolveTemplateMapping(mapping: string, payload: unknown): string {
+  if (!mapping || payload == null) return mapping;
+
+  const replaceInput = (_match: string, path: string) => {
+    const value = getPath(payload, path);
+    return value == null ? _match : String(value);
+  };
+
+  const replaceShort = (match: string, path: string) => {
+    if (path.startsWith('input.')) return match;
+    const value = getPath(payload, path);
+    return value == null ? match : String(value);
+  };
+
+  let text = mapping.replace(/\{\{input\.([^}]+)\}\}/g, replaceInput);
+  text = text.replace(/\{\{([^}]+)\}\}/g, replaceShort);
+  return text;
+}
+
 function nodeLabel(node: Node): string {
   const data = (node.data || {}) as Record<string, unknown>;
   const config = (data.node_config as Record<string, unknown>) || {};

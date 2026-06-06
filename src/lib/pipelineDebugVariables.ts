@@ -2,7 +2,12 @@ import type {
   PipelineInputVariableDef,
   PipelineVariableDef,
 } from '@/lib/pipelineNodeVariables';
-import { mergeTaskOutputVariables, parseInputTemplateValue, formatInputTemplate } from '@/lib/pipelineNodeVariables';
+import {
+  mergeTaskOutputVariables,
+  parseInputTemplateValue,
+  formatInputTemplate,
+  resolveTemplateMapping,
+} from '@/lib/pipelineNodeVariables';
 
 export type VariableBindingRow = {
   key: string;
@@ -130,10 +135,7 @@ export function buildConnectionVariableBindings(
     if (item.enabled === false || !item.key?.trim()) continue;
     const mapping = String(item.value ?? '');
     const templatePath = parseInputTemplateValue(mapping);
-    let resolved: unknown = mapping;
-    if (templatePath) {
-      resolved = getPath(payload, templatePath);
-    }
+    const resolved = resolveTemplateMapping(mapping, payload);
     rows.push({
       key: item.key.trim(),
       source: templatePath ? formatInputTemplate(templatePath) : mapping || '(literal)',

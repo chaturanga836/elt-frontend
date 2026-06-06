@@ -292,14 +292,24 @@ export default function PipelineDebugDrawer({
 
   const latestVariableViews = useMemo(() => {
     if (!latestLog) return null;
+    const config = latestLog.node_config || {};
+    const nodeType = latestLog.node_type;
+
+    const overrideVariables = (
+      config.overrides as {
+        variables?: Array<{ key?: string; value?: string; enabled?: boolean }>;
+      }
+    )?.variables;
+
+    const connectionRows =
+      nodeType === 3
+        ? buildConnectionVariableBindings(overrideVariables, latestLog.input_data)
+        : [];
+
     const bindings = latestLog.variable_bindings;
     if (bindings) {
       return {
-        connectionRows: (bindings.connection_variables || []).map((item) => ({
-          key: item.key,
-          source: item.mapping,
-          value: item.resolved_value,
-        })),
+        connectionRows,
         inputRows: (bindings.inputs || []).map((item) => ({
           key: item.key,
           source: item.source_path,
@@ -314,15 +324,9 @@ export default function PipelineDebugDrawer({
       };
     }
 
-    const config = latestLog.node_config || {};
-    const nodeType = latestLog.node_type;
     if (nodeType === 3) {
-      const variables = (
-        (config.overrides as { variables?: Array<{ key?: string; value?: string; enabled?: boolean }> })
-          ?.variables
-      );
       return {
-        connectionRows: buildConnectionVariableBindings(variables, latestLog.input_data),
+        connectionRows,
         inputRows: [],
         outputRows: buildScriptOutputBindings(
           [

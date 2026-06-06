@@ -42,23 +42,25 @@ export default function PipelineDebugVariableBindings({
         dataSource={rows}
         columns={[
           {
-            title: 'Key',
+            title: 'Connection key',
             dataIndex: 'key',
             width: 120,
             render: (key: string) => <Text code>{key}</Text>,
           },
           {
-            title: 'Source / mapping',
+            title: 'Mapping',
             dataIndex: 'source',
-            width: 180,
+            width: 140,
             render: (source: string | undefined) =>
               source ? <Text code style={{ fontSize: 11 }}>{source}</Text> : '—',
           },
           {
-            title: 'Value',
+            title: 'Resolved value',
             dataIndex: 'value',
             render: (value: unknown) => (
-              <Text style={{ fontSize: 12, wordBreak: 'break-word' }}>{formatValue(value)}</Text>
+              <Text strong style={{ fontSize: 12, wordBreak: 'break-word' }}>
+                {formatValue(value)}
+              </Text>
             ),
           },
         ]}
