@@ -9,6 +9,13 @@ import { connectionService } from '@/services/connection.service';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspaceTenantId } from '@/lib/tenantScope';
 import PipelineNodeDeleteButton from './PipelineNodeDeleteButton';
+import DatabaseNodeColumnMapEditor from './DatabaseNodeColumnMapEditor';
+import {
+  backendToUiColumnMap,
+  emptyColumnMap,
+  type DbColumnMapUi,
+  uiToBackendColumnMap,
+} from '@/lib/dbColumnMap';
 import styles from '../pipeline-editor.module.css';
 
 const { Text } = Typography;
@@ -81,8 +88,12 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
   const [open, setOpen] = useState(false);
   const [listLoading, setListLoading] = useState(false);
   const [tablesLoading, setTablesLoading] = useState(false);
+  const [columnsLoading, setColumnsLoading] = useState(false);
   const [tablesError, setTablesError] = useState<string | null>(null);
+  const [columnsError, setColumnsError] = useState<string | null>(null);
   const [connectionTables, setConnectionTables] = useState<string[]>([]);
+  const [tableColumns, setTableColumns] = useState<string[]>([]);
+  const [columnMapUi, setColumnMapUi] = useState<DbColumnMapUi>({});
   const [items, setItems] = useState<DbConnectionSummary[]>([]);
   const [form] = Form.useForm();
 
@@ -94,6 +105,7 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
   const operation = (Form.useWatch('operation', form) ?? savedOperation) as DbOperation;
   const watchedConnectionId = Form.useWatch('connection_id', form);
   const watchedAllowedTables = (Form.useWatch('allowed_tables', form) as string[] | undefined) ?? [];
+  const watchedTable = Form.useWatch('table', form) as string | undefined;
 
   const loadConnectionList = useCallback(async () => {
     setListLoading(true);
@@ -134,6 +146,44 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
     [workspaceId],
   );
 
+  const loadColumnsForTable = useCallback(
+    async (
+      connectionId: number | undefined,
+      table: string | undefined,
+      existingBackendMap?: Record<string, string>,
+    ) => {
+      if (!connectionId || !table) {
+        setTableColumns([]);
+        setColumnMapUi({});
+        setColumnsError(null);
+        return;
+      }
+      setColumnsLoading(true);
+      setColumnsError(null);
+      try {
+        const res = await connectionService.getConnectionTableColumns(
+          connectionId,
+          workspaceId,
+          table,
+        );
+        const columns = res.columns || [];
+        setTableColumns(columns);
+        setColumnMapUi(backendToUiColumnMap(existingBackendMap, columns));
+      } catch (err: unknown) {
+        setTableColumns([]);
+        setColumnMapUi({});
+        const message =
+          err && typeof err === 'object' && 'response' in err
+            ? String((err as { response?: { data?: { detail?: string } } }).response?.data?.detail)
+            : 'Failed to load columns';
+        setColumnsError(message || 'Failed to load columns');
+      } finally {
+        setColumnsLoading(false);
+      }
+    },
+    [workspaceId],
+  );
+
   useEffect(() => {
     void loadConnectionList();
   }, [loadConnectionList]);
@@ -144,6 +194,28 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
       watchedConnectionId != null ? Number(watchedConnectionId) : undefined,
     );
   }, [open, watchedConnectionId, loadTablesForConnection]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (operation !== 'insert' && operation !== 'update') return;
+    const connId = watchedConnectionId != null ? Number(watchedConnectionId) : undefined;
+    if (!connId || !watchedTable) {
+      setTableColumns([]);
+      setColumnMapUi({});
+      setColumnsError(null);
+      return;
+    }
+    const preserveMap = watchedTable === nodeConfig.table ? nodeConfig.column_map : undefined;
+    void loadColumnsForTable(connId, watchedTable, preserveMap);
+  }, [
+    open,
+    operation,
+    watchedConnectionId,
+    watchedTable,
+    loadColumnsForTable,
+    nodeConfig.table,
+    nodeConfig.column_map,
+  ]);
 
   const openModal = () => {
     form.setFieldsValue({
@@ -159,10 +231,10 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
       input_path: nodeConfig.input_path || '',
       params_path: nodeConfig.params_path || '',
       key_columns: formatKeyColumns(nodeConfig.key_columns),
-      column_map_json: nodeConfig.column_map
-        ? JSON.stringify(nodeConfig.column_map, null, 2)
-        : '',
     });
+    setTableColumns([]);
+    setColumnMapUi({});
+    setColumnsError(null);
     setOpen(true);
   };
 
@@ -171,18 +243,14 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
     const connection_id = Number(values.connection_id);
     const conn = items.find((c) => c.id === connection_id);
     const allowed_tables = (values.allowed_tables as string[] | undefined) || [];
+    const op = values.operation as DbOperation;
 
     let column_map: Record<string, string> | undefined;
-    const rawMap = (values.column_map_json || '').trim();
-    if (rawMap) {
-      try {
-        column_map = JSON.parse(rawMap) as Record<string, string>;
-      } catch {
-        throw new Error('Column map must be valid JSON');
-      }
+    if (op === 'insert' || op === 'update') {
+      const mapped = uiToBackendColumnMap(columnMapUi);
+      column_map = Object.keys(mapped).length ? mapped : undefined;
     }
 
-    const op = values.operation as DbOperation;
     const input_path = (values.input_path || '').trim() || undefined;
     const params_path = (values.params_path || '').trim() || undefined;
 
@@ -486,11 +554,16 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
               )}
 
               <Form.Item
-                label="Column map (optional JSON)"
-                name="column_map_json"
-                tooltip='Rename fields from previous node, e.g. {"url": "page_url", "title": "page_title"}'
+                label="Column map"
+                tooltip="Auto-generated from the target table. Map each column to a field from the previous node."
               >
-                <TextArea rows={3} placeholder='{"url": "page_url"}' />
+                <DatabaseNodeColumnMapEditor
+                  columns={tableColumns}
+                  value={columnMapUi}
+                  onChange={setColumnMapUi}
+                  loading={columnsLoading}
+                  error={columnsError}
+                />
               </Form.Item>
             </>
           )}

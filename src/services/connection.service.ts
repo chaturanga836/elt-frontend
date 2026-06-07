@@ -220,6 +220,17 @@ export const connectionService = {
         return response.data as { tables: string[] };
     },
 
+    getConnectionTableColumns: async (
+        connectionId: number,
+        workspaceId: number,
+        table: string,
+    ) => {
+        const response = await api.get(`/connections/${connectionId}/columns`, {
+            params: { workspace_id: workspaceId, table },
+        });
+        return response.data as { table: string; columns: string[] };
+    },
+
     deleteGenericConnection: async (connectionId: number, workspaceId: number) => {
         const response = await api.delete(
             `/connections/${connectionId}`,
