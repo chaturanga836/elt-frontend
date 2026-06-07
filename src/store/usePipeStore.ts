@@ -17,6 +17,7 @@ import {
   resolvePipelineEdges,
 } from '@/lib/pipelineChain';
 import { applyPipelineNodeDeletePolicy } from '@/lib/hydratePipelineCanvas';
+import { EMPTY_PIPELINE_GLOBALS } from '@/lib/pipelineGlobals';
 
 const GRID_SIZE_X = 200;
 
@@ -28,6 +29,7 @@ interface PipelineState {
   uuid: string | null;
   isDraft: boolean;
   draftSaveStatus: 'idle' | 'pending' | 'saving' | 'saved' | 'error';
+  pipelineGlobals: import('@/lib/pipelineGlobals').PipelineGlobalsConfig;
   getCurrentUuid: () => string | null;
   setUuid: (uuid: string | null) => void;
   setId: (id: number | null) => void;
@@ -35,6 +37,7 @@ interface PipelineState {
   setName: (name: string | null) => void;
   setIsDraft: (isDraft: boolean) => void;
   setDraftSaveStatus: (status: PipelineState['draftSaveStatus']) => void;
+  setPipelineGlobals: (globals: PipelineState['pipelineGlobals']) => void;
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
@@ -44,7 +47,15 @@ interface PipelineState {
   addNodeBetween: (type?: string) => void;
   updateNodeData: (nodeId: string, newData: any) => void;
   updateEdgeData: (edgeId: string, data: any) => void;
-  setPipeline: (id: number | null, uuid: string | null, nodes: Node[], edges: Edge[], name: string | null, isDraft?: boolean) => void;
+  setPipeline: (
+    id: number | null,
+    uuid: string | null,
+    nodes: Node[],
+    edges: Edge[],
+    name: string | null,
+    isDraft?: boolean,
+    pipelineGlobals?: import('@/lib/pipelineGlobals').PipelineGlobalsConfig,
+  ) => void;
   getNodes: () => Node[];
   getEdges: () => Edge[];
   addNode: (newNode: Node) => void;
@@ -91,6 +102,7 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
   id: null,
   isDraft: true,
   draftSaveStatus: 'idle',
+  pipelineGlobals: EMPTY_PIPELINE_GLOBALS,
 
   resetPipeline: () =>
     set({
@@ -101,6 +113,7 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
       uuid: null,
       isDraft: true,
       draftSaveStatus: 'idle',
+      pipelineGlobals: EMPTY_PIPELINE_GLOBALS,
     }),
 
   getCurrentUuid: () => get().uuid,
@@ -110,6 +123,7 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
   setName: (name) => set({ name }),
   setIsDraft: (isDraft) => set({ isDraft }),
   setDraftSaveStatus: (draftSaveStatus) => set({ draftSaveStatus }),
+  setPipelineGlobals: (pipelineGlobals) => set({ pipelineGlobals }),
 
   addNode: (newNode) =>
     set((state) => {
@@ -210,7 +224,7 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
     });
   },
 
-  setPipeline: (id, uuid, nodes, edges, name, isDraft = true) => {
+  setPipeline: (id, uuid, nodes, edges, name, isDraft = true, pipelineGlobals = EMPTY_PIPELINE_GLOBALS) => {
     set({
       id,
       uuid,
@@ -219,6 +233,7 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
       name,
       isDraft,
       draftSaveStatus: 'idle',
+      pipelineGlobals,
     });
   },
 

@@ -29,6 +29,7 @@ export type PipelineDebugDrawerProps = {
 type DebugState = {
   stepIndex: number;
   currentPayload: unknown;
+  currentGlobals: Record<string, unknown>;
   priorRunSucceeded: boolean;
   totalSteps: number | null;
   stepLogs: PipelineDebugStepResult[];
@@ -38,6 +39,7 @@ type DebugState = {
 const INITIAL_DEBUG_STATE: DebugState = {
   stepIndex: 0,
   currentPayload: null,
+  currentGlobals: {},
   priorRunSucceeded: true,
   totalSteps: null,
   stepLogs: [],
@@ -81,6 +83,10 @@ function buildRewindState(prev: DebugState, targetStep: number): DebugState {
   return {
     stepIndex: targetStep,
     currentPayload: payloadBeforeStep(keptLogs, targetStep),
+    currentGlobals:
+      keptLogs.length > 0
+        ? (keptLogs[keptLogs.length - 1].next_globals as Record<string, unknown>) || {}
+        : {},
     priorRunSucceeded: targetStep === 0 ? true : priorSucceededBeforeStep(keptLogs),
     totalSteps,
     stepLogs: keptLogs,
@@ -235,6 +241,7 @@ export default function PipelineDebugDrawer({
       const result = await PipelineService.runDebugStep(pipelineUuid, {
         step_index: debugState.stepIndex,
         current_payload: debugState.currentPayload,
+        current_globals: debugState.currentGlobals,
         prior_run_succeeded: debugState.priorRunSucceeded,
       });
 
@@ -244,6 +251,7 @@ export default function PipelineDebugDrawer({
         return {
           stepIndex: nextStepIndex,
           currentPayload: result.next_payload ?? prev.currentPayload,
+          currentGlobals: (result.next_globals as Record<string, unknown>) ?? prev.currentGlobals,
           priorRunSucceeded: prev.priorRunSucceeded && result.step_succeeded,
           totalSteps: result.total_steps,
           stepLogs: [...prev.stepLogs, result],
@@ -517,6 +525,11 @@ export default function PipelineDebugDrawer({
                 />
               ) : null}
               <RunPayloadJsonBlock label="Input" data={latestLog.input_data} inlineMaxHeight={120} />
+              <RunPayloadJsonBlock
+                label="Pipeline globals (after step)"
+                data={latestLog.next_globals ?? debugState.currentGlobals}
+                inlineMaxHeight={120}
+              />
               <RunPayloadJsonBlock label="Output" data={latestLog.output_data} inlineMaxHeight={160} />
               {latestLog.error_traceback ? (
                 <RunPayloadJsonBlock

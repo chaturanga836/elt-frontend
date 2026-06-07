@@ -12,6 +12,7 @@ import {
   outputVariablesFromFields,
   restNodeOutputFields,
 } from '@/lib/pipelineNodeVariables';
+import type { GlobalBindingDef } from '@/lib/pipelineGlobals';
 import { connectionService } from '@/services/connection.service';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspaceTenantId } from '@/lib/tenantScope';
@@ -22,6 +23,11 @@ import {
   type PipelineRestConnectionSummary,
 } from '@/lib/pipelineConnectionPick';
 import PipelineConnectionVariablesEditor from './PipelineConnectionVariablesEditor';
+import PipelineNodeGlobalBindingsEditor, {
+  rowsFromGlobalBindings,
+  toGlobalBindingPayload,
+  type GlobalBindingRow,
+} from './PipelineNodeGlobalBindingsEditor';
 import {
   type PipelineVarRow,
   rowsFromRuntimeEffective,
@@ -38,6 +44,7 @@ type RestConnectionSummary = PipelineRestConnectionSummary;
 type NodeConfig = {
   rest_connection_id?: number;
   overrides?: { variables?: Array<{ key: string; value: string; enabled?: boolean }> };
+  global_bindings?: GlobalBindingDef[];
   tenant_id?: string;
   workspace_id?: number;
   label?: string;
@@ -66,7 +73,11 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
   const [detailLoading, setDetailLoading] = useState(false);
   const [items, setItems] = useState<RestConnectionSummary[]>([]);
   const [varRows, setVarRows] = useState<PipelineVarRow[]>([]);
+  const [globalBindingRows, setGlobalBindingRows] = useState<GlobalBindingRow[]>([]);
   const [baseRows, setBaseRows] = useState<PipelineVarRow[]>([]);
+  const pipelineGlobalKeys = usePipelineStore((s) =>
+    s.pipelineGlobals.variables.map((v) => v.key),
+  );
   const [formConnectionId, setFormConnectionId] = useState<number | undefined>(selectedId);
 
   const selected = useMemo(
@@ -142,6 +153,7 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
   const openModal = () => {
     const connId = selectedId;
     setFormConnectionId(connId);
+    setGlobalBindingRows(rowsFromGlobalBindings(nodeConfig.global_bindings));
     if (connId) {
       void loadVariablesForConnection(connId, nodeConfig.overrides);
     } else {
@@ -170,12 +182,14 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
       ({ id: rest_connection_id, name: `Connection #${rest_connection_id}` } as RestConnectionSummary);
 
     const variables = toPipelineVariablePayload(varRows);
+    const global_bindings = toGlobalBindingPayload(globalBindingRows);
 
     updateNodeData(id, {
       label: conn?.name || 'Connection',
       node_config: {
         ...nodeConfig,
         rest_connection_id,
+        global_bindings,
         overrides: {
           ...(nodeConfig.overrides || {}),
           variables,
@@ -272,6 +286,15 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
               upstreamOutputs={upstreamOutputs}
               upstreamNodeLabel={upstreamNodeLabel}
             />
+            <div style={{ marginTop: 20 }}>
+              <PipelineNodeGlobalBindingsEditor
+                rows={globalBindingRows}
+                onChange={setGlobalBindingRows}
+                globalKeys={pipelineGlobalKeys}
+                upstreamFields={restNodeOutputFields()}
+                title="Capture connection response into globals"
+              />
+            </div>
           </div>
         )}
       </Modal>

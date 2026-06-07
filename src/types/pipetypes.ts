@@ -34,6 +34,7 @@ export interface CanvasStructure {
   nodes: Node[];
   edges: Edge[];
   viewport: Viewport;
+  pipeline_globals?: import('@/lib/pipelineGlobals').PipelineGlobalsConfig;
 }
 
 export interface PipelineCreatePayload {

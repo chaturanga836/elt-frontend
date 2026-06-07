@@ -108,6 +108,7 @@ export interface PipelineDebugStepResult {
   error_traceback: string | null;
   execution_time_ms: number | null;
   next_payload: unknown;
+  next_globals?: Record<string, unknown>;
   step_succeeded: boolean;
   variable_bindings?: PipelineDebugVariableBindings;
 }
@@ -115,6 +116,7 @@ export interface PipelineDebugStepResult {
 export interface PipelineDebugStepRequest {
   step_index: number;
   current_payload?: unknown;
+  current_globals?: Record<string, unknown>;
   prior_run_succeeded?: boolean;
 }
 

@@ -59,6 +59,7 @@ export function usePipelineDraftAutosave(options: {
       routePipelineUuid: options.routePipelineUuid,
       viewport: getViewport(),
       isDraft: true,
+      pipelineGlobals: usePipelineStore.getState().pipelineGlobals,
     });
 
     try {

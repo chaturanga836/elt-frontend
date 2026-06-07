@@ -33,6 +33,12 @@ import PipelineScriptVariablesEditor, {
   type InputVarRow,
   type OutputVarRow,
 } from './PipelineScriptVariablesEditor';
+import PipelineNodeGlobalBindingsEditor, {
+  rowsFromGlobalBindings,
+  toGlobalBindingPayload,
+  type GlobalBindingRow,
+} from './PipelineNodeGlobalBindingsEditor';
+import type { GlobalBindingDef } from '@/lib/pipelineGlobals';
 import PipelineNodeDeleteButton from './PipelineNodeDeleteButton';
 import styles from '../pipeline-editor.module.css';
 
@@ -41,6 +47,7 @@ const { Text } = Typography;
 type TaskNodeConfig = {
   input_variables?: PipelineInputVariableDef[];
   output_variables?: PipelineVariableDef[];
+  global_bindings?: GlobalBindingDef[];
 };
 
 const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) => {
@@ -59,9 +66,13 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
   const [variablesOpen, setVariablesOpen] = useState(false);
   const [inputRows, setInputRows] = useState<InputVarRow[]>([]);
   const [outputRows, setOutputRows] = useState<OutputVarRow[]>([]);
+  const [globalBindingRows, setGlobalBindingRows] = useState<GlobalBindingRow[]>([]);
   const updateNodeData = usePipelineStore((state) => state.updateNodeData);
   const nodes = usePipelineStore((state) => state.nodes);
   const edges = usePipelineStore((state) => state.edges);
+  const pipelineGlobalKeys = usePipelineStore((s) =>
+    s.pipelineGlobals.variables.map((v) => v.key),
+  );
   const nodeConfig = (data.node_config as TaskNodeConfig) || {};
   const allOutputVars = mergeTaskOutputVariables(nodeConfig.output_variables);
   const outputVarCount = allOutputVars.length;
@@ -158,12 +169,14 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
     e?.stopPropagation();
     setInputRows(rowsFromInputVariables(nodeConfig.input_variables, upstreamOutputs));
     setOutputRows(rowsFromTaskOutputVariables(nodeConfig.output_variables));
+    setGlobalBindingRows(rowsFromGlobalBindings(nodeConfig.global_bindings));
     setVariablesOpen(true);
   };
 
   const saveVariables = () => {
     const input_variables = toInputVariablePayload(inputRows);
     const output_variables = toTaskOutputVariablePayload(outputRows);
+    const global_bindings = toGlobalBindingPayload(globalBindingRows);
     const latestNode = usePipelineStore.getState().nodes.find((node) => node.id === id);
     const latestConfig = ((latestNode?.data as Record<string, unknown> | undefined)?.node_config ||
       {}) as TaskNodeConfig;
@@ -172,6 +185,7 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
         ...latestConfig,
         input_variables,
         output_variables,
+        global_bindings,
       },
     });
     setVariablesOpen(false);
@@ -287,6 +301,21 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
           upstreamNodeLabel={upstreamNodeLabel}
           upstreamOutputs={upstreamOutputs}
         />
+        <div style={{ marginTop: 20 }}>
+          <PipelineNodeGlobalBindingsEditor
+            rows={globalBindingRows}
+            onChange={setGlobalBindingRows}
+            globalKeys={pipelineGlobalKeys}
+            upstreamFields={mergeTaskOutputVariables(toTaskOutputVariablePayload(outputRows)).map(
+              (v) => ({
+                path: v.key,
+                label: v.key,
+                description: v.description,
+              }),
+            )}
+            title="Export script return fields to globals"
+          />
+        </div>
       </Modal>
     </div>
   );

@@ -10,6 +10,7 @@ import { usePipelineStore } from '@/store/usePipeStore';
 import { PipelineService } from '@/services/pipe.service';
 import { TaskService } from '@/services/task.service';
 import { mergePipelineCanvasNodes, applyPipelineNodeDeletePolicy } from '@/lib/hydratePipelineCanvas';
+import { parsePipelineGlobals } from '@/lib/pipelineGlobals';
 
 
 export default function Home() {
@@ -64,6 +65,7 @@ export default function Home() {
           initialEdges,
           pipeline.name,
           pipeline.is_draft !== false,
+          parsePipelineGlobals(canvas),
         );
         setId(pipeId);
       } catch (error) {

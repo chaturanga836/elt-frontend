@@ -24,6 +24,7 @@ import {
   orderNodesFromEdges,
 } from '@/lib/pipelineChain';
 import { usePipelineDraftAutosave } from '@/hooks/usePipelineDraftAutosave';
+import PipelineGlobalVariablesModal from './PipelineGlobalVariablesModal';
 import styles from '../pipeline-editor.module.css';
 
 const { Text } = Typography;
@@ -49,10 +50,11 @@ export default function PipelineCanvas() {
   const {
     nodes, edges, name, uuid, setName, setNodes, setEdges, setUuid,
     setId, getId, getCurrentUuid, getNodes, getEdges, updateNodePosition,
-    isDraft, draftSaveStatus, setIsDraft, setDraftSaveStatus,
+    isDraft, draftSaveStatus, setIsDraft, setDraftSaveStatus, pipelineGlobals,
   } = usePipelineStore();
 
   const [isPublishing, setIsPublishing] = useState(false);
+  const [globalsOpen, setGlobalsOpen] = useState(false);
   const [autosaveEnabled, setAutosaveEnabled] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [debugSessionKey, setDebugSessionKey] = useState(0);
@@ -202,6 +204,7 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode')
       routePipelineUuid,
       viewport: getViewport(),
       isDraft: false,
+      pipelineGlobals,
     });
 
     try {
@@ -295,6 +298,12 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode')
         <div className={styles.toolbarRight}>
           <Button
             size="small"
+            onClick={() => setGlobalsOpen(true)}
+          >
+            Global variables
+          </Button>
+          <Button
+            size="small"
             icon={<BugOutlined />}
             type={debugOpen ? 'primary' : 'default'}
             onClick={openDebugPanel}
@@ -325,6 +334,8 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode')
       <div className={styles.canvasArea}>
         <PipelineCanvasInner />
       </div>
+
+      <PipelineGlobalVariablesModal open={globalsOpen} onClose={() => setGlobalsOpen(false)} />
 
       <PipelineDebugDrawer
         key={debugSessionKey}

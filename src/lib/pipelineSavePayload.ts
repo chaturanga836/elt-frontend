@@ -5,6 +5,7 @@ import { buildPipelineNodeConfig, coerceOptionalTaskId } from '@/types/pipelineN
 import type { PipelineCreatePayload, PipelineTask } from '@/types/pipetypes';
 import { orderNodesFromEdges } from '@/lib/pipelineChain';
 import { PIPELINE_NAME_PLACEHOLDER } from '@/lib/validatePipelineName';
+import type { PipelineGlobalsConfig } from '@/lib/pipelineGlobals';
 
 function mapNodeTypeToInt(typeString: string | undefined): 0 | 1 | 2 | 3 | 4 {
   if (typeString === 'startNode') return 0;
@@ -25,6 +26,7 @@ export function buildPipelineSavePayload(options: {
   routePipelineUuid: string | null;
   viewport: Viewport;
   isDraft: boolean;
+  pipelineGlobals: PipelineGlobalsConfig;
 }): PipelineCreatePayload {
   const {
     nodes,
@@ -36,6 +38,7 @@ export function buildPipelineSavePayload(options: {
     routePipelineUuid,
     viewport,
     isDraft,
+    pipelineGlobals,
   } = options;
 
   const targetUuid = pipelineUuid || routePipelineUuid || uuidv4();
@@ -53,6 +56,7 @@ export function buildPipelineSavePayload(options: {
       nodes,
       edges,
       viewport,
+      pipeline_globals: pipelineGlobals,
     },
     tasks: orderedNodes.map((node, index): PipelineTask => {
       const leftParentId = index > 0 ? orderedNodes[index - 1].id : null;
