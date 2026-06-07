@@ -401,14 +401,14 @@ export default function PipelineDebugDrawer({
         </div>
       }
       placement="bottom"
-      height={drawerHeight}
+      size={drawerHeight}
       open={open}
       onClose={onClose}
       destroyOnHidden
       className={styles.debugDrawer}
       styles={{
         header: { position: 'relative' },
-        body: { padding: '12px 20px', overflow: 'auto' },
+        body: { padding: '12px 20px', overflow: 'hidden' },
       }}
     >
       {!pipelineUuid ? (
@@ -419,167 +419,173 @@ export default function PipelineDebugDrawer({
           description="Canvas edits auto-save as a draft. Publish when the pipeline is complete to enable runs from the list."
         />
       ) : (
-        <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
-          <div className={styles.debugDrawerToolbar}>
-            <Space wrap>
-              <Button
-                type="primary"
-                size="small"
-                icon={<CaretRightOutlined />}
-                loading={running}
-                disabled={!canRun || loadingPlan}
-                onClick={() => void handleRunStep()}
-              >
-                Run
-              </Button>
-              <Button
-                size="small"
-                icon={<ReloadOutlined />}
-                disabled={!canRerunFromSelected}
-                onClick={handleRerunFromSelected}
-              >
-                Re-run from step
-              </Button>
-              <Text type="secondary">{stepLabel}</Text>
-              {latestLog ? statusTag(latestLog.status) : null}
-              {latestLog?.execution_time_ms != null ? (
-                <Text type="secondary">{latestLog.execution_time_ms} ms</Text>
-              ) : null}
-            </Space>
-            {latestLog ? (
-              <Text strong ellipsis style={{ maxWidth: 320 }}>
-                {latestLog.node_name}
-              </Text>
-            ) : null}
-          </div>
-
-          {stepPlan.length > 0 ? (
-            <div className={styles.debugStepStrip}>
-              <Text type="secondary" className={styles.debugStepStripLabel}>
-                Steps
-              </Text>
-              <div className={styles.debugStepStripItems}>
-                {stepPlan.map((step) => {
-                  const log = stepStatusByIndex.get(step.step_index);
-                  const isExecuted = step.step_index < debugState.stepIndex;
-                  const isCurrent = step.step_index === debugState.stepIndex && !debugState.atEnd;
-                  const isSelected = selectedRerunStep === step.step_index;
-                  const canSelect = isExecuted;
-
-                  let tagColor: string | undefined;
-                  if (log?.status === RUN_STATUS_FAILED) tagColor = 'error';
-                  else if (log?.status === RUN_STATUS_SUCCESS) tagColor = 'success';
-                  else if (isCurrent) tagColor = 'processing';
-
-                  return (
-                    <Tag
-                      key={step.step_index}
-                      color={isSelected ? 'blue' : tagColor}
-                      className={canSelect ? styles.debugStepTagClickable : styles.debugStepTag}
-                      onClick={
-                        canSelect
-                          ? () =>
-                              setSelectedRerunStep((prev) =>
-                                prev === step.step_index ? null : step.step_index,
-                              )
-                          : undefined
-                      }
-                    >
-                      {step.step_index + 1}. {step.node_name}
-                    </Tag>
-                  );
-                })}
-              </div>
-              {executedStepCount > 0 ? (
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  Click a completed step, then Re-run from step to rewind and execute again from
-                  there.
+        <div className={styles.debugDrawerBody}>
+          <div className={styles.debugDrawerSticky}>
+            <div className={styles.debugDrawerToolbar}>
+              <Space wrap>
+                <Button
+                  type="primary"
+                  size="small"
+                  icon={<CaretRightOutlined />}
+                  loading={running}
+                  disabled={!canRun || loadingPlan}
+                  onClick={() => void handleRunStep()}
+                >
+                  Run
+                </Button>
+                <Button
+                  size="small"
+                  icon={<ReloadOutlined />}
+                  disabled={!canRerunFromSelected}
+                  onClick={handleRerunFromSelected}
+                >
+                  Re-run from step
+                </Button>
+                <Text type="secondary">{stepLabel}</Text>
+                {latestLog ? statusTag(latestLog.status) : null}
+                {latestLog?.execution_time_ms != null ? (
+                  <Text type="secondary">{latestLog.execution_time_ms} ms</Text>
+                ) : null}
+              </Space>
+              {latestLog ? (
+                <Text strong ellipsis style={{ maxWidth: 320 }}>
+                  {latestLog.node_name}
                 </Text>
               ) : null}
             </div>
-          ) : null}
 
-          {loadingPlan ? <Spin size="small" description="Loading steps…" /> : null}
-          {error ? <Alert type="error" title={error} showIcon /> : null}
+            {stepPlan.length > 0 ? (
+              <div className={styles.debugStepStrip}>
+                <Text type="secondary" className={styles.debugStepStripLabel}>
+                  Steps
+                </Text>
+                <div className={styles.debugStepStripItems}>
+                  {stepPlan.map((step) => {
+                    const log = stepStatusByIndex.get(step.step_index);
+                    const isExecuted = step.step_index < debugState.stepIndex;
+                    const isCurrent = step.step_index === debugState.stepIndex && !debugState.atEnd;
+                    const isSelected = selectedRerunStep === step.step_index;
+                    const canSelect = isExecuted;
 
-          <PipelineDebugGlobalsPanel
-            definedVariables={pipelineGlobalDefs}
-            currentGlobals={liveGlobals}
-            changedKeys={globalsChangedThisStep}
-            title={
-              executedStepCount > 0
-                ? 'Pipeline globals (live — updates after each step)'
-                : 'Pipeline globals (run a step to populate values)'
-            }
-          />
+                    let tagColor: string | undefined;
+                    if (log?.status === RUN_STATUS_FAILED) tagColor = 'error';
+                    else if (log?.status === RUN_STATUS_SUCCESS) tagColor = 'success';
+                    else if (isCurrent) tagColor = 'processing';
 
-          {!latestLog && !loadingPlan ? (
-            <Text type="secondary">
-              Click Run to execute the first node. Each click runs the next node until the end.
-            </Text>
-          ) : null}
+                    return (
+                      <Tag
+                        key={step.step_index}
+                        color={isSelected ? 'blue' : tagColor}
+                        className={canSelect ? styles.debugStepTagClickable : styles.debugStepTag}
+                        onClick={
+                          canSelect
+                            ? () =>
+                                setSelectedRerunStep((prev) =>
+                                  prev === step.step_index ? null : step.step_index,
+                                )
+                            : undefined
+                        }
+                      >
+                        {step.step_index + 1}. {step.node_name}
+                      </Tag>
+                    );
+                  })}
+                </div>
+                {executedStepCount > 0 ? (
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    Click a completed step, then Re-run from step to rewind and execute again from
+                    there.
+                  </Text>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
 
-          {latestLog ? (
-            <div className={styles.debugOutput}>
-              <Title level={5} style={{ marginTop: 0, marginBottom: 8 }}>
-                Step {latestLog.step_index} — {latestLog.node_name}
-                {latestLog.skipped ? ' (skipped)' : ''}
-              </Title>
+          <div className={styles.debugDrawerScroll}>
+            <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+              {loadingPlan ? <Spin size="small" description="Loading steps…" /> : null}
+              {error ? <Alert type="error" title={error} showIcon /> : null}
 
-              {latestVariableViews?.connectionRows.length ? (
-                <PipelineDebugVariableBindings
-                  title="Connection input variables (resolved)"
-                  rows={latestVariableViews.connectionRows}
-                />
+              <PipelineDebugGlobalsPanel
+                definedVariables={pipelineGlobalDefs}
+                currentGlobals={liveGlobals}
+                changedKeys={globalsChangedThisStep}
+                title={
+                  executedStepCount > 0
+                    ? 'Pipeline globals (live — updates after each step)'
+                    : 'Pipeline globals (run a step to populate values)'
+                }
+              />
+
+              {!latestLog && !loadingPlan ? (
+                <Text type="secondary">
+                  Click Run to execute the first node. Each click runs the next node until the end.
+                </Text>
               ) : null}
 
-              {latestVariableViews?.inputRows.length ? (
-                <PipelineDebugVariableBindings
-                  title="Script input variables"
-                  rows={latestVariableViews.inputRows}
-                />
+              {latestLog ? (
+                <div className={styles.debugOutput}>
+                  <Title level={5} style={{ marginTop: 0, marginBottom: 8 }}>
+                    Step {latestLog.step_index} — {latestLog.node_name}
+                    {latestLog.skipped ? ' (skipped)' : ''}
+                  </Title>
+
+                  {latestVariableViews?.connectionRows.length ? (
+                    <PipelineDebugVariableBindings
+                      title="Connection input variables (resolved)"
+                      rows={latestVariableViews.connectionRows}
+                    />
+                  ) : null}
+
+                  {latestVariableViews?.inputRows.length ? (
+                    <PipelineDebugVariableBindings
+                      title="Script input variables"
+                      rows={latestVariableViews.inputRows}
+                    />
+                  ) : null}
+
+                  {latestVariableViews?.outputRows.length ? (
+                    <PipelineDebugVariableBindings
+                      title="Output variables"
+                      rows={latestVariableViews.outputRows}
+                    />
+                  ) : null}
+
+                  {latestScriptError ? <PipelineDebugScriptError error={latestScriptError} /> : null}
+
+                  {latestLog.stdout_logs ? (
+                    <RunPayloadJsonBlock
+                      label="Stdout"
+                      data={latestLog.stdout_logs}
+                      language="plaintext"
+                      inlineMaxHeight={120}
+                      emptyText="(empty)"
+                    />
+                  ) : null}
+                  <RunPayloadJsonBlock label="Input" data={latestLog.input_data} inlineMaxHeight={120} />
+                  <RunPayloadJsonBlock label="Output" data={latestLog.output_data} inlineMaxHeight={160} />
+                  {latestLog.error_traceback && !latestScriptError ? (
+                    <RunPayloadJsonBlock
+                      label="Error"
+                      data={latestLog.error_traceback}
+                      language="plaintext"
+                      inlineMaxHeight={120}
+                    />
+                  ) : null}
+                </div>
               ) : null}
 
-              {latestVariableViews?.outputRows.length ? (
-                <PipelineDebugVariableBindings
-                  title="Output variables"
-                  rows={latestVariableViews.outputRows}
+              {debugState.atEnd ? (
+                <Alert
+                  type="info"
+                  showIcon
+                  title="Debug run complete"
+                  description="Select a step above to re-run from it, or use Reset in the toolbar to start over."
                 />
               ) : null}
-
-              {latestScriptError ? <PipelineDebugScriptError error={latestScriptError} /> : null}
-
-              {latestLog.stdout_logs ? (
-                <RunPayloadJsonBlock
-                  label="Stdout"
-                  data={latestLog.stdout_logs}
-                  language="plaintext"
-                  inlineMaxHeight={120}
-                  emptyText="(empty)"
-                />
-              ) : null}
-              <RunPayloadJsonBlock label="Input" data={latestLog.input_data} inlineMaxHeight={120} />
-              <RunPayloadJsonBlock label="Output" data={latestLog.output_data} inlineMaxHeight={160} />
-              {latestLog.error_traceback && !latestScriptError ? (
-                <RunPayloadJsonBlock
-                  label="Error"
-                  data={latestLog.error_traceback}
-                  language="plaintext"
-                  inlineMaxHeight={120}
-                />
-              ) : null}
-            </div>
-          ) : null}
-
-          {debugState.atEnd ? (
-            <Alert
-              type="info"
-              showIcon
-              title="Debug run complete"
-              description="Select a step above to re-run from it, or use Reset in the toolbar to start over."
-            />
-          ) : null}
-        </Space>
+            </Space>
+          </div>
+        </div>
       )}
     </Drawer>
   );
