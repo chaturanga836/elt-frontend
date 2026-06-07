@@ -11,11 +11,11 @@ import { workspaceTenantId } from '@/lib/tenantScope';
 import PipelineNodeDeleteButton from './PipelineNodeDeleteButton';
 import DatabaseNodeColumnMapEditor from './DatabaseNodeColumnMapEditor';
 import {
-  backendToUiColumnMap,
-  emptyColumnMap,
+  storedToUiColumnMap,
   type DbColumnMapUi,
-  uiToBackendColumnMap,
+  uiToStoredColumnMap,
 } from '@/lib/dbColumnMap';
+import type { StoredColumnMappings } from '@/lib/dbColumnMap';
 import styles from '../pipeline-editor.module.css';
 
 const { Text } = Typography;
@@ -44,6 +44,7 @@ type NodeConfig = {
   write_mode?: string;
   key_columns?: string[] | string;
   column_map?: Record<string, string>;
+  column_mappings?: StoredColumnMappings;
   tenant_id?: string;
   workspace_id?: number;
   label?: string;
@@ -79,6 +80,9 @@ function parseKeyColumns(raw: string): string[] {
 export default function DatabaseNode({ id, data }: { id: string; data: Record<string, unknown> }) {
   const workspaceId = useWorkspaceId();
   const updateNodeData = usePipelineStore((s) => s.updateNodeData);
+  const pipelineGlobalKeys = usePipelineStore((s) =>
+    s.pipelineGlobals.variables.map((v) => v.key).filter(Boolean),
+  );
   const nodeConfig = (data.node_config as NodeConfig) || {};
   const selectedId =
     (data.connection_id as number | undefined) ?? nodeConfig.connection_id;
@@ -150,7 +154,8 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
     async (
       connectionId: number | undefined,
       table: string | undefined,
-      existingBackendMap?: Record<string, string>,
+      existingMappings?: StoredColumnMappings,
+      legacyColumnMap?: Record<string, string>,
     ) => {
       if (!connectionId || !table) {
         setTableColumns([]);
@@ -168,7 +173,7 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
         );
         const columns = res.columns || [];
         setTableColumns(columns);
-        setColumnMapUi(backendToUiColumnMap(existingBackendMap, columns));
+        setColumnMapUi(storedToUiColumnMap(existingMappings, legacyColumnMap, columns));
       } catch (err: unknown) {
         setTableColumns([]);
         setColumnMapUi({});
@@ -205,8 +210,11 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
       setColumnsError(null);
       return;
     }
-    const preserveMap = watchedTable === nodeConfig.table ? nodeConfig.column_map : undefined;
-    void loadColumnsForTable(connId, watchedTable, preserveMap);
+    const preserveMappings =
+      watchedTable === nodeConfig.table ? nodeConfig.column_mappings : undefined;
+    const preserveLegacy =
+      watchedTable === nodeConfig.table ? nodeConfig.column_map : undefined;
+    void loadColumnsForTable(connId, watchedTable, preserveMappings, preserveLegacy);
   }, [
     open,
     operation,
@@ -214,6 +222,7 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
     watchedTable,
     loadColumnsForTable,
     nodeConfig.table,
+    nodeConfig.column_mappings,
     nodeConfig.column_map,
   ]);
 
@@ -245,10 +254,9 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
     const allowed_tables = (values.allowed_tables as string[] | undefined) || [];
     const op = values.operation as DbOperation;
 
-    let column_map: Record<string, string> | undefined;
+    let column_mappings: StoredColumnMappings | undefined;
     if (op === 'insert' || op === 'update') {
-      const mapped = uiToBackendColumnMap(columnMapUi);
-      column_map = Object.keys(mapped).length ? mapped : undefined;
+      column_mappings = uiToStoredColumnMap(columnMapUi);
     }
 
     const input_path = (values.input_path || '').trim() || undefined;
@@ -274,6 +282,7 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
       delete nextConfig.table;
       delete nextConfig.key_columns;
       delete nextConfig.column_map;
+      delete nextConfig.column_mappings;
       delete nextConfig.write_mode;
     } else if (op === 'script') {
       nextConfig.script = values.script;
@@ -281,14 +290,16 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
       delete nextConfig.table;
       delete nextConfig.key_columns;
       delete nextConfig.column_map;
+      delete nextConfig.column_mappings;
       delete nextConfig.write_mode;
     } else {
       nextConfig.table = values.table;
-      if (column_map) {
-        nextConfig.column_map = column_map;
+      if (column_mappings) {
+        nextConfig.column_mappings = column_mappings;
       } else {
-        delete nextConfig.column_map;
+        delete nextConfig.column_mappings;
       }
+      delete nextConfig.column_map;
       delete nextConfig.query;
       delete nextConfig.script;
       delete nextConfig.write_mode;
@@ -561,6 +572,7 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
                   columns={tableColumns}
                   value={columnMapUi}
                   onChange={setColumnMapUi}
+                  globalKeys={pipelineGlobalKeys}
                   loading={columnsLoading}
                   error={columnsError}
                 />
