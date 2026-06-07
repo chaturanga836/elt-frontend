@@ -20,9 +20,8 @@ export default function PipelineDebugGlobalsPanel({
   title = 'Pipeline globals',
 }: Props) {
   const changedSet = new Set(changedKeys);
-  const runtimeKeys = Object.keys(currentGlobals);
-  const definedKeys = definedVariables.map((v) => v.key);
-  const allKeys = Array.from(new Set([...definedKeys, ...runtimeKeys])).sort();
+  const definedKeys = definedVariables.map((v) => v.key).filter(Boolean);
+  const allKeys = [...definedKeys].sort();
 
   const rows: Array<{
     key: string;
