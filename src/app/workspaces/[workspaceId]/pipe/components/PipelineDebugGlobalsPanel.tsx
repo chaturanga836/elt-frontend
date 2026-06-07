@@ -56,7 +56,7 @@ export default function PipelineDebugGlobalsPanel({
   }
 
   return (
-    <div style={{ marginBottom: 12, overflow: 'auto' }}>
+    <div style={{ marginBottom: 12}}>
       <Text strong style={{ display: 'block', marginBottom: 8 }}>
         {title}
       </Text>
