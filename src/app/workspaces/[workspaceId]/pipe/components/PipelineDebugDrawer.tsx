@@ -10,11 +10,15 @@ import {
 } from '@/services/pipe.service';
 import RunPayloadJsonBlock from './RunPayloadJsonBlock';
 import PipelineDebugVariableBindings from './PipelineDebugVariableBindings';
+import PipelineDebugGlobalsPanel from './PipelineDebugGlobalsPanel';
+import PipelineDebugScriptError from './PipelineDebugScriptError';
 import {
   buildConnectionVariableBindings,
   buildScriptInputBindings,
   buildScriptOutputBindings,
 } from '@/lib/pipelineDebugVariables';
+import { globalsDiffKeys, parseScriptError } from '@/lib/pipelineDebugError';
+import { usePipelineStore } from '@/store/usePipeStore';
 import { RUN_STATUS_FAILED, RUN_STATUS_SUCCESS, statusTag } from './runDetailUtils';
 import styles from '../pipeline-editor.module.css';
 
@@ -106,6 +110,7 @@ export default function PipelineDebugDrawer({
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drawerHeight, setDrawerHeight] = useState(readStoredDrawerHeight);
+  const pipelineGlobalDefs = usePipelineStore((s) => s.pipelineGlobals.variables);
   const resizingRef = useRef(false);
   const resizeStartYRef = useRef(0);
   const resizeStartHeightRef = useRef(0);
@@ -274,6 +279,22 @@ export default function PipelineDebugDrawer({
   };
 
   const latestLog = debugState.stepLogs[debugState.stepLogs.length - 1] ?? null;
+
+  const latestScriptError = useMemo(
+    () => parseScriptError(latestLog?.error_traceback),
+    [latestLog?.error_traceback],
+  );
+
+  const globalsChangedThisStep = useMemo(() => {
+    if (!latestLog) return [];
+    const prevLog = debugState.stepLogs[debugState.stepLogs.length - 2];
+    const before = (prevLog?.next_globals as Record<string, unknown>) || {};
+    const after =
+      (latestLog.next_globals as Record<string, unknown>) || debugState.currentGlobals;
+    return globalsDiffKeys(before, after);
+  }, [latestLog, debugState.stepLogs, debugState.currentGlobals]);
+
+  const liveGlobals = debugState.currentGlobals;
   const canRun =
     Boolean(pipelineUuid) &&
     !running &&
@@ -481,6 +502,17 @@ export default function PipelineDebugDrawer({
           {loadingPlan ? <Spin size="small" description="Loading steps…" /> : null}
           {error ? <Alert type="error" title={error} showIcon /> : null}
 
+          <PipelineDebugGlobalsPanel
+            definedVariables={pipelineGlobalDefs}
+            currentGlobals={liveGlobals}
+            changedKeys={globalsChangedThisStep}
+            title={
+              executedStepCount > 0
+                ? 'Pipeline globals (live — updates after each step)'
+                : 'Pipeline globals (run a step to populate values)'
+            }
+          />
+
           {!latestLog && !loadingPlan ? (
             <Text type="secondary">
               Click Run to execute the first node. Each click runs the next node until the end.
@@ -515,6 +547,8 @@ export default function PipelineDebugDrawer({
                 />
               ) : null}
 
+              {latestScriptError ? <PipelineDebugScriptError error={latestScriptError} /> : null}
+
               {latestLog.stdout_logs ? (
                 <RunPayloadJsonBlock
                   label="Stdout"
@@ -525,13 +559,8 @@ export default function PipelineDebugDrawer({
                 />
               ) : null}
               <RunPayloadJsonBlock label="Input" data={latestLog.input_data} inlineMaxHeight={120} />
-              <RunPayloadJsonBlock
-                label="Pipeline globals (after step)"
-                data={latestLog.next_globals ?? debugState.currentGlobals}
-                inlineMaxHeight={120}
-              />
               <RunPayloadJsonBlock label="Output" data={latestLog.output_data} inlineMaxHeight={160} />
-              {latestLog.error_traceback ? (
+              {latestLog.error_traceback && !latestScriptError ? (
                 <RunPayloadJsonBlock
                   label="Error"
                   data={latestLog.error_traceback}
