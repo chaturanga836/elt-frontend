@@ -26,11 +26,15 @@ interface PipelineState {
   name: string | null;
   id: number | null;
   uuid: string | null;
+  isDraft: boolean;
+  draftSaveStatus: 'idle' | 'pending' | 'saving' | 'saved' | 'error';
   getCurrentUuid: () => string | null;
   setUuid: (uuid: string | null) => void;
   setId: (id: number | null) => void;
   getId: () => number | null;
   setName: (name: string | null) => void;
+  setIsDraft: (isDraft: boolean) => void;
+  setDraftSaveStatus: (status: PipelineState['draftSaveStatus']) => void;
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
@@ -40,7 +44,7 @@ interface PipelineState {
   addNodeBetween: (type?: string) => void;
   updateNodeData: (nodeId: string, newData: any) => void;
   updateEdgeData: (edgeId: string, data: any) => void;
-  setPipeline: (id: number | null, uuid: string | null, nodes: Node[], edges: Edge[], name: string | null) => void;
+  setPipeline: (id: number | null, uuid: string | null, nodes: Node[], edges: Edge[], name: string | null, isDraft?: boolean) => void;
   getNodes: () => Node[];
   getEdges: () => Edge[];
   addNode: (newNode: Node) => void;
@@ -85,6 +89,8 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
   name: null,
   uuid: null,
   id: null,
+  isDraft: true,
+  draftSaveStatus: 'idle',
 
   resetPipeline: () =>
     set({
@@ -93,6 +99,8 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
       name: null,
       id: null,
       uuid: null,
+      isDraft: true,
+      draftSaveStatus: 'idle',
     }),
 
   getCurrentUuid: () => get().uuid,
@@ -100,6 +108,8 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
   setId: (id) => set({ id }),
   getId: () => get().id,
   setName: (name) => set({ name }),
+  setIsDraft: (isDraft) => set({ isDraft }),
+  setDraftSaveStatus: (draftSaveStatus) => set({ draftSaveStatus }),
 
   addNode: (newNode) =>
     set((state) => {
@@ -200,13 +210,15 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
     });
   },
 
-  setPipeline: (id, uuid, nodes, edges, name) => {
+  setPipeline: (id, uuid, nodes, edges, name, isDraft = true) => {
     set({
       id,
       uuid,
       nodes: applyPipelineNodeDeletePolicy(nodes),
       edges: resolvePipelineEdges(nodes, edges),
       name,
+      isDraft,
+      draftSaveStatus: 'idle',
     });
   },
 

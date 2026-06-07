@@ -57,7 +57,14 @@ export default function Home() {
           mergePipelineCanvasNodes(canvasNodes, apiNodes, taskById),
         );
 
-        setPipeline(pipeId, uuid, initialNodes, initialEdges, pipeline.name);
+        setPipeline(
+          pipeId,
+          uuid,
+          initialNodes,
+          initialEdges,
+          pipeline.name,
+          pipeline.is_draft !== false,
+        );
         setId(pipeId);
       } catch (error) {
         console.error('Hydration Error:', error);

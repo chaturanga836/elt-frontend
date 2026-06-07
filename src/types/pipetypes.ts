@@ -42,6 +42,7 @@ export interface PipelineCreatePayload {
   name: string;
   org_id?: number;
   workspace_id?: number;
+  is_draft?: boolean;
   canvas_structure: CanvasStructure;
   tasks: PipelineTask[]; 
 }
@@ -50,6 +51,7 @@ export interface Pipeline extends PipelineCreatePayload {
   id: number;               // Now it's mandatory
   version: number;
   is_active: boolean;
+  is_draft?: boolean;
   created_at: string;
   updated_at: string;
 }

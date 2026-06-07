@@ -1,20 +1,18 @@
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import { Node, useReactFlow } from '@xyflow/react';
-import { Button, Input, Typography } from 'antd';
-import { PlusOutlined, SaveOutlined, EditOutlined, ApiOutlined, DatabaseOutlined, BugOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Button, Input, Tag, Typography } from 'antd';
+import { PlusOutlined, CloudUploadOutlined, EditOutlined, ApiOutlined, DatabaseOutlined, BugOutlined, ReloadOutlined } from '@ant-design/icons';
 import { usePipelineStore } from "@/store/usePipeStore";
 import PipelineCanvasInner from './PipelineCanvasInner';
 import PipelineDebugDrawer from './PipelineDebugDrawer';
 import { notification } from '@/lib/antd/static';
 import '@xyflow/react/dist/style.css';
 import { PipelineService } from '@/services/pipe.service';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { PipelineCreatePayload } from '@/types/pipetypes';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
-import { buildPipelineNodeConfig, coerceOptionalTaskId } from '@/types/pipelineNodeConfig';
-import type { PipelineTask } from '@/types/pipetypes';
+import { buildPipelineSavePayload } from '@/lib/pipelineSavePayload';
 import {
   PIPELINE_NAME_PLACEHOLDER,
   isPipelineNameValid,
@@ -25,24 +23,53 @@ import {
   isCompleteLinearChain,
   orderNodesFromEdges,
 } from '@/lib/pipelineChain';
+import { usePipelineDraftAutosave } from '@/hooks/usePipelineDraftAutosave';
 import styles from '../pipeline-editor.module.css';
 
 const { Text } = Typography;
+
+function draftStatusLabel(status: string): string {
+  switch (status) {
+    case 'pending':
+      return 'Unsaved changes…';
+    case 'saving':
+      return 'Saving draft…';
+    case 'saved':
+      return 'Draft saved';
+    case 'error':
+      return 'Draft save failed';
+    default:
+      return '';
+  }
+}
 
 export default function PipelineCanvas() {
   const workspaceId = useWorkspaceId();
   const params = useParams();
   const {
     nodes, edges, name, uuid, setName, setNodes, setEdges, setUuid,
-    setId, getId, getCurrentUuid, getNodes, getEdges, updateNodePosition
+    setId, getId, getCurrentUuid, getNodes, getEdges, updateNodePosition,
+    isDraft, draftSaveStatus, setIsDraft, setDraftSaveStatus,
   } = usePipelineStore();
 
-  const [isSaving, setIsSaving] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [autosaveEnabled, setAutosaveEnabled] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [debugSessionKey, setDebugSessionKey] = useState(0);
   const routePipelineUuid =
     typeof params?.id === 'string' && params.id !== 'new' ? params.id : null;
   const debugPipelineUuid = getCurrentUuid() || uuid || routePipelineUuid;
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAutosaveEnabled(true), 400);
+    return () => clearTimeout(timer);
+  }, [routePipelineUuid]);
+
+  usePipelineDraftAutosave({
+    workspaceId,
+    routePipelineUuid,
+    enabled: autosaveEnabled,
+  });
 
   const openDebugPanel = () => {
     setDebugSessionKey((k) => k + 1);
@@ -57,9 +84,7 @@ export default function PipelineCanvas() {
     setDebugOpen(false);
   };
   
-  // Requires ReactFlowProvider from pipe/layout.tsx (wraps canvas only, not intercept modals)
   const { getViewport } = useReactFlow();
-
 
 const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode') => {
   const currentNodes = getNodes();
@@ -100,16 +125,7 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode')
   }
 };
 
-  const mapNodeTypeToInt = (typeString: string | undefined): 0 | 1 | 2 | 3 | 4 => {
-    if (typeString === 'startNode') return 0;
-    if (typeString === 'taskNode') return 1;
-    if (typeString === 'endNode') return 2;
-    if (typeString === 'restNode') return 3;
-    if (typeString === 'dbNode') return 4;
-    return 1; // Default fallback to execution node (taskNode)
-  };
-
-  const handleSave = async () => {
+  const handlePublish = async () => {
     const nameError = pipelineNameValidationMessage(name);
     if (nameError) {
       return notification.warning({ message: 'Invalid pipeline name', description: nameError });
@@ -138,7 +154,7 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode')
       return notification.warning({
         message: 'Scraper pipeline incomplete',
         description:
-          'This task only parses scraper output. Add REST Endpoint between Start and the parse task, select your Scrape URL connection, then save.',
+          'This task only parses scraper output. Add REST Endpoint between Start and the parse task, then publish.',
       });
     }
 
@@ -153,7 +169,7 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode')
       return notification.warning({
         message: 'REST endpoint not configured',
         description:
-          'Open each REST node and select your saved Scrape URL connection before saving.',
+          'Open each REST node and select your saved connection before publishing.',
       });
     }
 
@@ -168,58 +184,25 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode')
       return notification.warning({
         message: 'Database node not configured',
         description:
-          'Open each Database node and select your saved DB connection before saving.',
+          'Open each Database node and select your saved DB connection before publishing.',
       });
     }
 
-    setIsSaving(true);
+    setIsPublishing(true);
     const pipelineId = getId();
     const targetUuid = getCurrentUuid() || uuid || routePipelineUuid || uuidv4();
 
-const payload: PipelineCreatePayload = {
-    ...(pipelineId && { id: pipelineId }),
-    pipeline_uuid: targetUuid,
-    name: trimmedName,
-    org_id: 1,
-    workspace_id: workspaceId,
-    canvas_structure: {
+    const payload = buildPipelineSavePayload({
       nodes,
       edges,
+      name: trimmedName,
+      workspaceId,
+      pipelineId,
+      pipelineUuid: uuid,
+      routePipelineUuid,
       viewport: getViewport(),
-    },
-    tasks: orderedNodes.map((node, index): PipelineTask => {
-      const leftParentId = index > 0 ? orderedNodes[index - 1].id : null;
-      const rightParentId =
-        index < orderedNodes.length - 1 ? orderedNodes[index + 1].id : null;
-
-      const nodeType = mapNodeTypeToInt(node.type);
-      const isBoundary = nodeType === 0 || nodeType === 2;
-      const nodeConfig = buildPipelineNodeConfig(
-        node.data as Record<string, unknown>,
-        nodeType,
-      );
-
-      const nodeData = node.data as Record<string, unknown>;
-      const config = nodeData.config as { name?: string } | undefined;
-      const label =
-        config?.name ||
-        (nodeData.label as string) ||
-        (nodeType === 0 ? 'Start' : nodeType === 2 ? 'End' : 'Task');
-
-      return {
-        node_uuid: node.id,
-        id: nodeData.id ? Number(nodeData.id) : undefined,
-        name: label,
-        node_type: nodeType,
-        task_id: isBoundary
-          ? coerceOptionalTaskId(nodeConfig.hook_task_id)
-          : coerceOptionalTaskId(nodeData.task_id),
-        node_config: nodeConfig,
-        left_depend: leftParentId,
-        right_depend: rightParentId,
-      };
-    }),
-  };
+      isDraft: false,
+    });
 
     try {
       if (pipelineId) {
@@ -229,16 +212,24 @@ const payload: PipelineCreatePayload = {
         setId(data.pipeline_id);
       }
       notification.success({
-        message: 'Pipeline Saved',
-        description: 'Successfully saved.',
+        message: 'Pipeline published',
+        description: 'This version is ready to run.',
       });
       setUuid(targetUuid);
+      setIsDraft(false);
+      setDraftSaveStatus('saved');
     } catch (err) {
       console.error(err);
+      notification.error({
+        message: 'Publish failed',
+        description: 'Fix validation errors and try again.',
+      });
     } finally {
-      setIsSaving(false);
+      setIsPublishing(false);
     }
   };
+
+  const statusText = draftStatusLabel(draftSaveStatus);
 
   return (
     <div className={styles.editorShell}>
@@ -280,6 +271,25 @@ const payload: PipelineCreatePayload = {
               borderRadius: 6,
             }}
           />
+
+          {isDraft ? (
+            <Tag color="gold" style={{ marginLeft: 8 }}>
+              Draft
+            </Tag>
+          ) : (
+            <Tag color="green" style={{ marginLeft: 8 }}>
+              Published
+            </Tag>
+          )}
+
+          {statusText ? (
+            <Text
+              type={draftSaveStatus === 'error' ? 'danger' : 'secondary'}
+              style={{ fontSize: 12, marginLeft: 8 }}
+            >
+              {statusText}
+            </Text>
+          ) : null}
         </div>
 
         <div className={styles.toolbarRight}>
@@ -301,13 +311,13 @@ const payload: PipelineCreatePayload = {
           </Button>
           <Button
             type="primary"
-            icon={<SaveOutlined />}
-            loading={isSaving}
-            disabled={!isPipelineNameValid(name)}
-            onClick={handleSave}
+            icon={<CloudUploadOutlined />}
+            loading={isPublishing}
+            disabled={!isPipelineNameValid(name) || draftSaveStatus === 'saving'}
+            onClick={handlePublish}
             style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', borderRadius: 6 }}
           >
-            Save Pipeline
+            Publish
           </Button>
         </div>
       </header>

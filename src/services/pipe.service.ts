@@ -135,6 +135,7 @@ export const PipelineService = {
         id: number;
         pipeline_uuid: string;
         name: string;
+        is_draft?: boolean;
         canvas_structure?: CanvasStructure;
       };
       nodes: Array<{

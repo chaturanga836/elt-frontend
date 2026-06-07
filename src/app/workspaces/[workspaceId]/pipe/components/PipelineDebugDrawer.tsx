@@ -386,8 +386,8 @@ export default function PipelineDebugDrawer({
         <Alert
           type="warning"
           showIcon
-          title="Save the pipeline first"
-          description="Step debugging runs against the saved pipeline version. Save, then open debug again."
+          title="Draft not saved yet"
+          description="Canvas edits auto-save as a draft. Publish when the pipeline is complete to enable runs from the list."
         />
       ) : (
         <Space orientation="vertical" size="middle" style={{ width: '100%' }}>

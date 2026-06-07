@@ -69,6 +69,13 @@ export default function PipelineListPage() {
       ),
     },
     {
+      title: 'Status',
+      dataIndex: 'is_draft',
+      key: 'is_draft',
+      render: (isDraft: boolean | undefined) =>
+        isDraft ? <Tag color="gold">Draft</Tag> : <Tag color="green">Published</Tag>,
+    },
+    {
       title: 'Latest Version',
       dataIndex: 'version',
       key: 'version',
@@ -85,7 +92,13 @@ export default function PipelineListPage() {
       key: 'action',
       render: (_:any, record: any) => (
         <Space>
-          <Button icon={<PlayCircleOutlined />} size="small" onClick={() => handleRunPipeline(record.pipeline_uuid)}>
+          <Button
+            icon={<PlayCircleOutlined />}
+            size="small"
+            disabled={record.is_draft}
+            title={record.is_draft ? 'Publish the pipeline before running' : undefined}
+            onClick={() => handleRunPipeline(record.pipeline_uuid)}
+          >
             Run
           </Button>
           <Link href={workspacePath(workspaceId, `pipe/${record.pipeline_uuid}`)}>
