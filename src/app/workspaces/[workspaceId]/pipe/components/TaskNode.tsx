@@ -12,6 +12,7 @@ import {
   SwapOutlined,
 } from '@ant-design/icons';
 import { usePipelineStore } from '@/store/usePipeStore';
+import { useShallow } from 'zustand/react/shallow';
 import { resolvePipelineEdges } from '@/lib/pipelineChain';
 import {
   buildDefaultTaskNodeVariables,
@@ -70,8 +71,8 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
   const updateNodeData = usePipelineStore((state) => state.updateNodeData);
   const nodes = usePipelineStore((state) => state.nodes);
   const edges = usePipelineStore((state) => state.edges);
-  const pipelineGlobalKeys = usePipelineStore((s) =>
-    s.pipelineGlobals.variables.map((v) => v.key),
+  const pipelineGlobalKeys = usePipelineStore(
+    useShallow((s) => s.pipelineGlobals.variables.map((v) => v.key)),
   );
   const nodeConfig = (data.node_config as TaskNodeConfig) || {};
   const allOutputVars = mergeTaskOutputVariables(nodeConfig.output_variables);

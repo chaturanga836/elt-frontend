@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useReactFlow } from '@xyflow/react';
 import { usePipelineStore } from '@/store/usePipeStore';
@@ -10,8 +10,6 @@ import { workspacePath } from '@/lib/paths';
 
 const DRAFT_DEBOUNCE_MS = 1200;
 
-type DraftSaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
-
 export function usePipelineDraftAutosave(options: {
   workspaceId: number;
   routePipelineUuid: string | null;
@@ -19,83 +17,72 @@ export function usePipelineDraftAutosave(options: {
 }) {
   const router = useRouter();
   const { getViewport } = useReactFlow();
-  const nodes = usePipelineStore((s) => s.nodes);
-  const edges = usePipelineStore((s) => s.edges);
-  const name = usePipelineStore((s) => s.name);
-  const pipelineId = usePipelineStore((s) => s.id);
-  const pipelineUuid = usePipelineStore((s) => s.uuid);
-  const setId = usePipelineStore((s) => s.setId);
-  const setUuid = usePipelineStore((s) => s.setUuid);
-  const setIsDraft = usePipelineStore((s) => s.setIsDraft);
-  const setDraftSaveStatus = usePipelineStore((s) => s.setDraftSaveStatus);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
   const queuedRef = useRef(false);
   const skipAutosaveRef = useRef(true);
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   useEffect(() => {
     skipAutosaveRef.current = true;
   }, [options.routePipelineUuid]);
 
-  const persistDraft = useCallback(async () => {
-    if (!options.enabled || savingRef.current) {
+  const persistDraftRef = useRef<() => Promise<void>>(async () => {});
+  persistDraftRef.current = async () => {
+    const opts = optionsRef.current;
+    if (!opts.enabled || savingRef.current) {
       queuedRef.current = true;
       return;
     }
 
     savingRef.current = true;
-    setDraftSaveStatus('saving');
+    usePipelineStore.getState().setDraftSaveStatus('saving');
 
-    const currentId = usePipelineStore.getState().id;
-    const currentUuid = usePipelineStore.getState().uuid;
+    const state = usePipelineStore.getState();
     const payload = buildPipelineSavePayload({
-      nodes: usePipelineStore.getState().nodes,
-      edges: usePipelineStore.getState().edges,
-      name: usePipelineStore.getState().name,
-      workspaceId: options.workspaceId,
-      pipelineId: currentId,
-      pipelineUuid: currentUuid,
-      routePipelineUuid: options.routePipelineUuid,
+      nodes: state.nodes,
+      edges: state.edges,
+      name: state.name,
+      workspaceId: opts.workspaceId,
+      pipelineId: state.id,
+      pipelineUuid: state.uuid,
+      routePipelineUuid: opts.routePipelineUuid,
       viewport: getViewport(),
       isDraft: true,
-      pipelineGlobals: usePipelineStore.getState().pipelineGlobals,
+      pipelineGlobals: state.pipelineGlobals,
     });
 
     try {
-      if (currentId) {
-        await PipelineService.UpdatePipeline(currentId, payload);
+      if (state.id) {
+        await PipelineService.UpdatePipeline(state.id, payload);
       } else {
         const data = await PipelineService.savePipeline(payload);
-        setId(data.pipeline_id);
-        if (!options.routePipelineUuid) {
-          router.replace(workspacePath(options.workspaceId, `pipe/${payload.pipeline_uuid}`));
+        usePipelineStore.getState().setId(data.pipeline_id);
+        if (!opts.routePipelineUuid) {
+          router.replace(workspacePath(opts.workspaceId, `pipe/${payload.pipeline_uuid}`));
         }
       }
-      setUuid(payload.pipeline_uuid);
-      setIsDraft(true);
-      setDraftSaveStatus('saved');
+      usePipelineStore.getState().setUuid(payload.pipeline_uuid);
+      usePipelineStore.getState().setIsDraft(true);
+      usePipelineStore.getState().setDraftSaveStatus('saved');
     } catch (err) {
       console.error('Draft save failed', err);
-      setDraftSaveStatus('error');
+      usePipelineStore.getState().setDraftSaveStatus('error');
     } finally {
       savingRef.current = false;
       if (queuedRef.current) {
         queuedRef.current = false;
-        void persistDraft();
+        void persistDraftRef.current();
       }
     }
-  }, [
-    getViewport,
-    options.enabled,
-    options.routePipelineUuid,
-    options.workspaceId,
-    router,
-    setDraftSaveStatus,
-    setId,
-    setIsDraft,
-    setUuid,
-  ]);
+  };
+
+  const nodes = usePipelineStore((s) => s.nodes);
+  const edges = usePipelineStore((s) => s.edges);
+  const name = usePipelineStore((s) => s.name);
+  const pipelineGlobals = usePipelineStore((s) => s.pipelineGlobals);
 
   useEffect(() => {
     if (!options.enabled) return;
@@ -105,13 +92,13 @@ export function usePipelineDraftAutosave(options: {
       return;
     }
 
-    setDraftSaveStatus('pending');
+    usePipelineStore.getState().setDraftSaveStatus('pending');
 
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
     timerRef.current = setTimeout(() => {
-      void persistDraft();
+      void persistDraftRef.current();
     }, DRAFT_DEBOUNCE_MS);
 
     return () => {
@@ -119,5 +106,5 @@ export function usePipelineDraftAutosave(options: {
         clearTimeout(timerRef.current);
       }
     };
-  }, [nodes, edges, name, options.enabled, persistDraft, setDraftSaveStatus]);
+  }, [nodes, edges, name, pipelineGlobals, options.enabled]);
 }

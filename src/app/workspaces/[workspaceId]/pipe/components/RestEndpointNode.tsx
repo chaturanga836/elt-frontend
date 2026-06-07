@@ -6,6 +6,7 @@ import { useParams, usePathname } from 'next/navigation';
 import { Card, Avatar, Typography, Flex, Modal, Spin, Alert } from 'antd';
 import { ApiOutlined } from '@ant-design/icons';
 import { usePipelineStore } from '@/store/usePipeStore';
+import { useShallow } from 'zustand/react/shallow';
 import { resolvePipelineEdges } from '@/lib/pipelineChain';
 import {
   getImmediateUpstreamOutputFields,
@@ -75,8 +76,8 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
   const [varRows, setVarRows] = useState<PipelineVarRow[]>([]);
   const [globalBindingRows, setGlobalBindingRows] = useState<GlobalBindingRow[]>([]);
   const [baseRows, setBaseRows] = useState<PipelineVarRow[]>([]);
-  const pipelineGlobalKeys = usePipelineStore((s) =>
-    s.pipelineGlobals.variables.map((v) => v.key),
+  const pipelineGlobalKeys = usePipelineStore(
+    useShallow((s) => s.pipelineGlobals.variables.map((v) => v.key)),
   );
   const [formConnectionId, setFormConnectionId] = useState<number | undefined>(selectedId);
 

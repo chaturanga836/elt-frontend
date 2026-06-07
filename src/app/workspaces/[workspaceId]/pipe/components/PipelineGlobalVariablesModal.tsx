@@ -23,13 +23,14 @@ export default function PipelineGlobalVariablesModal({ open, onClose }: Props) {
 
   useEffect(() => {
     if (!open) return;
+    const variables = usePipelineStore.getState().pipelineGlobals.variables;
     setRows(
-      pipelineGlobals.variables.map((v) => ({
+      variables.map((v) => ({
         ...v,
         uiId: generateId(),
       })),
     );
-  }, [open, pipelineGlobals]);
+  }, [open]);
 
   const save = () => {
     setPipelineGlobals({
