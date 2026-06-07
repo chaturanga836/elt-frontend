@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Card, Avatar, Typography, Flex, Modal, Select, Form, Alert, Input, Radio } from 'antd';
 import { DatabaseOutlined } from '@ant-design/icons';
+import { useShallow } from 'zustand/react/shallow';
 import { usePipelineStore } from '@/store/usePipeStore';
 import { connectionService } from '@/services/connection.service';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
@@ -80,8 +81,8 @@ function parseKeyColumns(raw: string): string[] {
 export default function DatabaseNode({ id, data }: { id: string; data: Record<string, unknown> }) {
   const workspaceId = useWorkspaceId();
   const updateNodeData = usePipelineStore((s) => s.updateNodeData);
-  const pipelineGlobalKeys = usePipelineStore((s) =>
-    s.pipelineGlobals.variables.map((v) => v.key).filter(Boolean),
+  const pipelineGlobalKeys = usePipelineStore(
+    useShallow((s) => s.pipelineGlobals.variables.map((v) => v.key).filter(Boolean)),
   );
   const nodeConfig = (data.node_config as NodeConfig) || {};
   const selectedId =
@@ -98,6 +99,11 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
   const [connectionTables, setConnectionTables] = useState<string[]>([]);
   const [tableColumns, setTableColumns] = useState<string[]>([]);
   const [columnMapUi, setColumnMapUi] = useState<DbColumnMapUi>({});
+  const savedColumnConfigRef = useRef<{
+    table?: string;
+    column_mappings?: StoredColumnMappings;
+    column_map?: Record<string, string>;
+  }>({});
   const [items, setItems] = useState<DbConnectionSummary[]>([]);
   const [form] = Form.useForm();
 
@@ -204,29 +210,21 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
     if (!open) return;
     if (operation !== 'insert' && operation !== 'update') return;
     const connId = watchedConnectionId != null ? Number(watchedConnectionId) : undefined;
-    if (!connId || !watchedTable) {
-      setTableColumns([]);
-      setColumnMapUi({});
-      setColumnsError(null);
-      return;
-    }
+    if (!connId || !watchedTable) return;
+
+    const saved = savedColumnConfigRef.current;
     const preserveMappings =
-      watchedTable === nodeConfig.table ? nodeConfig.column_mappings : undefined;
-    const preserveLegacy =
-      watchedTable === nodeConfig.table ? nodeConfig.column_map : undefined;
+      watchedTable === saved.table ? saved.column_mappings : undefined;
+    const preserveLegacy = watchedTable === saved.table ? saved.column_map : undefined;
     void loadColumnsForTable(connId, watchedTable, preserveMappings, preserveLegacy);
-  }, [
-    open,
-    operation,
-    watchedConnectionId,
-    watchedTable,
-    loadColumnsForTable,
-    nodeConfig.table,
-    nodeConfig.column_mappings,
-    nodeConfig.column_map,
-  ]);
+  }, [open, operation, watchedConnectionId, watchedTable, loadColumnsForTable]);
 
   const openModal = () => {
+    savedColumnConfigRef.current = {
+      table: nodeConfig.table,
+      column_mappings: nodeConfig.column_mappings,
+      column_map: nodeConfig.column_map,
+    };
     form.setFieldsValue({
       connection_id: selectedId,
       allowed_tables: savedAllowedTables,
