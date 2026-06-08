@@ -8,11 +8,13 @@ import {
   SaveOutlined,
   PlayCircleOutlined,
   EditOutlined,
+  BugOutlined,
 } from '@ant-design/icons';
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useWorkflowStore } from '@/store/useWorkflowStore';
 import WorkflowCanvasInner from './WorkflowCanvasInner';
+import WorkflowDebugDrawer from './WorkflowDebugDrawer';
 import WorkflowNodePalette from './WorkflowNodePalette';
 import { WorkflowService } from '@/services/workflow.service';
 import { notification } from '@/lib/antd/static';
@@ -39,6 +41,7 @@ function WorkflowCanvasContent() {
   } = useWorkflowStore();
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
+  const [debugOpen, setDebugOpen] = useState(false);
   const routeWorkflowUuid =
     typeof params?.id === 'string' && params.id !== 'new' ? params.id : null;
 
@@ -147,6 +150,13 @@ function WorkflowCanvasContent() {
         </Space>
         <Space>
           <Button
+            icon={<BugOutlined />}
+            disabled={!storeUuid && !routeWorkflowUuid}
+            onClick={() => setDebugOpen(true)}
+          >
+            Debug
+          </Button>
+          <Button
             icon={<PlayCircleOutlined />}
             loading={running}
             onClick={handleRun}
@@ -172,6 +182,11 @@ function WorkflowCanvasContent() {
           <WorkflowCanvasInner />
         </div>
       </div>
+      <WorkflowDebugDrawer
+        open={debugOpen}
+        workflowUuid={storeUuid || routeWorkflowUuid}
+        onClose={() => setDebugOpen(false)}
+      />
     </div>
   );
 }
