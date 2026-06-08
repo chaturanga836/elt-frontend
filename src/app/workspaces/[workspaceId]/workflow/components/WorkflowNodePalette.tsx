@@ -3,6 +3,7 @@
 import { Button, Card, Typography } from 'antd';
 import { v4 as uuidv4 } from 'uuid';
 import { Node } from '@xyflow/react';
+import { computeWorkflowNodePosition } from '@/lib/workflowNodePlacement';
 import { useWorkflowStore } from '@/store/useWorkflowStore';
 
 const { Text } = Typography;
@@ -24,11 +25,11 @@ export default function WorkflowNodePalette() {
 
   const addPaletteNode = (type: string, label: string) => {
     const id = `${type.replace('Node', '')}_${uuidv4().slice(0, 8)}`;
-    const maxX = Math.max(...nodes.map((n) => n.position.x), 200);
+    const position = computeWorkflowNodePosition(nodes);
     const newNode: Node = {
       id,
       type,
-      position: { x: maxX + 180, y: 180 + Math.random() * 80 },
+      position,
       data: {
         label,
         node_config: type === 'conditionNode' ? { expression: 'True' } : {},
