@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     Table,
     Typography,
@@ -9,18 +9,30 @@ import {
     Collapse,
     Spin,
     Alert,
+    Button,
+    Popconfirm,
+    message,
+    Progress,
 } from 'antd';
+import { PlayCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import {
     PipelineService,
     PipelineRunDetail,
     PipelineNodeLog,
 } from '@/services/pipe.service';
-import { statusTag } from './runDetailUtils';
+import {
+    RUN_STATUS_INITIALIZING,
+    RUN_STATUS_SUCCESS,
+    canResumePipelineRun,
+    statusTag,
+} from './runDetailUtils';
 import RunReportPanel from '@/features/reports/components/RunReportPanel';
 import RunPayloadJsonBlock from './RunPayloadJsonBlock';
 
 const { Title, Text, Paragraph } = Typography;
+
+const POLL_MS = 2500;
 
 interface RunDetailViewProps {
     runId: number;
@@ -30,53 +42,97 @@ export default function RunDetailView({ runId }: RunDetailViewProps) {
     const [loading, setLoading] = useState(true);
     const [runDetail, setRunDetail] = useState<PipelineRunDetail | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [resuming, setResuming] = useState(false);
 
-    useEffect(() => {
+    const loadDetail = useCallback(async (opts?: { silent?: boolean }) => {
         if (!Number.isFinite(runId) || runId <= 0) {
             setError('Invalid run ID');
             setLoading(false);
-            return;
+            return null;
         }
 
-        let cancelled = false;
-
-        (async () => {
+        if (!opts?.silent) {
             setLoading(true);
-            setError(null);
-            setRunDetail(null);
-            try {
-                const detail = await PipelineService.getPipelineRunDetail(runId);
-                if (!cancelled) {
-                    setRunDetail(detail);
-                }
-            } catch (err) {
-                console.error('Failed to load run detail', err);
-                if (!cancelled) {
-                    setError('Failed to load execution details.');
-                }
-            } finally {
-                if (!cancelled) {
-                    setLoading(false);
-                }
-            }
-        })();
+        }
+        setError(null);
 
-        return () => {
-            cancelled = true;
-        };
+        try {
+            const detail = await PipelineService.getPipelineRunDetail(runId);
+            setRunDetail(detail);
+            return detail;
+        } catch (err) {
+            console.error('Failed to load run detail', err);
+            if (!opts?.silent) {
+                setError('Failed to load execution details.');
+            }
+            return null;
+        } finally {
+            if (!opts?.silent) {
+                setLoading(false);
+            }
+        }
     }, [runId]);
 
-    if (loading) {
+    useEffect(() => {
+        void loadDetail();
+    }, [loadDetail]);
+
+    useEffect(() => {
+        if (runDetail?.run.status !== RUN_STATUS_INITIALIZING) {
+            return undefined;
+        }
+
+        const timer = window.setInterval(() => {
+            void loadDetail({ silent: true });
+        }, POLL_MS);
+
+        return () => window.clearInterval(timer);
+    }, [runDetail?.run.status, loadDetail]);
+
+    const handleResume = async () => {
+        setResuming(true);
+        try {
+            const res = await PipelineService.resumePipelineRun(runId);
+            message.success(`Resuming from step ${res.resume_from_step}`);
+            await loadDetail({ silent: true });
+        } catch (err) {
+            console.error('Resume failed', err);
+            message.error('Failed to resume run. Check that the run failed with a saved checkpoint.');
+        } finally {
+            setResuming(false);
+        }
+    };
+
+    if (loading && !runDetail) {
         return <Spin tip="Loading execution details…" />;
     }
 
-    if (error) {
+    if (error && !runDetail) {
         return <Alert type="error" message={error} showIcon />;
     }
 
     if (!runDetail) {
         return <Alert type="warning" message="Run not found." showIcon />;
     }
+
+    const { run } = runDetail;
+    const ctx = run.run_context;
+    const totalSteps = ctx?.total_steps;
+    const stepIndex = run.current_step_index;
+    const showProgress =
+        totalSteps != null
+        && totalSteps > 0
+        && stepIndex != null
+        && run.status !== RUN_STATUS_SUCCESS;
+    const progressPercent =
+        showProgress && totalSteps
+            ? Math.min(100, Math.round((stepIndex / totalSteps) * 100))
+            : undefined;
+    const resumeAllowed = canResumePipelineRun(
+        run.status,
+        run.current_step_index,
+        run.can_resume,
+    );
 
     const nodeLogColumns = [
         {
@@ -147,36 +203,121 @@ export default function RunDetailView({ runId }: RunDetailViewProps) {
         ),
     }));
 
+    const contextCollapseItems = [
+        ...(run.input_payload != null
+            ? [{
+                key: 'input',
+                label: 'Run input',
+                children: <RunPayloadJsonBlock label="input_payload" data={run.input_payload} />,
+            }]
+            : []),
+        ...(ctx?.payload !== undefined
+            ? [{
+                key: 'checkpoint-payload',
+                label: 'Checkpoint payload',
+                children: <RunPayloadJsonBlock label="payload" data={ctx.payload} />,
+            }]
+            : []),
+        ...(ctx?.globals && Object.keys(ctx.globals).length > 0
+            ? [{
+                key: 'checkpoint-globals',
+                label: 'Checkpoint globals',
+                children: <RunPayloadJsonBlock label="globals" data={ctx.globals} />,
+            }]
+            : []),
+    ];
+
     return (
         <Space direction="vertical" style={{ width: '100%' }} size="large">
+            <Space wrap>
+                {resumeAllowed ? (
+                    <Popconfirm
+                        title="Resume from last checkpoint?"
+                        description={
+                            stepIndex != null
+                                ? `Execution will continue from step ${stepIndex}.`
+                                : 'Execution will continue from the saved checkpoint.'
+                        }
+                        onConfirm={() => void handleResume()}
+                        okText="Resume"
+                    >
+                        <Button
+                            type="primary"
+                            icon={<PlayCircleOutlined />}
+                            loading={resuming}
+                        >
+                            Resume run
+                        </Button>
+                    </Popconfirm>
+                ) : null}
+                <Button
+                    icon={<ReloadOutlined />}
+                    onClick={() => void loadDetail()}
+                    loading={loading}
+                >
+                    Refresh
+                </Button>
+            </Space>
+
+            {run.status === RUN_STATUS_INITIALIZING ? (
+                <Alert
+                    type="info"
+                    showIcon
+                    message="Run in progress"
+                    description="This page refreshes automatically until the run finishes."
+                />
+            ) : null}
+
+            {showProgress ? (
+                <div>
+                    <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+                        Checkpoint: step {stepIndex} of {totalSteps}
+                    </Text>
+                    <Progress percent={progressPercent} size="small" status="active" />
+                </div>
+            ) : null}
+
             <Descriptions column={1} size="small" bordered>
-                <Descriptions.Item label="Run ID">{runDetail.run.id}</Descriptions.Item>
+                <Descriptions.Item label="Run ID">{run.id}</Descriptions.Item>
                 <Descriptions.Item label="Pipeline">
-                    {runDetail.run.pipeline_name?.trim() || '—'}
+                    {run.pipeline_name?.trim() || '—'}
                 </Descriptions.Item>
                 <Descriptions.Item label="Status">
-                    {statusTag(runDetail.run.status)}
+                    {statusTag(run.status)}
                 </Descriptions.Item>
+                {stepIndex != null ? (
+                    <Descriptions.Item label="Step pointer">
+                        {stepIndex}
+                        {totalSteps != null ? ` / ${totalSteps}` : ''}
+                    </Descriptions.Item>
+                ) : null}
                 <Descriptions.Item label="Started">
-                    {dayjs(runDetail.run.started_at).format('YYYY-MM-DD HH:mm:ss')} UTC
+                    {dayjs(run.started_at).format('YYYY-MM-DD HH:mm:ss')} UTC
                 </Descriptions.Item>
                 <Descriptions.Item label="Finished">
-                    {runDetail.run.finished_at
-                        ? dayjs(runDetail.run.finished_at).format('YYYY-MM-DD HH:mm:ss') + ' UTC'
+                    {run.finished_at
+                        ? dayjs(run.finished_at).format('YYYY-MM-DD HH:mm:ss') + ' UTC'
                         : '—'}
                 </Descriptions.Item>
-                {runDetail.run.error_summary && (
+                {run.error_summary && (
                     <Descriptions.Item label="Error summary">
                         <Paragraph style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}>
-                            {runDetail.run.error_summary}
+                            {run.error_summary}
                         </Paragraph>
                     </Descriptions.Item>
                 )}
             </Descriptions>
 
+            {contextCollapseItems.length > 0 ? (
+                <div>
+                    <Title level={5} style={{ marginBottom: 12 }}>Run state</Title>
+                    <Collapse items={contextCollapseItems} size="small" />
+                </div>
+            ) : null}
+
             <RunReportPanel
-                runId={runDetail.run.id}
-                pipelineUuid={runDetail.run.pipeline_uuid}
+                runId={run.id}
+                pipelineUuid={run.pipeline_uuid}
             />
 
             <div>

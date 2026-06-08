@@ -11,7 +11,22 @@ export const RUN_STATUS_SUCCESS = 2;
 export const RUN_STATUS_FAILED = 3;
 
 export function canViewRunDetail(status: number): boolean {
-    return status === RUN_STATUS_SUCCESS || status === RUN_STATUS_FAILED;
+    return (
+        status === RUN_STATUS_INITIALIZING
+        || status === RUN_STATUS_SUCCESS
+        || status === RUN_STATUS_FAILED
+    );
+}
+
+export function canResumePipelineRun(
+    status: number,
+    currentStepIndex: number | null | undefined,
+    canResumeFlag?: boolean,
+): boolean {
+    if (canResumeFlag !== undefined) {
+        return canResumeFlag;
+    }
+    return status === RUN_STATUS_FAILED && currentStepIndex != null;
 }
 
 export function statusTag(statusValue: number) {

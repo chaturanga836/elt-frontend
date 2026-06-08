@@ -14,6 +14,7 @@ import {
 import {
     ReloadOutlined,
     EyeOutlined,
+    PlayCircleOutlined,
 } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import { useRouter } from 'next/navigation';
@@ -21,7 +22,7 @@ import {
     PipelineService,
     PipelineRunHistoryParams,
 } from '@/services/pipe.service';
-import { canViewRunDetail, statusTag } from './runDetailUtils';
+import { canResumePipelineRun, canViewRunDetail, statusTag } from './runDetailUtils';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
 
@@ -33,6 +34,7 @@ interface PipelineRun {
     pipeline_name?: string | null;
     status: number;
     error_summary: string | null;
+    current_step_index?: number | null;
     started_at: string;
     finished_at: string | null;
 }
@@ -128,16 +130,27 @@ export default function HistoryComponent() {
         {
             title: 'Actions',
             key: 'actions',
-            width: 100,
+            width: 160,
             render: (_: unknown, record: PipelineRun) => (
-                <Button
-                    type="link"
-                    icon={<EyeOutlined />}
-                    disabled={!canViewRunDetail(record.status)}
-                    onClick={() => openRunDetail(record.id)}
-                >
-                    View
-                </Button>
+                <Space size="small">
+                    <Button
+                        type="link"
+                        icon={<EyeOutlined />}
+                        disabled={!canViewRunDetail(record.status)}
+                        onClick={() => openRunDetail(record.id)}
+                    >
+                        View
+                    </Button>
+                    {canResumePipelineRun(record.status, record.current_step_index) ? (
+                        <Button
+                            type="link"
+                            icon={<PlayCircleOutlined />}
+                            onClick={() => openRunDetail(record.id)}
+                        >
+                            Resume
+                        </Button>
+                    ) : null}
+                </Space>
             ),
         },
     ];

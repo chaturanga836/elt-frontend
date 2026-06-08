@@ -77,7 +77,8 @@ export default function WorkflowListPage() {
             Workflows
           </Title>
           <Text type="secondary">
-            Design branching diagrams with pipelines, if/else, and parallel execution
+            Orchestrate published pipelines in parallel or sequence — use Pipelines for linear
+            data steps and routing logic inside scripts.
           </Text>
         </div>
         <Button

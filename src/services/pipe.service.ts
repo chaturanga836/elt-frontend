@@ -34,21 +34,42 @@ export interface PipelineNodeLog {
   executed_at: string;
 }
 
+export interface PipelineRunContext {
+  payload?: unknown;
+  globals?: Record<string, unknown>;
+  total_steps?: number;
+  run_succeeded?: boolean;
+}
+
+export interface PipelineRunSummary {
+  id: number;
+  pipeline_uuid: string;
+  pipeline_name?: string | null;
+  pipeline_id: number;
+  org_id: number;
+  workspace_id: number;
+  status: number;
+  error_summary: string | null;
+  canvas_snapshot?: unknown;
+  graph_snapshot?: unknown;
+  input_payload?: unknown;
+  current_step_index?: number | null;
+  run_context?: PipelineRunContext | null;
+  can_resume?: boolean;
+  started_at: string;
+  finished_at: string | null;
+}
+
 export interface PipelineRunDetail {
-  run: {
-    id: number;
-    pipeline_uuid: string;
-    pipeline_name?: string | null;
-    pipeline_id: number;
-    org_id: number;
-    workspace_id: number;
-    status: number;
-    error_summary: string | null;
-    canvas_snapshot: unknown;
-    started_at: string;
-    finished_at: string | null;
-  };
+  run: PipelineRunSummary;
   node_logs: PipelineNodeLog[];
+}
+
+export interface ResumePipelineRunResponse {
+  message: string;
+  run_id: number;
+  resume_from_step: number;
+  status: string;
 }
 
 export interface PipelineDebugStepPlan {
@@ -162,6 +183,14 @@ export const PipelineService = {
 
   getPipelineRunDetail: async (runId: number): Promise<PipelineRunDetail> => {
     const response = await api.get(`/sync/runs/${runId}`);
+    return response.data;
+  },
+
+  resumePipelineRun: async (
+    runId: number,
+    body?: { from_step_index?: number },
+  ): Promise<ResumePipelineRunResponse> => {
+    const response = await api.post(`/sync/runs/${runId}/resume`, body ?? {});
     return response.data;
   },
 
