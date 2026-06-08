@@ -222,7 +222,7 @@ export default function WorkflowDebugDrawer({ open, workflowUuid, onClose }: Pro
               <Text strong style={{ fontSize: 12 }}>
                 Parallel fork input (shared by each branch)
               </Text>
-              <RunPayloadJsonBlock payload={debugState.forkPayload} />
+              <RunPayloadJsonBlock label="Fork input" data={debugState.forkPayload} />
             </div>
           ) : null}
 
@@ -236,7 +236,7 @@ export default function WorkflowDebugDrawer({ open, workflowUuid, onClose }: Pro
                   <Text code style={{ fontSize: 11 }}>
                     {key}
                   </Text>
-                  <RunPayloadJsonBlock payload={debugState.branchOutputs[key]} />
+                  <RunPayloadJsonBlock label="Branch output" data={debugState.branchOutputs[key]} />
                 </div>
               ))}
             </div>
@@ -274,14 +274,8 @@ export default function WorkflowDebugDrawer({ open, workflowUuid, onClose }: Pro
                   style={{ marginBottom: 12 }}
                 />
               ) : null}
-              <Text strong style={{ fontSize: 12 }}>
-                Input
-              </Text>
-              <RunPayloadJsonBlock payload={latestLog.input_data} />
-              <Text strong style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
-                Output
-              </Text>
-              <RunPayloadJsonBlock payload={latestLog.output_data} />
+              <RunPayloadJsonBlock label="Input" data={latestLog.input_data} />
+              <RunPayloadJsonBlock label="Output" data={latestLog.output_data} />
             </div>
           ) : (
             <Text type="secondary" style={{ fontSize: 12 }}>
