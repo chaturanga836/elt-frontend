@@ -16,7 +16,7 @@ export interface WorkflowNodePayload {
   node_uuid: string;
   node_type: WorkflowNodeTypeInt;
   task_id?: number | null;
-  node_config?: BoundaryHookConfig;
+  node_config?: BoundaryHookConfig | Record<string, unknown>;
 }
 
 export interface WorkflowCanvasStructure {

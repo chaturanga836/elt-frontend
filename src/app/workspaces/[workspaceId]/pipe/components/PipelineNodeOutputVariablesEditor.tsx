@@ -13,6 +13,7 @@ type OutputVarRow = PipelineVariableDef & { uiId: string; isDefault?: boolean };
 type Props = {
   rows: OutputVarRow[];
   onChange: (rows: OutputVarRow[]) => void;
+  globalKeys?: string[];
 };
 
 export function rowsFromOutputVariables(
@@ -50,22 +51,32 @@ export function mergeSavedOutputVariables(
   return merged;
 }
 
-export function toOutputVariablePayload(rows: OutputVarRow[]): PipelineVariableDef[] {
+export function toOutputVariablePayload(
+  rows: OutputVarRow[],
+  globalKeys: string[] = [],
+): PipelineVariableDef[] {
+  const globalSet = new Set(globalKeys.map((k) => k.trim()).filter(Boolean));
   const seen = new Set<string>();
   const merged: PipelineVariableDef[] = [];
   for (const row of rows) {
     const key = row.key.trim();
     if (!key || seen.has(key)) continue;
     seen.add(key);
+    const exportGlobal = row.export_global === true || globalSet.has(key);
     merged.push({
       key,
       ...(row.description?.trim() ? { description: row.description.trim() } : {}),
+      ...(exportGlobal ? { export_global: true } : {}),
     });
   }
   return merged;
 }
 
-export default function PipelineNodeOutputVariablesEditor({ rows, onChange }: Props) {
+export default function PipelineNodeOutputVariablesEditor({
+  rows,
+  onChange,
+  globalKeys = [],
+}: Props) {
   const update = (uiId: string, patch: Partial<OutputVarRow>) =>
     onChange(rows.map((r) => (r.uiId === uiId ? { ...r, ...patch } : r)));
 

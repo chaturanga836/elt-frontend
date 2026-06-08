@@ -1,16 +1,6 @@
 import { CanvasStructure, PipelineCreatePayload } from '@/types/pipetypes';
 import api from './api';
 
-export interface PipelineTask {
-  task_key: string;
-  task_name: string; 
-  connection_id: number;
-  depends_on: string[];
-  transform_code: string;
-  func_name: string;
-  input_mapping?: Record<string, any>;
-}
-
 export interface PipelineFilterParams {
   org_id?: number;
   workspace_id?: number;

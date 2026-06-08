@@ -190,6 +190,40 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode')
       });
     }
 
+    const scriptWithoutTask = orderedNodes.filter((n) => {
+      if (n.type !== 'taskNode') return false;
+      const data = n.data as Record<string, unknown>;
+      const taskId = data.task_id ?? (data.config as { id?: number } | undefined)?.id;
+      return !taskId;
+    });
+    if (scriptWithoutTask.length > 0) {
+      return notification.warning({
+        message: 'Script node missing task',
+        description: 'Select a script for every Script node before publishing.',
+      });
+    }
+
+    const definedGlobalKeys = new Set(
+      pipelineGlobals.variables.map((v) => v.key.trim()).filter(Boolean),
+    );
+    const invalidGlobalBinding = nodes.find((n) => {
+      const cfg = (n.data as Record<string, unknown>)?.node_config as
+        | { global_bindings?: Array<{ key?: string }> }
+        | undefined;
+      const bindings = cfg?.global_bindings || [];
+      return bindings.some((b) => {
+        const key = (b.key || '').trim();
+        return key && !definedGlobalKeys.has(key);
+      });
+    });
+    if (invalidGlobalBinding) {
+      return notification.warning({
+        message: 'Invalid global binding',
+        description:
+          'Every global binding must reference a key defined in toolbar → Global variables.',
+      });
+    }
+
     setIsPublishing(true);
     const pipelineId = getId();
     const targetUuid = getCurrentUuid() || uuid || routePipelineUuid || uuidv4();

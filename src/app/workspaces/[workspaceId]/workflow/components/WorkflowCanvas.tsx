@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import { Button, Input, Space } from 'antd';
 import {
@@ -16,28 +16,13 @@ import WorkflowCanvasInner from './WorkflowCanvasInner';
 import WorkflowNodePalette from './WorkflowNodePalette';
 import { WorkflowService } from '@/services/workflow.service';
 import { notification } from '@/lib/antd/static';
-import {
-  WorkflowCreatePayload,
-  WorkflowNodeTypeInt,
-} from '@/types/workflow';
-import { buildBoundaryNodeConfig } from '@/types/boundaryHooks';
+import { buildWorkflowSavePayload } from '@/lib/buildWorkflowSavePayload';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
-
-function mapNodeType(type?: string): WorkflowNodeTypeInt {
-  const map: Record<string, WorkflowNodeTypeInt> = {
-    startNode: 0,
-    taskNode: 1,
-    endNode: 2,
-    pipelineNode: 3,
-    conditionNode: 4,
-    parallelForkNode: 5,
-    parallelJoinNode: 6,
-  };
-  return map[type || ''] ?? 1;
-}
+import { workspacePath } from '@/lib/paths';
 
 function WorkflowCanvasContent() {
   const workspaceId = useWorkspaceId();
+  const router = useRouter();
   const params = useParams();
   const { getViewport } = useReactFlow();
   const {
@@ -57,42 +42,37 @@ function WorkflowCanvasContent() {
   const routeWorkflowUuid =
     typeof params?.id === 'string' && params.id !== 'new' ? params.id : null;
 
-  const buildPayload = (): WorkflowCreatePayload => {
+  const buildPayload = () => {
     const workflowUuid = storeUuid || routeWorkflowUuid || uuidv4();
-    return {
-      ...(getId() ? { id: getId()! } : {}),
-      workflow_uuid: workflowUuid,
+    return buildWorkflowSavePayload({
+      nodes,
+      edges,
       name,
       description,
-      org_id: 1,
-      workspace_id: workspaceId,
-      canvas_structure: {
-        nodes,
-        edges,
-        viewport: getViewport(),
-      },
-      nodes: nodes.map((node) => {
-        const nodeType = mapNodeType(node.type);
-        const isBoundary = nodeType === 0 || nodeType === 2;
-        const nodeConfig = buildBoundaryNodeConfig(
-          node.data as Record<string, unknown>,
-          nodeType === 2,
-        );
-        return {
-          node_uuid: node.id,
-          node_type: nodeType,
-          task_id: isBoundary
-            ? (nodeConfig.hook_task_id ?? null)
-            : ((node.data?.task_id as number) || null),
-          node_config: nodeConfig,
-        };
-      }),
-    };
+      workspaceId,
+      workflowId: getId(),
+      workflowUuid,
+      viewport: getViewport(),
+    });
   };
 
   const handleSave = async () => {
     if (!name.trim()) {
       notification.warning({ message: 'Workflow name is required' });
+      return;
+    }
+
+    const taskWithoutScript = nodes.filter((n) => {
+      if (n.type !== 'taskNode') return false;
+      const data = n.data as Record<string, unknown>;
+      const taskId = data.task_id ?? (data.config as { id?: number } | undefined)?.id;
+      return !taskId;
+    });
+    if (taskWithoutScript.length > 0) {
+      notification.warning({
+        message: 'Task node missing script',
+        description: 'Select a script for every Task node before saving.',
+      });
       return;
     }
     setSaving(true);
@@ -127,6 +107,9 @@ function WorkflowCanvasContent() {
         message: 'Workflow queued',
         description: `Run ID: ${res.run_id}`,
       });
+      if (res.run_id) {
+        router.push(workspacePath(workspaceId, `workflow/runs/${res.run_id}`));
+      }
     } catch {
       notification.error({ message: 'Failed to start run' });
     } finally {

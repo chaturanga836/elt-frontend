@@ -28,16 +28,18 @@ export default function EditWorkflowPage() {
         }> = res.nodes || [];
         const apiByUuid = Object.fromEntries(apiNodes.map((n) => [n.node_uuid, n]));
 
-        const mergedNodes = (canvas.nodes || []).map((node: { id: string; data?: Record<string, unknown> }) => {
+        const mergedNodes = (canvas.nodes || []).map((node: { id: string; type?: string; data?: Record<string, unknown> }) => {
           const api = apiByUuid[node.id];
           if (!api) return node;
           const hookId = api.node_config?.hook_task_id ?? api.task_id;
+          const taskId =
+            node.type === 'taskNode' ? (api.task_id ?? node.data?.task_id) : hookId;
           return {
             ...node,
             data: {
               ...node.data,
               node_config: api.node_config ?? node.data?.node_config,
-              task_id: hookId ?? node.data?.task_id,
+              task_id: taskId ?? node.data?.task_id,
             },
           };
         });

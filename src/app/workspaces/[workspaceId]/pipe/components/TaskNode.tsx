@@ -176,7 +176,7 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
 
   const saveVariables = () => {
     const input_variables = toInputVariablePayload(inputRows);
-    const output_variables = toTaskOutputVariablePayload(outputRows);
+    const output_variables = toTaskOutputVariablePayload(outputRows, pipelineGlobalKeys);
     const global_bindings = toGlobalBindingPayload(globalBindingRows);
     const latestNode = usePipelineStore.getState().nodes.find((node) => node.id === id);
     const latestConfig = ((latestNode?.data as Record<string, unknown> | undefined)?.node_config ||
@@ -301,6 +301,7 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
           onOutputChange={setOutputRows}
           upstreamNodeLabel={upstreamNodeLabel}
           upstreamOutputs={upstreamOutputs}
+          globalKeys={pipelineGlobalKeys}
         />
         <div style={{ marginTop: 20 }}>
           <PipelineNodeGlobalBindingsEditor

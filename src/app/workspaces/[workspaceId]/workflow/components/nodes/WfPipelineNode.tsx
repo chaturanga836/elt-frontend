@@ -22,10 +22,12 @@ export default function WfPipelineNode({
     WorkflowService.listPipelines(workspaceId)
       .then((res) => {
         setPipelines(
-          (res.items || []).map((p: { name: string; pipeline_uuid: string }) => ({
-            label: p.name,
-            value: p.pipeline_uuid,
-          })),
+          (res.items || [])
+            .filter((p: { is_draft?: boolean }) => !p.is_draft)
+            .map((p: { name: string; pipeline_uuid: string }) => ({
+              label: p.name,
+              value: p.pipeline_uuid,
+            })),
         );
       })
       .catch(() => setPipelines([]));

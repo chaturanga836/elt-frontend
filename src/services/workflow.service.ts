@@ -29,6 +29,23 @@ export const WorkflowService = {
     return response.data;
   },
 
+  listWorkflowRuns: async (
+    workspaceId: number,
+    workflowUuid?: string,
+    page = 1,
+    limit = 20,
+  ) => {
+    const response = await api.get('/workflows/runs', {
+      params: {
+        workspace_id: workspaceId,
+        workflow_uuid: workflowUuid,
+        page,
+        limit,
+      },
+    });
+    return response.data;
+  },
+
   getWorkflowRun: async (runId: number) => {
     const response = await api.get(`/workflows/runs/${runId}`);
     return response.data;

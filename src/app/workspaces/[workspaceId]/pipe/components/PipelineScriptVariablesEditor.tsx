@@ -22,6 +22,7 @@ type Props = {
   onOutputChange: (rows: OutputVarRow[]) => void;
   upstreamNodeLabel?: string;
   upstreamOutputs?: UpstreamOutputField[];
+  globalKeys?: string[];
 };
 
 export function rowsFromInputVariables(
@@ -69,8 +70,11 @@ export function rowsFromTaskOutputVariables(
   return [...rows, { uiId: generateId(), key: '', description: '', isDefault: false }];
 }
 
-export function toTaskOutputVariablePayload(rows: OutputVarRow[]): PipelineVariableDef[] {
-  return toOutputVariablePayload(rows);
+export function toTaskOutputVariablePayload(
+  rows: OutputVarRow[],
+  globalKeys: string[] = [],
+): PipelineVariableDef[] {
+  return toOutputVariablePayload(rows, globalKeys);
 }
 
 export default function PipelineScriptVariablesEditor({
@@ -80,6 +84,7 @@ export default function PipelineScriptVariablesEditor({
   onOutputChange,
   upstreamNodeLabel,
   upstreamOutputs,
+  globalKeys = [],
 }: Props) {
   return (
     <div>
@@ -102,7 +107,11 @@ export default function PipelineScriptVariablesEditor({
         Default output <Text code>result</Text> is always included. Add more keys your script
         returns so downstream connection nodes can map them.
       </Text>
-      <PipelineNodeOutputVariablesEditor rows={outputRows} onChange={onOutputChange} />
+      <PipelineNodeOutputVariablesEditor
+        rows={outputRows}
+        onChange={onOutputChange}
+        globalKeys={globalKeys}
+      />
     </div>
   );
 }

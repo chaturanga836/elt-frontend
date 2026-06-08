@@ -4,6 +4,8 @@ import { getPredecessorNode } from '@/lib/pipelineChain';
 export type PipelineVariableDef = {
   key: string;
   description?: string;
+  /** When true, script return fields with this key update pipeline globals at runtime. */
+  export_global?: boolean;
 };
 
 /** Maps a script input name to a field on the previous node's output payload. */
