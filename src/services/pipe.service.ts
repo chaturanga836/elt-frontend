@@ -54,6 +54,7 @@ export interface PipelineRunSummary {
   graph_snapshot?: unknown;
   input_payload?: unknown;
   current_step_index?: number | null;
+  backfill_batch_id?: string | null;
   run_context?: PipelineRunContext | null;
   can_resume?: boolean;
   started_at: string;
@@ -70,6 +71,36 @@ export interface ResumePipelineRunResponse {
   run_id: number;
   resume_from_step: number;
   status: string;
+}
+
+export interface PipelineBackfillResponse {
+  message: string;
+  backfill_batch_id: string;
+  pipeline_uuid: string;
+  pipeline_id: number;
+  start_date: string;
+  end_date: string;
+  date_field: string;
+  total_days: number;
+  runs: Array<{
+    run_id: number;
+    sync_date: string;
+    input_payload: Record<string, unknown>;
+  }>;
+}
+
+export interface PipelineBackfillStatus {
+  backfill_batch_id: string;
+  pipeline_uuid: string;
+  total_runs: number;
+  runs: Array<{
+    id: number;
+    status: number;
+    input_payload: Record<string, unknown> | null;
+    error_summary: string | null;
+    started_at: string;
+    finished_at: string | null;
+  }>;
 }
 
 export interface PipelineDebugStepPlan {
@@ -168,8 +199,28 @@ export const PipelineService = {
     return response.data; 
   },
 
-  runPipe: async (uuid: string) => {
-    const response = await api.post(`/sync/run/${uuid}`);
+  runPipe: async (uuid: string, inputPayload?: Record<string, unknown>) => {
+    const response = await api.post(`/sync/run/${uuid}`, {
+      input_payload: inputPayload ?? undefined,
+    });
+    return response.data;
+  },
+
+  runPipelineBackfill: async (
+    uuid: string,
+    body: {
+      start_date: string;
+      end_date: string;
+      date_field?: string;
+      input_payload?: Record<string, unknown>;
+    },
+  ): Promise<PipelineBackfillResponse> => {
+    const response = await api.post(`/sync/run/${uuid}/backfill`, body);
+    return response.data;
+  },
+
+  getPipelineBackfill: async (batchId: string): Promise<PipelineBackfillStatus> => {
+    const response = await api.get(`/sync/backfills/${batchId}`);
     return response.data;
   },
 

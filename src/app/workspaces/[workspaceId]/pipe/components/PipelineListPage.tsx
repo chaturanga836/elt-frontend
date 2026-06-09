@@ -2,7 +2,14 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { Table, Button, Space, Tag, Input, Card } from 'antd';
-import { PlayCircleOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import {
+  PlayCircleOutlined,
+  EditOutlined,
+  PlusOutlined,
+  SearchOutlined,
+  CalendarOutlined,
+} from '@ant-design/icons';
+import PipelineBackfillModal from './PipelineBackfillModal';
 import { PipelineService } from '@/services/pipe.service';
 import Link from 'next/link';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
@@ -14,6 +21,11 @@ export default function PipelineListPage() {
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, size: 10 });
   const [searchText, setSearchText] = useState('');
+  const [backfillOpen, setBackfillOpen] = useState(false);
+  const [backfillTarget, setBackfillTarget] = useState<{
+    uuid: string;
+    name: string;
+  } | null>(null);
 
   const fetchPipelines = useCallback(async () => {
     try {
@@ -101,6 +113,18 @@ export default function PipelineListPage() {
           >
             Run
           </Button>
+          <Button
+            icon={<CalendarOutlined />}
+            size="small"
+            disabled={record.is_draft}
+            title={record.is_draft ? 'Publish before backfill' : 'One run per day in a date range'}
+            onClick={() => {
+              setBackfillTarget({ uuid: record.pipeline_uuid, name: record.name });
+              setBackfillOpen(true);
+            }}
+          >
+            Backfill
+          </Button>
           <Link href={workspacePath(workspaceId, `pipe/${record.pipeline_uuid}`)}>
             <Button icon={<EditOutlined />} size="small" type="primary" ghost>Edit</Button>
           </Link>
@@ -140,6 +164,16 @@ export default function PipelineListPage() {
           onChange={handleTableChange}
         />
       </Card>
+
+      <PipelineBackfillModal
+        open={backfillOpen}
+        pipelineUuid={backfillTarget?.uuid ?? null}
+        pipelineName={backfillTarget?.name}
+        onClose={() => {
+          setBackfillOpen(false);
+          setBackfillTarget(null);
+        }}
+      />
     </div>
   );
 }
