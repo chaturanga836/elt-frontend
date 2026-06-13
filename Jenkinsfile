@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'docker' }
+    agent any
 
     environment {
         DEPLOY_HOST = '13.200.160.10'
