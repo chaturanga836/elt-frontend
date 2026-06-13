@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { WorkspaceService } from '@/services/workspace.service';
-import { workspacePath } from '@/lib/paths';
+import { projectPath } from '@/lib/paths';
 import { COMMON_TIMEZONES } from '@/constants/timezones';
 
 const { Title, Text } = Typography;
@@ -26,10 +26,10 @@ export default function NewWorkspacePage() {
       <div className="p-8">
         <Card>
           <Title level={4}>Access denied</Title>
-          <Text type="secondary">Only super administrators can create workspaces.</Text>
+          <Text type="secondary">Only super administrators can create projects.</Text>
           <div style={{ marginTop: 16 }}>
-            <Link href="/workspaces">
-              <Button>Back to workspaces</Button>
+            <Link href="/projects">
+              <Button>Back to projects</Button>
             </Link>
           </div>
         </Card>
@@ -46,10 +46,10 @@ export default function NewWorkspacePage() {
       setLoading(true);
       const ws = await WorkspaceService.create(orgId, values);
       setCurrentWorkspaceId(ws.id);
-      notification.success({ message: 'Workspace created' });
-      router.push(workspacePath(ws.id, 'pipe'));
+      notification.success({ message: 'Project created' });
+      router.push(projectPath(ws.id, 'workflow'));
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to create workspace';
+      const msg = err instanceof Error ? err.message : 'Failed to create project';
       notification.error({ message: msg });
     } finally {
       setLoading(false);
@@ -59,16 +59,16 @@ export default function NewWorkspacePage() {
   return (
     <div className="p-8 max-w-xl">
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Link href="/workspaces">
+        <Link href="/projects">
           <Button type="text" icon={<ArrowLeftOutlined />}>
             Back
           </Button>
         </Link>
         <div>
           <Title level={2} style={{ margin: 0 }}>
-            Create workspace
+            Create project
           </Title>
-          <Text type="secondary">Set up a new workspace for your team.</Text>
+          <Text type="secondary">Set up a new BaaS project for your team.</Text>
         </div>
         <Card>
           <Form
@@ -79,7 +79,7 @@ export default function NewWorkspacePage() {
           >
             <Form.Item
               name="name"
-              label="Workspace name"
+              label="Project name"
               rules={[{ required: true, message: 'Name is required' }]}
             >
               <Input placeholder="e.g. Research Team" />
@@ -95,7 +95,7 @@ export default function NewWorkspacePage() {
             </Form.Item>
             <Form.Item>
               <Button type="primary" htmlType="submit" loading={loading} block>
-                Create workspace
+                Create project
               </Button>
             </Form.Item>
           </Form>

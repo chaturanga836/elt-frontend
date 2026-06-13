@@ -20,7 +20,7 @@ import {
   EditOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { connectionService } from '@/services/connection.service';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
@@ -72,6 +72,10 @@ function createPath(workspaceId: number, sourceId: string): string {
 
 export default function ConnectionsTable() {
   const workspaceId = useWorkspaceId();
+  const pathname = usePathname();
+  const isApiSection =
+    pathname.includes('/api/rest') ||
+    /\/projects\/\d+\/connections\/?$/.test(pathname.replace(/\/$/, ''));
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ConnectionRecord[]>([]);
@@ -199,10 +203,12 @@ export default function ConnectionsTable() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <Title level={2} style={{ margin: 0 }}>
-            Connections
+            {isApiSection ? 'API Endpoints' : 'Connections'}
           </Title>
           <Text type="secondary">
-            REST APIs, databases, and storage in one place
+            {isApiSection
+              ? 'REST API endpoints and integrations for this project'
+              : 'REST APIs, databases, and storage in one place'}
           </Text>
         </div>
         <Button
@@ -211,7 +217,7 @@ export default function ConnectionsTable() {
           icon={<PlusOutlined />}
           onClick={() => setIsModalOpen(true)}
         >
-          Add Connection
+          {isApiSection ? 'Add Endpoint' : 'Add Connection'}
         </Button>
       </div>
 

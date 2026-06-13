@@ -24,7 +24,7 @@ import {
 } from '@/services/pipe.service';
 import { canResumePipelineRun, canViewRunDetail, statusTag } from './runDetailUtils';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
-import { workspacePath } from '@/lib/paths';
+import { projectPath } from '@/lib/paths';
 
 const { RangePicker } = DatePicker;
 const { Title } = Typography;
@@ -83,7 +83,7 @@ export default function HistoryComponent() {
     };
 
     const openRunDetail = (runId: number) => {
-        router.push(workspacePath(workspaceId, `pipe/history/${runId}`));
+        router.push(projectPath(workspaceId, `workflow/history/${runId}`));
     };
 
     const columns = [
@@ -94,7 +94,7 @@ export default function HistoryComponent() {
             width: 90,
         },
         {
-            title: 'Pipeline',
+            title: 'Workflow',
             dataIndex: 'pipeline_name',
             key: 'pipeline_name',
             ellipsis: true,
@@ -157,7 +157,7 @@ export default function HistoryComponent() {
 
     return (
         <div style={{ padding: '24px' }}>
-            <Title level={4} style={{ marginBottom: '20px' }}>Pipeline Run History</Title>
+            <Title level={4} style={{ marginBottom: '20px' }}>Workflow Run History</Title>
 
             <Card style={{ marginBottom: '16px' }} size="small">
                 <Space wrap size="middle">

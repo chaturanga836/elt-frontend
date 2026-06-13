@@ -5,7 +5,7 @@ import { Avatar, Button, Card, Descriptions, Space, Tag, Typography } from 'antd
 import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
-import { workspacePath } from '@/lib/paths';
+import { projectPath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
 
@@ -21,9 +21,9 @@ export default function SettingsPage() {
     <div className="p-8 max-w-2xl">
       {currentWorkspaceId ? (
         <div className="mb-4">
-          <Link href={workspacePath(currentWorkspaceId, 'pipe')}>
+          <Link href={projectPath(currentWorkspaceId, 'workflow')}>
             <Button type="link" style={{ paddingLeft: 0 }}>
-              Back to workspace
+              Back to project
             </Button>
           </Link>
         </div>
@@ -45,20 +45,20 @@ export default function SettingsPage() {
             <Descriptions.Item label="Realm roles">
               {realmRoles.length ? realmRoles.map((r) => <Tag key={r}>{r}</Tag>) : '—'}
             </Descriptions.Item>
-            <Descriptions.Item label="Workspace access">
+            <Descriptions.Item label="Project access">
               {workspaceIds.length
-                ? workspaceIds.map((id) => <Tag key={id}>WS #{id}</Tag>)
-                : 'No workspace groups assigned'}
+                ? workspaceIds.map((id) => <Tag key={id}>Project #{id}</Tag>)
+                : 'No project groups assigned'}
             </Descriptions.Item>
           </Descriptions>
         </Space>
       </Card>
 
-      <Card className="mt-4" title="Workspace administration">
+      <Card className="mt-4" title="Project administration">
         <Text type="secondary">
-          Manage workspaces, invitations, timezones, and plugins from the{' '}
-          <Link href="/workspaces">workspaces</Link> page.
-          {isSuperAdmin && ' As super admin, you can create new workspaces.'}
+          Manage projects, invitations, timezones, and plugins from the{' '}
+          <Link href="/projects">projects</Link> page.
+          {isSuperAdmin && ' As super admin, you can create new projects.'}
         </Text>
       </Card>
     </div>

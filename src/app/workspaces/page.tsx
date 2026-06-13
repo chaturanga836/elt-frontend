@@ -20,7 +20,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { WorkspaceItem, WorkspaceService } from '@/services/workspace.service';
 import AppBrand from '@/components/brand/AppBrand';
-import { workspacePath } from '@/lib/paths';
+import { projectPath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
 
@@ -42,7 +42,7 @@ export default function WorkspacesPage() {
   const openWorkspace = useCallback(
     (id: number) => {
       setCurrentWorkspaceId(id);
-      router.push(workspacePath(id, 'pipe'));
+      router.push(projectPath(id, 'workflow'));
     },
     [router, setCurrentWorkspaceId],
   );
@@ -64,7 +64,7 @@ export default function WorkspacesPage() {
         return;
       }
     } catch {
-      notification.error({ message: 'Failed to load workspaces' });
+      notification.error({ message: 'Failed to load projects' });
     } finally {
       setLoading(false);
     }
@@ -111,7 +111,7 @@ export default function WorkspacesPage() {
           onClick={(e) => {
             e.stopPropagation();
             setCurrentWorkspaceId(record.id);
-            router.push(workspacePath(record.id, 'settings'));
+            router.push(projectPath(record.id, 'settings'));
           }}
         >
           Settings
@@ -152,14 +152,14 @@ export default function WorkspacesPage() {
           <Empty
             description={
               isSuperAdmin
-                ? 'No workspaces yet. Create your first workspace to get started.'
-                : 'You are not assigned to any workspace yet. Contact your administrator.'
+                ? 'No projects yet. Create your first project to get started.'
+                : 'You are not assigned to any project yet. Contact your administrator.'
             }
           >
             {isSuperAdmin && (
-              <Link href="/workspaces/new">
+              <Link href="/projects/new">
                 <Button type="primary" size="large" icon={<PlusOutlined />}>
-                  Create workspace
+                  Create project
                 </Button>
               </Link>
             )}
@@ -177,14 +177,14 @@ export default function WorkspacesPage() {
             <AppBrand variant="header" />
           </div>
           <Title level={2} style={{ margin: 0 }}>
-            Workspaces
+            Projects
           </Title>
-          <Text type="secondary">Select a workspace to open pipelines, workflows, and connections.</Text>
+          <Text type="secondary">Select a project to manage API, database, storage, and workflows.</Text>
         </div>
         {isSuperAdmin && (
-          <Link href="/workspaces/new">
+          <Link href="/projects/new">
             <Button type="primary" icon={<PlusOutlined />} size="large">
-              Create workspace
+              Create project
             </Button>
           </Link>
         )}
@@ -214,7 +214,7 @@ export default function WorkspacesPage() {
           pageSize: params.limit,
           total: data.total,
           showSizeChanger: false,
-          showTotal: (total) => `${total} workspaces`,
+          showTotal: (total) => `${total} projects`,
           onChange: (page) => setParams((p) => ({ ...p, page })),
         }}
         onRow={(record) => ({

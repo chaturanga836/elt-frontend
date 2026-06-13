@@ -17,7 +17,7 @@ const { Title, Text } = Typography;
 
 export default function WorkspaceSettingsPage() {
   const params = useParams();
-  const raw = params?.workspaceId;
+  const raw = params?.projectId ?? params?.workspaceId;
   const workspaceId = typeof raw === 'string' ? Number(raw) : Number(raw?.[0]);
   const setCurrentWorkspaceId = useWorkspaceStore((s) => s.setCurrentWorkspaceId);
   const [workspace, setWorkspace] = useState<WorkspaceItem | null>(null);
@@ -32,7 +32,7 @@ export default function WorkspaceSettingsPage() {
         const ws = await WorkspaceService.get(workspaceId);
         setWorkspace(ws);
       } catch {
-        notification.error({ message: 'Workspace not found' });
+        notification.error({ message: 'Project not found' });
       } finally {
         setLoading(false);
       }
@@ -50,8 +50,8 @@ export default function WorkspaceSettingsPage() {
   if (!workspace) {
     return (
       <div className="p-8">
-        <Link href="/workspaces">
-          <Button icon={<ArrowLeftOutlined />}>Back to workspaces</Button>
+        <Link href="/projects">
+          <Button icon={<ArrowLeftOutlined />}>Back to projects</Button>
         </Link>
       </div>
     );
@@ -59,15 +59,15 @@ export default function WorkspaceSettingsPage() {
 
   return (
     <div className="p-8">
-      <Link href="/workspaces">
+      <Link href="/projects">
         <Button type="text" icon={<ArrowLeftOutlined />} className="mb-4">
-          All workspaces
+          All projects
         </Button>
       </Link>
       <Title level={2} style={{ marginTop: 0 }}>
         {workspace.name}
       </Title>
-      <Text type="secondary">Workspace ID {workspace.id} · Settings</Text>
+      <Text type="secondary">Project ID {workspace.id} · Settings</Text>
 
       <Card className="mt-6">
         <Tabs
@@ -98,8 +98,8 @@ export default function WorkspaceSettingsPage() {
         />
       </Card>
       <div className="mt-4">
-        <Link href={workspacePath(workspace.id, 'pipe')}>
-          <Button type="primary">Open workspace</Button>
+        <Link href={workspacePath(workspace.id, 'workflow')}>
+          <Button type="primary">Open project</Button>
         </Link>
       </div>
     </div>

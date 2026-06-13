@@ -12,11 +12,14 @@ import {
 import PipelineBackfillModal from './PipelineBackfillModal';
 import { PipelineService } from '@/services/pipe.service';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
-import { workspacePath } from '@/lib/paths';
+import { projectPath } from '@/lib/paths';
 
 export default function PipelineListPage() {
   const workspaceId = useWorkspaceId();
+  const pathname = usePathname();
+  const flowSegment = pathname.includes('/workflow') ? 'workflow' : 'pipe';
   const [data, setData] = useState({ items: [], total: 0 });
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, size: 10 });
@@ -71,11 +74,11 @@ export default function PipelineListPage() {
 
   const columns = [
     {
-      title: 'Pipeline Name',
+      title: 'Workflow Name',
       dataIndex: 'name',
       key: 'name',
       render: (text: string, record: any) => (
-        <Link href={workspacePath(workspaceId, `pipe/${record.pipeline_uuid}`)}>
+        <Link href={projectPath(workspaceId, `${flowSegment}/${record.pipeline_uuid}`)}>
           <span style={{ color: '#1890ff', fontWeight: 600 }}>{text}</span>
         </Link>
       ),
@@ -125,7 +128,7 @@ export default function PipelineListPage() {
           >
             Backfill
           </Button>
-          <Link href={workspacePath(workspaceId, `pipe/${record.pipeline_uuid}`)}>
+          <Link href={projectPath(workspaceId, `${flowSegment}/${record.pipeline_uuid}`)}>
             <Button icon={<EditOutlined />} size="small" type="primary" ghost>Edit</Button>
           </Link>
         </Space>
@@ -135,11 +138,16 @@ export default function PipelineListPage() {
 
   return (
     <div style={{ padding: '24px' }}>
-      <Card title="Data Pipelines" extra={
-        <Link href={workspacePath(workspaceId, 'pipe/new?reset=1')}>
-          <Button type="primary" icon={<PlusOutlined />}>Create Pipeline</Button>
-        </Link>
-      }>
+      <Card
+        title="Workflows"
+        extra={
+          <Link href={projectPath(workspaceId, `${flowSegment}/new?reset=1`)}>
+            <Button type="primary" icon={<PlusOutlined />}>
+              Create Workflow
+            </Button>
+          </Link>
+        }
+      >
         <div style={{ marginBottom: 16 }}>
           <Input
             placeholder="Search by name..."

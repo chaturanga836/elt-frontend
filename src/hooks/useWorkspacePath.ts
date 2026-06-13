@@ -1,12 +1,14 @@
 'use client';
 
-import { workspacePath } from '@/lib/paths';
+import { projectPath } from '@/lib/paths';
 import { useWorkspaceId } from './useWorkspaceId';
 
 export function useWorkspacePath(segment = ''): string {
   const workspaceId = useWorkspaceId();
-  return workspacePath(workspaceId, segment);
+  return projectPath(workspaceId, segment);
 }
+
+export const useProjectPath = useWorkspacePath;
 
 export function useWorkspaceIdParam(): number {
   return useWorkspaceId();

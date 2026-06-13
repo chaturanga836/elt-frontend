@@ -3,24 +3,27 @@
 import React, { useEffect, useState } from 'react';
 import { Avatar, Button, Layout, Menu, Space, theme, Typography } from 'antd';
 import {
-  ProjectOutlined,
-  PlusCircleOutlined,
-  AppstoreOutlined,
-  SettingOutlined,
-  HistoryOutlined,
-  UnorderedListOutlined,
-  NodeIndexOutlined,
   ApiOutlined,
-  GroupOutlined,
-  SafetyCertificateOutlined,
+  DatabaseOutlined,
+  CloudOutlined,
+  ThunderboltOutlined,
+  NodeIndexOutlined,
+  UnorderedListOutlined,
+  HistoryOutlined,
+  InboxOutlined,
+  ClockCircleOutlined,
+  CodeOutlined,
+  GithubOutlined,
+  SettingOutlined,
   SwapOutlined,
-  FilePdfOutlined,
+  GroupOutlined,
+  TableOutlined,
 } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { logoutFromKeycloak } from '@/lib/keycloak';
 import AppBrand from '@/components/brand/AppBrand';
-import { workspacePath } from '@/lib/paths';
+import { projectPath } from '@/lib/paths';
 import { WorkspaceService, WorkspaceItem } from '@/services/workspace.service';
 
 const { Sider, Content } = Layout;
@@ -40,10 +43,18 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
   const username = useAuthStore((s) => s.username);
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
-  const base = workspacePath(workspaceId);
-  const pipeBase = workspacePath(workspaceId, 'pipe');
-  const workflowBase = workspacePath(workspaceId, 'workflow');
-  const connectionsBase = workspacePath(workspaceId, 'connections');
+  const base = projectPath(workspaceId);
+  const apiRest = projectPath(workspaceId, 'api/rest');
+  const apiGroups = projectPath(workspaceId, 'api/rest/groups');
+  const dbSql = projectPath(workspaceId, 'db/sql');
+  const dbTables = projectPath(workspaceId, 'db/tables');
+  const storageBase = projectPath(workspaceId, 'storage');
+  const realtimeBase = projectPath(workspaceId, 'realtime');
+  const workflowBase = projectPath(workspaceId, 'workflow');
+  const queueBase = projectPath(workspaceId, 'queue');
+  const cronBase = projectPath(workspaceId, 'cron');
+  const servicesBase = projectPath(workspaceId, 'services');
+  const servicesGithub = projectPath(workspaceId, 'services/github');
 
   const {
     token: { colorBgContainer },
@@ -65,75 +76,65 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
 
   const menuItems = [
     {
-      key: 'pipelines-group',
-      icon: <ProjectOutlined />,
-      label: 'Pipelines',
-      children: [
-        {
-          key: pipeBase,
-          icon: <UnorderedListOutlined />,
-          label: 'All Pipelines',
-        },
-        {
-          key: `${pipeBase}/history`,
-          icon: <HistoryOutlined />,
-          label: 'Run History',
-        },
-      ],
-    },
-    {
-      key: 'workflows-group',
-      icon: <NodeIndexOutlined />,
-      label: 'Workflows',
-      children: [
-        {
-          key: workflowBase,
-          icon: <UnorderedListOutlined />,
-          label: 'All Workflows',
-        },
-        {
-          key: `${workflowBase}/new`,
-          icon: <PlusCircleOutlined />,
-          label: 'New Workflow',
-        },
-      ],
-    },
-    {
-      key: 'connections-group',
+      key: 'api-group',
       icon: <ApiOutlined />,
-      label: 'Connections',
+      label: 'API (REST)',
       children: [
-        {
-          key: `${connectionsBase}/rest-api/groups`,
-          icon: <GroupOutlined />,
-          label: 'Groups',
-        },
-        {
-          key: connectionsBase,
-          icon: <AppstoreOutlined />,
-          label: 'Standalone',
-        },
+        { key: apiGroups, icon: <GroupOutlined />, label: 'Groups' },
+        { key: apiRest, icon: <UnorderedListOutlined />, label: 'Endpoints' },
       ],
     },
     {
-      key: workspacePath(workspaceId, 'task'),
-      icon: <AppstoreOutlined />,
-      label: 'Tasks',
+      key: 'db-group',
+      icon: <DatabaseOutlined />,
+      label: 'DB',
+      children: [
+        { key: dbSql, icon: <CodeOutlined />, label: 'SQL Editor' },
+        { key: dbTables, icon: <TableOutlined />, label: 'Tables' },
+      ],
     },
     {
-      key: workspacePath(workspaceId, 'external-links'),
-      icon: <SafetyCertificateOutlined />,
-      label: 'External Links',
+      key: storageBase,
+      icon: <CloudOutlined />,
+      label: 'Storage',
     },
     {
-      key: workspacePath(workspaceId, 'reports'),
-      icon: <FilePdfOutlined />,
-      label: 'Reports',
+      key: realtimeBase,
+      icon: <ThunderboltOutlined />,
+      label: 'Realtime',
     },
     {
-      key: workspacePath(workspaceId, 'settings'),
+      key: 'workflow-group',
+      icon: <NodeIndexOutlined />,
+      label: 'Workflow',
+      children: [
+        { key: workflowBase, icon: <UnorderedListOutlined />, label: 'All Workflows' },
+        { key: `${workflowBase}/history`, icon: <HistoryOutlined />, label: 'Run History' },
+      ],
+    },
+    {
+      key: queueBase,
+      icon: <InboxOutlined />,
+      label: 'Queue',
+    },
+    {
+      key: cronBase,
+      icon: <ClockCircleOutlined />,
+      label: 'Cron',
+    },
+    {
+      key: 'services-group',
+      icon: <CodeOutlined />,
+      label: 'Services & Functions',
+      children: [
+        { key: servicesBase, icon: <UnorderedListOutlined />, label: 'All Functions' },
+        { key: servicesGithub, icon: <GithubOutlined />, label: 'GitHub' },
+      ],
+    },
+    {
+      key: projectPath(workspaceId, 'settings'),
       icon: <SettingOutlined />,
-      label: 'Workspace Settings',
+      label: 'Project Settings',
     },
     {
       key: '/settings',
@@ -142,56 +143,40 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
     },
   ];
 
-  const wsPrefix = `${base}/`;
+  const path = pathname.replace(/\/workspaces\//, '/projects/');
 
   const getSelectedMenuKey = () => {
-    if (pathname.includes('/pipe/history')) {
-      return `${pipeBase}/history`;
+    if (path.includes('/pipe/history') || path.includes('/workflow/history')) {
+      return `${workflowBase}/history`;
     }
-    if (pathname.includes('/workflow/new')) {
-      return `${workflowBase}/new`;
+    if (path.includes('/api/rest/groups')) {
+      return apiGroups;
     }
-    if (pathname.includes('/workflow')) {
-      return workflowBase;
+    if (path.includes('/api/rest') || (path.includes('/connections') && !path.includes('/connections/'))) {
+      return apiRest;
     }
-    if (pathname.includes('/connections/rest-api/groups')) {
-      return `${connectionsBase}/rest-api/groups`;
+    if (path.includes('/db/sql')) return dbSql;
+    if (path.includes('/db/tables')) return dbTables;
+    if (path.includes('/storage') && !path.includes('/connections/storage')) return storageBase;
+    if (path.includes('/realtime')) return realtimeBase;
+    if (path.includes('/queue')) return queueBase;
+    if (path.includes('/cron')) return cronBase;
+    if (path.includes('/services/github')) return servicesGithub;
+    if (path.includes('/task') || path.includes('/services')) return servicesBase;
+    if (path.includes('/settings') && path.startsWith(`${base}/`)) {
+      return projectPath(workspaceId, 'settings');
     }
-    if (pathname.includes('/connections')) {
-      return connectionsBase;
-    }
-    if (pathname.includes('/external-links')) {
-      return workspacePath(workspaceId, 'external-links');
-    }
-    if (pathname.includes('/reports')) {
-      return workspacePath(workspaceId, 'reports');
-    }
-    if (pathname.includes('/settings') && pathname.startsWith(wsPrefix)) {
-      return workspacePath(workspaceId, 'settings');
-    }
-    if (pathname === '/settings') {
-      return '/settings';
-    }
-    if (pathname.includes('/task')) {
-      return workspacePath(workspaceId, 'task');
-    }
-    if (pathname.includes('/pipe')) {
-      return pipeBase;
-    }
-    return pathname;
+    if (path === '/settings') return '/settings';
+    if (path.includes('/pipe') || path.includes('/workflow')) return workflowBase;
+    return path;
   };
 
-  const getSelectedParentKeys = () => {
+  const getOpenKeys = () => {
     const keys: string[] = [];
-    if (pathname.includes('/pipe')) {
-      keys.push('pipelines-group');
-    }
-    if (pathname.includes('/workflow')) {
-      keys.push('workflows-group');
-    }
-    if (pathname.includes('/connections')) {
-      keys.push('connections-group');
-    }
+    if (path.includes('/api/rest') || path.includes('/connections')) keys.push('api-group');
+    if (path.includes('/db/')) keys.push('db-group');
+    if (path.includes('/pipe') || path.includes('/workflow')) keys.push('workflow-group');
+    if (path.includes('/task') || path.includes('/services')) keys.push('services-group');
     return keys;
   };
 
@@ -226,16 +211,16 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
               style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, display: 'block' }}
               ellipsis
             >
-              {workspace?.name ?? `Workspace #${workspaceId}`}
+              {workspace?.name ?? `Project #${workspaceId}`}
             </Text>
             <Button
               type="link"
               size="small"
               icon={<SwapOutlined />}
               style={{ color: 'rgba(255,255,255,0.75)', padding: 0, height: 'auto' }}
-              onClick={() => router.push('/workspaces')}
+              onClick={() => router.push('/projects')}
             >
-              Switch workspace
+              Switch project
             </Button>
           </div>
         )}
@@ -244,7 +229,7 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
           theme="dark"
           mode="inline"
           selectedKeys={[getSelectedMenuKey()]}
-          defaultOpenKeys={getSelectedParentKeys()}
+          defaultOpenKeys={getOpenKeys()}
           items={menuItems}
           onClick={({ key }) => {
             if (!key.endsWith('-group')) {

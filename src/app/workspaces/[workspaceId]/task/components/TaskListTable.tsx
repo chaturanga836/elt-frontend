@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Table, Button, Space, Input, Card, notification } from 'antd';
+import { Table, Button, Space, Input, Card, Tag, notification } from 'antd';
 import { EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { TaskService, TaskResponse } from '@/services/task.service';
 import Link from 'next/link';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
-import { workspacePath } from '@/lib/paths';
+import { projectPath } from '@/lib/paths';
 
 export default function TaskListTable() {
   const workspaceId = useWorkspaceId();
@@ -32,7 +32,7 @@ export default function TaskListTable() {
       });
       setData({ items: response.items, total: response.total });
     } catch (err) {
-      notification.error({ message: "Failed to fetch tasks" });
+      notification.error({ message: 'Failed to fetch functions' });
       console.error(err);
     } finally {
       setLoading(false);
@@ -71,6 +71,13 @@ export default function TaskListTable() {
       dataIndex: 'name',
       key: 'name',
       sorter: true,
+      render: (name: string, record: TaskResponse) => (
+        <Space>
+          <span>{name}</span>
+          <Tag color="blue">custom</Tag>
+          <Tag>{record.id % 2 === 0 ? 'async' : 'sync'}</Tag>
+        </Space>
+      ),
     },
     {
       title: 'Description',
@@ -91,7 +98,7 @@ export default function TaskListTable() {
       width: 120,
       render: (_: any, record: TaskResponse) => (
         <Space>
-          <Link href={workspacePath(workspaceId, `task/${record.id}`)}>
+          <Link href={projectPath(workspaceId, `services/${record.id}`)}>
             <Button icon={<EditOutlined />} size="small" type="primary" ghost>
               View/Edit
             </Button>
@@ -104,16 +111,18 @@ export default function TaskListTable() {
   return (
     <div style={{ padding: '24px' }}>
       <Card 
-        title="Independent Task Library" 
+        title="Services & Functions"
         extra={
-          <Link href={workspacePath(workspaceId, 'task/new')}>
-            <Button type="primary" icon={<PlusOutlined />}>Create New Task</Button>
+          <Link href={projectPath(workspaceId, 'services/new')}>
+            <Button type="primary" icon={<PlusOutlined />}>
+              Create Function
+            </Button>
           </Link>
         }
       >
         <div style={{ marginBottom: 16 }}>
           <Input
-            placeholder="Search tasks by name or ID..."
+            placeholder="Search functions by name or ID..."
             prefix={<SearchOutlined />}
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: 350 }}

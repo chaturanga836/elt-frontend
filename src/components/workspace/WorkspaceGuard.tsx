@@ -10,7 +10,7 @@ import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 export default function WorkspaceGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const params = useParams();
-  const raw = params?.workspaceId;
+  const raw = params?.projectId ?? params?.workspaceId;
   const workspaceId = typeof raw === 'string' ? Number(raw) : Number(raw?.[0]);
 
   const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
@@ -25,13 +25,13 @@ export default function WorkspaceGuard({ children }: { children: React.ReactNode
     const run = async () => {
       if (!Number.isFinite(workspaceId) || workspaceId < 1) {
         setCurrentWorkspaceId(null);
-        router.replace('/workspaces');
+        router.replace('/projects');
         return;
       }
 
       if (!isSuperAdmin && workspaceIds.length > 0 && !workspaceIds.includes(workspaceId)) {
         setCurrentWorkspaceId(null);
-        router.replace('/workspaces');
+        router.replace('/projects');
         return;
       }
 
@@ -43,7 +43,7 @@ export default function WorkspaceGuard({ children }: { children: React.ReactNode
       } catch {
         if (cancelled) return;
         setCurrentWorkspaceId(null);
-        router.replace('/workspaces');
+        router.replace('/projects');
       }
     };
 
