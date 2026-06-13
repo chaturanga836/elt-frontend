@@ -18,21 +18,36 @@ pipeline {
         }
 
         stage('Prepare Environment') {
-            when { branch 'master' }
+            when {
+                expression {
+                    def b = env.BRANCH_NAME ?: env.GIT_BRANCH ?: ''
+                    return b.contains('master')
+                }
+            }
             steps {
                 sh 'bash jenkins/prepare-env.sh'
             }
         }
 
         stage('Deploy') {
-            when { branch 'master' }
+            when {
+                expression {
+                    def b = env.BRANCH_NAME ?: env.GIT_BRANCH ?: ''
+                    return b.contains('master')
+                }
+            }
             steps {
                 sh 'bash deploy.sh'
             }
         }
 
         stage('Health') {
-            when { branch 'master' }
+            when {
+                expression {
+                    def b = env.BRANCH_NAME ?: env.GIT_BRANCH ?: ''
+                    return b.contains('master')
+                }
+            }
             steps {
                 sh '''
                     set -e
