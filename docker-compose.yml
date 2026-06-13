@@ -4,15 +4,14 @@ services:
     build:
       context: .
       args:
-        - NEXT_PUBLIC_BUILD_ID=${BUILD_ID:-development}
-        - NEXT_PUBLIC_API_URL=http://13.200.160.10:8000/api/v1
-        - NEXT_PUBLIC_KC_URL=http://13.200.160.10:8081
-        - NEXT_PUBLIC_KC_REALM=workspace-realm
-        - NEXT_PUBLIC_KC_CLIENT_ID=workspace-web
+        - NEXT_PUBLIC_BUILD_ID=${NEXT_PUBLIC_BUILD_ID:-development}
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+        - NEXT_PUBLIC_KC_URL=${NEXT_PUBLIC_KC_URL}
+        - NEXT_PUBLIC_KC_REALM=${NEXT_PUBLIC_KC_REALM}
+        - NEXT_PUBLIC_KC_CLIENT_ID=${NEXT_PUBLIC_KC_CLIENT_ID}
     ports:
       - "3000:3000"
     volumes:
-      # Persistent cache for Next.js build artifacts
       - next_build_cache:/app/.next/cache
     restart: unless-stopped
 
