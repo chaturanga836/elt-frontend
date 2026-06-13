@@ -9,6 +9,7 @@ services:
         - NEXT_PUBLIC_KC_URL=${NEXT_PUBLIC_KC_URL}
         - NEXT_PUBLIC_KC_REALM=${NEXT_PUBLIC_KC_REALM}
         - NEXT_PUBLIC_KC_CLIENT_ID=${NEXT_PUBLIC_KC_CLIENT_ID}
+    image: etl-frontend-image:${NEXT_PUBLIC_BUILD_ID:-latest}
     ports:
       - "3000:3000"
     volumes:
