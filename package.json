@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:ci": "eslint --quiet"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^2.1.0",

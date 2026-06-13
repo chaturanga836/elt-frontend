@@ -35,6 +35,6 @@ tar cf - \
     tar xf -
     apk add --no-cache libc6-compat >/dev/null
     npm ci --legacy-peer-deps
-    npm run lint
+    npm run lint:ci
     npm run build
   '
