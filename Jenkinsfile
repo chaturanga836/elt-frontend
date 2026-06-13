@@ -13,16 +13,7 @@ pipeline {
     stages {
         stage('Test') {
             steps {
-                sh '''
-                    npm ci --legacy-peer-deps
-                    npm run lint
-                    NEXT_PUBLIC_BUILD_ID=ci \
-                    NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL}" \
-                    NEXT_PUBLIC_KC_URL="${NEXT_PUBLIC_KC_URL}" \
-                    NEXT_PUBLIC_KC_REALM="${NEXT_PUBLIC_KC_REALM}" \
-                    NEXT_PUBLIC_KC_CLIENT_ID="${NEXT_PUBLIC_KC_CLIENT_ID}" \
-                    npm run build
-                '''
+                sh 'bash jenkins/run-tests.sh'
             }
         }
 

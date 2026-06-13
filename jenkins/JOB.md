@@ -28,7 +28,7 @@ No Jenkins credentials required for frontend (public build-time URLs only).
 
 ## Pipeline stages
 
-1. **Test** — all branches: `npm ci`, lint, build with production URLs
+1. **Test** — all branches: [`run-tests.sh`](run-tests.sh) (`npm ci`, lint, build in `node:22.13.1-alpine`)
 2. **Prepare Environment** — `master` only: [`prepare-env.sh`](prepare-env.sh) → writes `.env`
 3. **Deploy** — `master` only: [`deploy.sh`](../deploy.sh) (removes legacy `etl-frontend-container`, compose rebuild, prune)
 4. **Health** — `master` only: `curl http://${DEPLOY_HOST}:3000` with retries
