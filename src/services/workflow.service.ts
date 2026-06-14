@@ -90,12 +90,15 @@ export interface WorkflowDebugStepPlan {
     node_name: string;
     node_type: number | null;
     node_config?: Record<string, unknown>;
+    branch_label?: string;
   }>;
 }
 
 export interface WorkflowDebugStepRequest {
   step_index: number;
   current_payload?: unknown;
+  fork_payload?: unknown;
+  branch_outputs?: Record<string, unknown>;
   current_globals?: Record<string, unknown>;
   prior_run_succeeded?: boolean;
 }
@@ -104,6 +107,8 @@ export interface WorkflowDebugStepResult {
   step_index: number;
   total_steps: number;
   is_last: boolean;
+  kind?: string;
+  branch_label?: string;
   node_uuid: string;
   node_name: string;
   node_type: number | null;
@@ -117,4 +122,11 @@ export interface WorkflowDebugStepResult {
   next_payload: unknown;
   next_globals?: Record<string, unknown>;
   step_succeeded: boolean;
+  parallel_context?: {
+    fork_payload: unknown;
+  };
+  branch_update?: {
+    branch_start_uuid: string;
+    branch_output: unknown;
+  };
 }
