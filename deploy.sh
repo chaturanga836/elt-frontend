@@ -6,6 +6,9 @@ PRUNE="${REPO_ROOT}/jenkins/docker-prune.sh"
 
 cd "$REPO_ROOT"
 
+# shellcheck source=jenkins/compose.sh
+source "${REPO_ROOT}/jenkins/compose.sh"
+
 _prune_on_exit() {
   if [ -x "$PRUNE" ]; then
     bash "$PRUNE" || true
@@ -30,7 +33,7 @@ export DOCKER_BUILDKIT="${DOCKER_BUILDKIT:-0}"
 
 docker rm -f etl-frontend-container 2>/dev/null || true
 
-docker compose down --remove-orphans 2>/dev/null || true
-docker compose up -d --build --force-recreate --remove-orphans
+compose down --remove-orphans 2>/dev/null || compose down 2>/dev/null || true
+compose up -d --build --force-recreate
 
 curl -sf "http://${DEPLOY_HOST:-127.0.0.1}:3000" >/dev/null
