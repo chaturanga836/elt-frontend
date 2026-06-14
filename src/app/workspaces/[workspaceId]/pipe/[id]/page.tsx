@@ -11,11 +11,13 @@ import { PipelineService } from '@/services/pipe.service';
 import { TaskService } from '@/services/task.service';
 import { mergePipelineCanvasNodes, applyPipelineNodeDeletePolicy } from '@/lib/hydratePipelineCanvas';
 import { parsePipelineGlobals } from '@/lib/pipelineGlobals';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 
 
 export default function Home() {
 
   const params = useParams();
+  const workspaceId = useWorkspaceId();
   const id = params.id;
   const { setPipeline, setId } = usePipelineStore();
   const [loading, setLoading] = useState(true);
@@ -31,7 +33,7 @@ export default function Home() {
       resetPipeline();
 
       try {
-        const res = await PipelineService.getPipeline(id as string);
+        const res = await PipelineService.getPipeline(workspaceId, id as string);
         const pipeline = res.pipeline;
         const apiNodes = res.nodes || [];
         const pipeId = pipeline.id;
@@ -48,7 +50,7 @@ export default function Home() {
           ),
         ];
         const tasks = await Promise.all(
-          taskIds.map((taskId) => TaskService.getTask(taskId).catch(() => null)),
+          taskIds.map((taskId) => TaskService.getTask(workspaceId, taskId).catch(() => null)),
         );
         const taskById = new Map(
           tasks.filter((t) => t != null).map((t) => [t!.id, t!]),

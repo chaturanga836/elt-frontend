@@ -64,7 +64,7 @@ export default function PipelineListPage() {
     console.log(`Run pipeline ${pipeline_uuid}`);
     try{
       console.log("here we are");
-      const res = await PipelineService.runPipe(pipeline_uuid);
+      const res = await PipelineService.runPipe(workspaceId, pipeline_uuid);
       console.info(res);
     }catch(e){
       console.error(e);

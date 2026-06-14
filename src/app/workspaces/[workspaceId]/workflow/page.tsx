@@ -60,7 +60,7 @@ export default function WorkflowListPage() {
             type="link"
             icon={<PlayCircleOutlined />}
             onClick={async () => {
-              await WorkflowService.runWorkflow(record.workflow_uuid);
+              await WorkflowService.runWorkflow(workspaceId, record.workflow_uuid);
               load();
             }}
           />

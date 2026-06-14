@@ -6,9 +6,11 @@ import { Spin, message } from 'antd';
 import WorkflowCanvas from '../components/WorkflowCanvas';
 import { useWorkflowStore } from '@/store/useWorkflowStore';
 import { WorkflowService } from '@/services/workflow.service';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 
 export default function EditWorkflowPage() {
   const { id } = useParams();
+  const workspaceId = useWorkspaceId();
   const setWorkflow = useWorkflowStore((s) => s.setWorkflow);
   const [loading, setLoading] = useState(true);
 
@@ -18,7 +20,7 @@ export default function EditWorkflowPage() {
     resetWorkflow();
     (async () => {
       try {
-        const res = await WorkflowService.getWorkflow(id as string);
+        const res = await WorkflowService.getWorkflow(workspaceId, id as string);
         const wf = res.workflow;
         const canvas = wf.canvas_structure || { nodes: [], edges: [] };
         const apiNodes: Array<{
@@ -58,7 +60,7 @@ export default function EditWorkflowPage() {
         setLoading(false);
       }
     })();
-  }, [id, setWorkflow]);
+  }, [id, setWorkflow, workspaceId]);
 
   if (loading) {
     return (

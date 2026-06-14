@@ -84,7 +84,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
     (async () => {
       try {
         setHydrating(true);
-        const task = await TaskService.getTask(taskId);
+        const task = await TaskService.getTask(workspaceId, taskId);
         if (!alive) return;
         setTaskData({
           name: task.name || '',
@@ -313,7 +313,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
       };
 
       if (isEditMode && taskId) {
-        const updated = await TaskService.updateTask(taskId, payload);
+        const updated = await TaskService.updateTask(workspaceId, taskId, payload);
         api.success({
           message: 'Task Updated',
           description: 'Task saved successfully.',
@@ -324,7 +324,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
           return;
         }
       } else {
-        const created = await TaskService.createTask(payload);
+        const created = await TaskService.createTask(workspaceId, payload);
         api.success({
           message: 'Task Created',
           description: 'Task created successfully.',

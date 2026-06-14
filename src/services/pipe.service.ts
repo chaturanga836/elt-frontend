@@ -1,21 +1,25 @@
 import { CanvasStructure, PipelineCreatePayload } from '@/types/pipetypes';
 import api from './api';
 
+function wsParams(workspaceId: number) {
+  return { params: { workspace_id: workspaceId } };
+}
+
 export interface PipelineFilterParams {
+  workspace_id: number;
   org_id?: number;
-  workspace_id?: number;
   page?: number;
   size?: number;
   name?: string;
 }
 
-// 1. Explicitly structure incoming log details matching your FastAPI backend
 export interface PipelineRunHistoryParams {
+  workspace_id: number;
   pipeline_uuid?: string;
   pipeline_name?: string;
   status?: number;
-  start_date?: string; // ISO String format
-  end_date?: string;   // ISO String format
+  start_date?: string;
+  end_date?: string;
   page?: number;
   limit?: number;
 }
@@ -173,7 +177,7 @@ export const PipelineService = {
     return response.data;
   },
 
-  getPipeline: async (uuid: string) => {
+  getPipeline: async (workspaceId: number, uuid: string) => {
     const response = await api.get<{
       pipeline: {
         id: number;
@@ -188,25 +192,26 @@ export const PipelineService = {
         node_config?: Record<string, unknown>;
         task_id?: number | null;
       }>;
-    }>(`/pipelines/${uuid}`);
+    }>(`/pipelines/${uuid}`, wsParams(workspaceId));
     return response.data;
   },
 
   getPipelines: async (params: PipelineFilterParams) => {
-    const response = await api.get('/pipelines/', { 
-      params: params 
-    });
-    return response.data; 
+    const response = await api.get('/pipelines/', { params });
+    return response.data;
   },
 
-  runPipe: async (uuid: string, inputPayload?: Record<string, unknown>) => {
-    const response = await api.post(`/sync/run/${uuid}`, {
-      input_payload: inputPayload ?? undefined,
-    });
+  runPipe: async (workspaceId: number, uuid: string, inputPayload?: Record<string, unknown>) => {
+    const response = await api.post(
+      `/sync/run/${uuid}`,
+      { input_payload: inputPayload ?? undefined },
+      wsParams(workspaceId),
+    );
     return response.data;
   },
 
   runPipelineBackfill: async (
+    workspaceId: number,
     uuid: string,
     body: {
       start_date: string;
@@ -215,51 +220,51 @@ export const PipelineService = {
       input_payload?: Record<string, unknown>;
     },
   ): Promise<PipelineBackfillResponse> => {
-    const response = await api.post(`/sync/run/${uuid}/backfill`, body);
+    const response = await api.post(`/sync/run/${uuid}/backfill`, body, wsParams(workspaceId));
     return response.data;
   },
 
-  getPipelineBackfill: async (batchId: string): Promise<PipelineBackfillStatus> => {
-    const response = await api.get(`/sync/backfills/${batchId}`);
+  getPipelineBackfill: async (workspaceId: number, batchId: string): Promise<PipelineBackfillStatus> => {
+    const response = await api.get(`/sync/backfills/${batchId}`, wsParams(workspaceId));
     return response.data;
   },
 
-  // 2. Add the dynamic log retrieval method hooked to your /api/v1/sync/runs endpoint
   getPipelineRuns: async (params: PipelineRunHistoryParams) => {
-    const response = await api.get('/sync/runs', {
-      params: params
-    });
-    return response.data; // Returns { meta: { total_records, page, limit, total_pages }, results: [...] }
+    const response = await api.get('/sync/runs', { params });
+    return response.data;
   },
 
-  getPipelineRunDetail: async (runId: number): Promise<PipelineRunDetail> => {
-    const response = await api.get(`/sync/runs/${runId}`);
+  getPipelineRunDetail: async (workspaceId: number, runId: number): Promise<PipelineRunDetail> => {
+    const response = await api.get(`/sync/runs/${runId}`, wsParams(workspaceId));
     return response.data;
   },
 
   resumePipelineRun: async (
+    workspaceId: number,
     runId: number,
     body?: { from_step_index?: number },
   ): Promise<ResumePipelineRunResponse> => {
-    const response = await api.post(`/sync/runs/${runId}/resume`, body ?? {});
+    const response = await api.post(`/sync/runs/${runId}/resume`, body ?? {}, wsParams(workspaceId));
     return response.data;
   },
 
   getDebugSteps: async (
+    workspaceId: number,
     uuid: string,
     priorRunSucceeded = true,
   ): Promise<PipelineDebugStepPlan> => {
     const response = await api.get(`/sync/debug-steps/${uuid}`, {
-      params: { prior_run_succeeded: priorRunSucceeded },
+      params: { workspace_id: workspaceId, prior_run_succeeded: priorRunSucceeded },
     });
     return response.data;
   },
 
   runDebugStep: async (
+    workspaceId: number,
     uuid: string,
     body: PipelineDebugStepRequest,
   ): Promise<PipelineDebugStepResult> => {
-    const response = await api.post(`/sync/debug-step/${uuid}`, body);
+    const response = await api.post(`/sync/debug-step/${uuid}`, body, wsParams(workspaceId));
     return response.data;
   },
 };

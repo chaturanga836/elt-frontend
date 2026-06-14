@@ -1,6 +1,10 @@
 import { WorkflowCreatePayload } from '@/types/workflow';
 import api from './api';
 
+function wsParams(workspaceId: number) {
+  return { params: { workspace_id: workspaceId } };
+}
+
 export const WorkflowService = {
   saveWorkflow: async (payload: WorkflowCreatePayload) => {
     const response = await api.post('/workflows/', payload);
@@ -12,8 +16,8 @@ export const WorkflowService = {
     return response.data;
   },
 
-  getWorkflow: async (uuid: string) => {
-    const response = await api.get(`/workflows/${uuid}`);
+  getWorkflow: async (workspaceId: number, uuid: string) => {
+    const response = await api.get(`/workflows/${uuid}`, wsParams(workspaceId));
     return response.data;
   },
 
@@ -24,8 +28,8 @@ export const WorkflowService = {
     return response.data;
   },
 
-  runWorkflow: async (uuid: string) => {
-    const response = await api.post(`/workflows/run/${uuid}`);
+  runWorkflow: async (workspaceId: number, uuid: string) => {
+    const response = await api.post(`/workflows/run/${uuid}`, undefined, wsParams(workspaceId));
     return response.data;
   },
 
@@ -46,8 +50,8 @@ export const WorkflowService = {
     return response.data;
   },
 
-  getWorkflowRun: async (runId: number) => {
-    const response = await api.get(`/workflows/runs/${runId}`);
+  getWorkflowRun: async (workspaceId: number, runId: number) => {
+    const response = await api.get(`/workflows/runs/${runId}`, wsParams(workspaceId));
     return response.data;
   },
 
@@ -59,15 +63,20 @@ export const WorkflowService = {
   },
 
   getDebugSteps: async (
+    workspaceId: number,
     uuid: string,
     body?: { current_payload?: unknown; prior_run_succeeded?: boolean },
   ) => {
-    const response = await api.post(`/workflows/debug-steps/${uuid}`, body ?? {});
+    const response = await api.post(
+      `/workflows/debug-steps/${uuid}`,
+      body ?? {},
+      wsParams(workspaceId),
+    );
     return response.data as WorkflowDebugStepPlan;
   },
 
-  runDebugStep: async (uuid: string, body: WorkflowDebugStepRequest) => {
-    const response = await api.post(`/workflows/debug-step/${uuid}`, body);
+  runDebugStep: async (workspaceId: number, uuid: string, body: WorkflowDebugStepRequest) => {
+    const response = await api.post(`/workflows/debug-step/${uuid}`, body, wsParams(workspaceId));
     return response.data as WorkflowDebugStepResult;
   },
 };
@@ -81,18 +90,13 @@ export interface WorkflowDebugStepPlan {
     node_name: string;
     node_type: number | null;
     node_config?: Record<string, unknown>;
-    branch_label?: string | null;
-    branch_index?: number | null;
-    is_branch_entry?: boolean;
-    is_branch_exit?: boolean;
   }>;
 }
 
 export interface WorkflowDebugStepRequest {
   step_index: number;
   current_payload?: unknown;
-  fork_payload?: unknown;
-  branch_outputs?: Record<string, unknown>;
+  current_globals?: Record<string, unknown>;
   prior_run_succeeded?: boolean;
 }
 
@@ -100,15 +104,9 @@ export interface WorkflowDebugStepResult {
   step_index: number;
   total_steps: number;
   is_last: boolean;
-  kind: string;
-  branch_label?: string | null;
-  branch_index?: number | null;
-  is_branch_entry?: boolean;
-  is_branch_exit?: boolean;
   node_uuid: string;
   node_name: string;
   node_type: number | null;
-  node_config?: Record<string, unknown>;
   status: number;
   skipped: boolean;
   input_data: Record<string, unknown> | null;
@@ -117,15 +115,6 @@ export interface WorkflowDebugStepResult {
   error_traceback: string | null;
   execution_time_ms: number | null;
   next_payload: unknown;
+  next_globals?: Record<string, unknown>;
   step_succeeded: boolean;
-  parallel_context?: {
-    fork_uuid: string;
-    join_uuid: string;
-    branch_starts: string[];
-    fork_payload: unknown;
-  } | null;
-  branch_update?: {
-    branch_start_uuid: string;
-    branch_output: unknown;
-  } | null;
 }

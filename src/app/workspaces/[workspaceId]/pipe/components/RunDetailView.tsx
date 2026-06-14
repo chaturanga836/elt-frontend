@@ -29,6 +29,7 @@ import {
 } from './runDetailUtils';
 import RunReportPanel from '@/features/reports/components/RunReportPanel';
 import RunPayloadJsonBlock from './RunPayloadJsonBlock';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -39,6 +40,7 @@ interface RunDetailViewProps {
 }
 
 export default function RunDetailView({ runId }: RunDetailViewProps) {
+    const workspaceId = useWorkspaceId();
     const [loading, setLoading] = useState(true);
     const [runDetail, setRunDetail] = useState<PipelineRunDetail | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -57,7 +59,7 @@ export default function RunDetailView({ runId }: RunDetailViewProps) {
         setError(null);
 
         try {
-            const detail = await PipelineService.getPipelineRunDetail(runId);
+            const detail = await PipelineService.getPipelineRunDetail(workspaceId, runId);
             setRunDetail(detail);
             return detail;
         } catch (err) {
@@ -71,7 +73,7 @@ export default function RunDetailView({ runId }: RunDetailViewProps) {
                 setLoading(false);
             }
         }
-    }, [runId]);
+    }, [runId, workspaceId]);
 
     useEffect(() => {
         void loadDetail();
@@ -92,7 +94,7 @@ export default function RunDetailView({ runId }: RunDetailViewProps) {
     const handleResume = async () => {
         setResuming(true);
         try {
-            const res = await PipelineService.resumePipelineRun(runId);
+            const res = await PipelineService.resumePipelineRun(workspaceId, runId);
             message.success(`Resuming from step ${res.resume_from_step}`);
             await loadDetail({ silent: true });
         } catch (err) {

@@ -105,7 +105,7 @@ function WorkflowCanvasContent() {
     }
     setRunning(true);
     try {
-      const res = await WorkflowService.runWorkflow(uuid);
+      const res = await WorkflowService.runWorkflow(workspaceId, uuid);
       notification.success({
         message: 'Workflow queued',
         description: `Run ID: ${res.run_id}`,

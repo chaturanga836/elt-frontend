@@ -27,6 +27,7 @@ export default function TaskListTable() {
       setLoading(true);
       // Using the consolidated service method
       const response = await TaskService.getTaskList({
+        workspace_id: workspaceId,
         ...params,
         query: searchText
       });
@@ -37,7 +38,7 @@ export default function TaskListTable() {
     } finally {
       setLoading(false);
     }
-  }, [params, searchText]);
+  }, [params, searchText, workspaceId]);
 
   useEffect(() => {
     // Debouncing the search text so it doesn't hit the API on every keystroke

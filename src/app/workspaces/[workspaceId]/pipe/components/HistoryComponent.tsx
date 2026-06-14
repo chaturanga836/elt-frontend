@@ -53,13 +53,14 @@ export default function HistoryComponent() {
     const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
 
     const buildFetchParams = useCallback((): PipelineRunHistoryParams => ({
+        workspace_id: workspaceId,
         page,
         limit: pageSize,
         pipeline_name: pipelineName || undefined,
         status: statusFilter,
         start_date: dateRange?.[0]?.startOf('day').toISOString(),
         end_date: dateRange?.[1]?.endOf('day').toISOString(),
-    }), [page, pageSize, pipelineName, statusFilter, dateRange]);
+    }), [workspaceId, page, pageSize, pipelineName, statusFilter, dateRange]);
 
     const fetchHistory = useCallback(async () => {
         setLoading(true);

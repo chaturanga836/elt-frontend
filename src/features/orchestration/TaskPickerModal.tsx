@@ -59,6 +59,7 @@ export default function TaskPickerModal({
   const loadPage = useCallback(
     (nextPage: number, query: string) => {
       performFetch({
+        workspace_id: workspaceId,
         query,
         page: nextPage,
         limit: PAGE_SIZE,
@@ -66,7 +67,7 @@ export default function TaskPickerModal({
         sort_order: 'desc',
       });
     },
-    [performFetch],
+    [performFetch, workspaceId],
   );
 
   useEffect(() => {

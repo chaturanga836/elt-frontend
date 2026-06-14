@@ -1,61 +1,123 @@
 'use client';
 
-import React from 'react';
-import { Button, Card, Space, Table, Tag, Typography, notification } from 'antd';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  Button,
+  Card,
+  Form,
+  Input,
+  Modal,
+  Space,
+  Table,
+  Tag,
+  Typography,
+  notification,
+} from 'antd';
 import { GithubOutlined, LinkOutlined, ImportOutlined } from '@ant-design/icons';
+import {
+  GitConnection,
+  GitConnectionService,
+} from '@/services/git-connection.service';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 
 const { Title, Text } = Typography;
 
-const MOCK_REPOS = [
-  {
-    key: '1',
-    repo: 'acme/api-functions',
-    branch: 'main',
-    functions: 8,
-    lastSync: '2026-06-11 10:30',
-    status: 'connected',
-  },
-  {
-    key: '2',
-    repo: 'acme/etl-workers',
-    branch: 'develop',
-    functions: 3,
-    lastSync: '2026-06-10 16:45',
-    status: 'connected',
-  },
-];
-
 export default function GitHubConnectPage() {
+  const workspaceId = useWorkspaceId();
+  const [connections, setConnections] = useState<GitConnection[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [connectOpen, setConnectOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [form] = Form.useForm();
+
+  const loadConnections = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await GitConnectionService.list(workspaceId);
+      setConnections(res.items || []);
+    } catch {
+      notification.error({ message: 'Failed to load Git connections' });
+    } finally {
+      setLoading(false);
+    }
+  }, [workspaceId]);
+
+  useEffect(() => {
+    void loadConnections();
+  }, [loadConnections]);
+
+  const handleConnect = async () => {
+    try {
+      const values = await form.validateFields();
+      setSubmitting(true);
+      await GitConnectionService.create(workspaceId, {
+        provider: 'github',
+        account_login: values.account_login,
+        repo_full_name: values.repo_full_name || undefined,
+        default_branch: values.default_branch || 'main',
+        access_token: values.access_token,
+        scopes: ['repo'],
+      });
+      notification.success({ message: 'GitHub connected' });
+      setConnectOpen(false);
+      form.resetFields();
+      await loadConnections();
+    } catch {
+      notification.error({ message: 'Failed to connect GitHub' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRevoke = async (connectionId: number) => {
+    try {
+      await GitConnectionService.revoke(workspaceId, connectionId);
+      notification.success({ message: 'Connection revoked' });
+      await loadConnections();
+    } catch {
+      notification.error({ message: 'Failed to revoke connection' });
+    }
+  };
+
   const columns = [
     {
-      title: 'Repository',
-      dataIndex: 'repo',
-      render: (repo: string) => (
+      title: 'Account / Repository',
+      key: 'repo',
+      render: (_: unknown, row: GitConnection) => (
         <Space>
           <GithubOutlined />
-          <Text strong>{repo}</Text>
+          <Text strong>{row.repo_full_name || row.account_login || `Connection #${row.id}`}</Text>
         </Space>
       ),
     },
-    { title: 'Branch', dataIndex: 'branch', render: (b: string) => <Tag>{b}</Tag> },
-    { title: 'Functions', dataIndex: 'functions', width: 100 },
-    { title: 'Last sync', dataIndex: 'lastSync', width: 160 },
+    {
+      title: 'Branch',
+      dataIndex: 'default_branch',
+      render: (b: string) => <Tag>{b}</Tag>,
+    },
     {
       title: 'Status',
       dataIndex: 'status',
-      render: () => <Tag color="green">Connected</Tag>,
+      render: (status: string) => (
+        <Tag color={status === 'connected' ? 'green' : 'default'}>{status}</Tag>
+      ),
     },
     {
       title: 'Actions',
       key: 'actions',
-      render: () => (
-        <Button
-          size="small"
-          icon={<ImportOutlined />}
-          onClick={() => notification.success({ message: 'Import started (prototype)' })}
-        >
-          Import
-        </Button>
+      render: (_: unknown, row: GitConnection) => (
+        <Space>
+          <Button
+            size="small"
+            icon={<ImportOutlined />}
+            onClick={() => notification.info({ message: 'Import from repo (coming soon)' })}
+          >
+            Import
+          </Button>
+          <Button size="small" danger onClick={() => void handleRevoke(row.id)}>
+            Revoke
+          </Button>
+        </Space>
       ),
     },
   ];
@@ -65,24 +127,59 @@ export default function GitHubConnectPage() {
       <Title level={3} style={{ marginTop: 0 }}>
         GitHub
       </Title>
-      <Text type="secondary">Connect repositories to deploy sync and async functions. Prototype — mock linked repos.</Text>
+      <Text type="secondary">
+        Connect GitHub with a personal access token. OAuth redirect can be enabled via server env vars.
+      </Text>
 
       <Card style={{ marginTop: 16 }}>
         <Space>
           <Button
             type="primary"
             icon={<LinkOutlined />}
-            onClick={() => notification.info({ message: 'GitHub OAuth simulated (prototype)' })}
+            onClick={() => setConnectOpen(true)}
           >
             Connect GitHub
           </Button>
-          <Button icon={<GithubOutlined />}>Browse organizations</Button>
         </Space>
       </Card>
 
-      <Card title="Linked repositories" style={{ marginTop: 16 }}>
-        <Table columns={columns} dataSource={MOCK_REPOS} pagination={false} />
+      <Card title="Linked connections" style={{ marginTop: 16 }}>
+        <Table
+          rowKey="id"
+          loading={loading}
+          columns={columns}
+          dataSource={connections}
+          pagination={false}
+        />
       </Card>
+
+      <Modal
+        title="Connect GitHub"
+        open={connectOpen}
+        onCancel={() => setConnectOpen(false)}
+        onOk={() => void handleConnect()}
+        confirmLoading={submitting}
+        okText="Connect"
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item name="account_login" label="GitHub username or org">
+            <Input placeholder="acme" />
+          </Form.Item>
+          <Form.Item name="repo_full_name" label="Repository (optional)">
+            <Input placeholder="acme/api-functions" />
+          </Form.Item>
+          <Form.Item name="default_branch" label="Default branch" initialValue="main">
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="access_token"
+            label="Personal access token"
+            rules={[{ required: true, message: 'Token is required' }]}
+          >
+            <Input.Password placeholder="ghp_..." />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

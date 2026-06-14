@@ -5,6 +5,7 @@ import { Alert, DatePicker, Form, Input, Modal, Typography, message } from 'antd
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { PipelineService } from '@/services/pipe.service';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 
 const { Text } = Typography;
 
@@ -23,6 +24,7 @@ export default function PipelineBackfillModal({
   onClose,
   onSuccess,
 }: Props) {
+  const workspaceId = useWorkspaceId();
   const [submitting, setSubmitting] = useState(false);
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null);
   const [dateField, setDateField] = useState('sync_date');
@@ -39,7 +41,7 @@ export default function PipelineBackfillModal({
 
     setSubmitting(true);
     try {
-      const res = await PipelineService.runPipelineBackfill(pipelineUuid, {
+      const res = await PipelineService.runPipelineBackfill(workspaceId, pipelineUuid, {
         start_date: dateRange[0].format('YYYY-MM-DD'),
         end_date: dateRange[1].format('YYYY-MM-DD'),
         date_field: dateField.trim() || 'sync_date',

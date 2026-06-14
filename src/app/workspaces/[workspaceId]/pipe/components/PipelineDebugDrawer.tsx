@@ -19,6 +19,7 @@ import {
 } from '@/lib/pipelineDebugVariables';
 import { globalsDiffKeys, parseScriptError } from '@/lib/pipelineDebugError';
 import { usePipelineStore } from '@/store/usePipeStore';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { RUN_STATUS_FAILED, RUN_STATUS_SUCCESS, statusTag } from './runDetailUtils';
 import styles from '../pipeline-editor.module.css';
 
@@ -103,6 +104,7 @@ export default function PipelineDebugDrawer({
   pipelineUuid,
   onClose,
 }: PipelineDebugDrawerProps) {
+  const workspaceId = useWorkspaceId();
   const [debugState, setDebugState] = useState<DebugState>(INITIAL_DEBUG_STATE);
   const [stepPlan, setStepPlan] = useState<PipelineDebugStepPlan['steps']>([]);
   const [selectedRerunStep, setSelectedRerunStep] = useState<number | null>(null);
@@ -205,7 +207,7 @@ export default function PipelineDebugDrawer({
       setLoadingPlan(true);
       setError(null);
       try {
-        const plan = await PipelineService.getDebugSteps(pipelineUuid, true);
+        const plan = await PipelineService.getDebugSteps(workspaceId, pipelineUuid, true);
         if (!cancelled) {
           setStepPlan(plan.steps);
           setDebugState((prev) => ({
@@ -228,7 +230,7 @@ export default function PipelineDebugDrawer({
     return () => {
       cancelled = true;
     };
-  }, [open, pipelineUuid]);
+  }, [open, pipelineUuid, workspaceId]);
 
   const executedStepCount = debugState.stepLogs.length;
 
@@ -243,7 +245,7 @@ export default function PipelineDebugDrawer({
     setSelectedRerunStep(null);
 
     try {
-      const result = await PipelineService.runDebugStep(pipelineUuid, {
+      const result = await PipelineService.runDebugStep(workspaceId, pipelineUuid, {
         step_index: debugState.stepIndex,
         current_payload: debugState.currentPayload,
         current_globals: debugState.currentGlobals,

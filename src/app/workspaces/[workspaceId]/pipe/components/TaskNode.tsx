@@ -116,7 +116,7 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
     if (!taskId || data.config) return;
 
     let cancelled = false;
-    void TaskService.getTask(taskId)
+    void TaskService.getTask(workspaceId, taskId)
       .then((task) => {
         if (!cancelled) {
           updateNodeData(id, { config: task, task_id: task.id });

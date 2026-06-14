@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Collapse, Descriptions, Spin, Table, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
 import { WorkflowService } from '@/services/workflow.service';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -37,6 +38,7 @@ type WorkflowRunDetail = {
 };
 
 export default function WorkflowRunDetailView({ runId }: { runId: number }) {
+  const workspaceId = useWorkspaceId();
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<WorkflowRunDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +54,7 @@ export default function WorkflowRunDetailView({ runId }: { runId: number }) {
     (async () => {
       setLoading(true);
       try {
-        const data = await WorkflowService.getWorkflowRun(runId);
+        const data = await WorkflowService.getWorkflowRun(workspaceId, runId);
         if (!cancelled) setDetail(data);
       } catch {
         if (!cancelled) setError('Failed to load workflow run.');
@@ -64,7 +66,7 @@ export default function WorkflowRunDetailView({ runId }: { runId: number }) {
     return () => {
       cancelled = true;
     };
-  }, [runId]);
+  }, [runId, workspaceId]);
 
   if (loading) return <Spin tip="Loading workflow run…" />;
   if (error) return <Alert type="error" message={error} showIcon />;

@@ -9,6 +9,7 @@ import {
   WorkflowDebugStepResult,
 } from '@/services/workflow.service';
 import RunPayloadJsonBlock from '../../pipe/components/RunPayloadJsonBlock';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 
 const { Text, Title } = Typography;
 
@@ -62,6 +63,7 @@ function kindLabel(kind: string) {
 }
 
 export default function WorkflowDebugDrawer({ open, workflowUuid, onClose }: Props) {
+  const workspaceId = useWorkspaceId();
   const [debugState, setDebugState] = useState<DebugState>(INITIAL);
   const [stepPlan, setStepPlan] = useState<WorkflowDebugStepPlan['steps']>([]);
   const [loadingPlan, setLoadingPlan] = useState(false);
@@ -84,7 +86,7 @@ export default function WorkflowDebugDrawer({ open, workflowUuid, onClose }: Pro
     setLoadingPlan(true);
     setError(null);
     try {
-      const plan = await WorkflowService.getDebugSteps(workflowUuid, {
+      const plan = await WorkflowService.getDebugSteps(workspaceId, workflowUuid, {
         current_payload: debugState.currentPayload,
         prior_run_succeeded: debugState.priorRunSucceeded,
       });
@@ -111,7 +113,7 @@ export default function WorkflowDebugDrawer({ open, workflowUuid, onClose }: Pro
     setError(null);
 
     try {
-      const result = await WorkflowService.runDebugStep(workflowUuid, {
+      const result = await WorkflowService.runDebugStep(workspaceId, workflowUuid, {
         step_index: debugState.stepIndex,
         current_payload: debugState.currentPayload,
         fork_payload: debugState.forkPayload,
