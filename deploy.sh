@@ -13,8 +13,11 @@ _prune_on_exit() {
 }
 trap _prune_on_exit EXIT
 
-git fetch origin master
-git reset --hard origin/master
+# Jenkins already checked out the commit; git fetch needs credentials in CI.
+if [ -z "${BUILD_NUMBER:-}" ]; then
+  git fetch origin master
+  git reset --hard origin/master
+fi
 
 if [ -f .env ]; then
   set -a
