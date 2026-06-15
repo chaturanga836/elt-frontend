@@ -20,10 +20,19 @@ type Step = 'intro' | 'engine' | 'name';
 type Props = {
   workspaceId: number;
   onProvisioned: (status: WorkspaceDatabaseStatus) => void;
+  mode?: 'initial' | 'add';
+  existingNames?: string[];
+  onCancel?: () => void;
 };
 
-export default function WorkspaceDatabaseSetup({ workspaceId, onProvisioned }: Props) {
-  const [step, setStep] = useState<Step>('intro');
+export default function WorkspaceDatabaseSetup({
+  workspaceId,
+  onProvisioned,
+  mode = 'initial',
+  existingNames = [],
+  onCancel,
+}: Props) {
+  const [step, setStep] = useState<Step>(mode === 'add' ? 'engine' : 'intro');
   const [engines, setEngines] = useState<WorkspaceDatabaseEngineInfo[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [selectedEngine, setSelectedEngine] = useState<WorkspaceDatabaseEngine | null>(null);
@@ -94,15 +103,41 @@ export default function WorkspaceDatabaseSetup({ workspaceId, onProvisioned }: P
     );
   }
 
+  const minHeight = mode === 'add' ? 280 : 360;
+  const nameRules = [
+    { required: true, message: 'Enter a database name' },
+    {
+      pattern: NAME_PATTERN,
+      message: 'Use lowercase letters, digits, underscores; start with a letter',
+    },
+    ...(existingNames.length > 0
+      ? [
+          {
+            validator: (_: unknown, value: string) => {
+              const normalized = (value || '').trim().toLowerCase();
+              if (normalized && existingNames.includes(normalized)) {
+                return Promise.reject(new Error(`"${normalized}" already exists in this project`));
+              }
+              return Promise.resolve();
+            },
+          },
+        ]
+      : []),
+  ];
+
   if (step === 'engine') {
     return (
-      <Flex align="center" justify="center" style={{ minHeight: 360 }}>
+      <Flex align="center" justify="center" style={{ minHeight }}>
         <Space direction="vertical" size="large" style={{ width: '100%', maxWidth: 520 }}>
           <div>
             <Title level={4} style={{ marginBottom: 4 }}>
               Choose database engine
             </Title>
-            <Text type="secondary">One engine type per database. You can create multiple databases (schemas) per engine.</Text>
+            <Text type="secondary">
+              {mode === 'add' && existingNames.length > 0
+                ? `Existing: ${existingNames.join(', ')}. Pick the engine for the new schema.`
+                : 'One engine type per database. You can create multiple databases (schemas) per engine.'}
+            </Text>
           </div>
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             {engines.map((engine) => (
@@ -134,41 +169,39 @@ export default function WorkspaceDatabaseSetup({ workspaceId, onProvisioned }: P
               </Card>
             ))}
           </Space>
-          <Button onClick={() => setStep('intro')}>Back</Button>
+          <Flex justify="space-between">
+            {mode === 'add' ? (
+              <Button onClick={onCancel}>Cancel</Button>
+            ) : (
+              <Button onClick={() => setStep('intro')}>Back</Button>
+            )}
+          </Flex>
         </Space>
       </Flex>
     );
   }
 
   return (
-    <Flex align="center" justify="center" style={{ minHeight: 360 }}>
+    <Flex align="center" justify="center" style={{ minHeight }}>
       <Space direction="vertical" size="large" style={{ width: '100%', maxWidth: 420 }}>
         <div>
           <Title level={4} style={{ marginBottom: 4 }}>
             Name your database
           </Title>
           <Text type="secondary">
-            One service container per engine per project. Additional PostgreSQL databases are schemas inside that container.
+            {mode === 'add'
+              ? 'Stored as a schema in your project PostgreSQL container. Names must be unique.'
+              : 'One service container per engine per project. Additional PostgreSQL databases are schemas inside that container.'}
           </Text>
         </div>
         <Form form={form} layout="vertical" onFinish={onSubmitName}>
-          <Form.Item
-            name="name"
-            label="Database name"
-            rules={[
-              { required: true, message: 'Enter a database name' },
-              {
-                pattern: NAME_PATTERN,
-                message: 'Use lowercase letters, digits, underscores; start with a letter',
-              },
-            ]}
-          >
-            <Input placeholder="myapp" autoFocus />
+          <Form.Item name="name" label="Database name" rules={nameRules}>
+            <Input placeholder={mode === 'add' ? 'billing' : 'myapp'} autoFocus />
           </Form.Item>
           <Flex justify="space-between">
             <Button onClick={() => setStep('engine')}>Back</Button>
             <Button type="primary" htmlType="submit" loading={submitting}>
-              Next
+              {mode === 'add' ? 'Create' : 'Next'}
             </Button>
           </Flex>
         </Form>

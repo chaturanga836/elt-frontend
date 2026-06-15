@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Flex, Spin } from 'antd';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import WorkspaceDatabaseSetup from '@/features/baas-prototype/WorkspaceDatabaseSetup';
+import WorkspaceDatabaseShell from '@/features/baas-prototype/WorkspaceDatabaseShell';
 import {
   WorkspaceDatabaseService,
   WorkspaceDatabaseStatus,
@@ -47,5 +48,13 @@ export default function DbLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <WorkspaceDatabaseShell
+      workspaceId={workspaceId}
+      status={status}
+      onStatusChange={setStatus}
+    >
+      {children}
+    </WorkspaceDatabaseShell>
+  );
 }

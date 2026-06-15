@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   Button,
+  AutoComplete,
   Card,
   Checkbox,
   Col,
@@ -29,6 +30,16 @@ type ColumnDef = {
 };
 
 const COLUMN_TYPES = ['SERIAL', 'INTEGER', 'BIGINT', 'TEXT', 'VARCHAR(255)', 'BOOLEAN', 'TIMESTAMPTZ', 'JSONB'];
+
+const DEFAULT_PRESETS = [
+  { label: 'now()', value: 'now()' },
+  { label: "'active'", value: "'active'" },
+  { label: 'true', value: 'true' },
+  { label: 'false', value: 'false' },
+  { label: '0', value: '0' },
+  { label: "''", value: "''" },
+  { label: 'gen_random_uuid()', value: 'gen_random_uuid()' },
+];
 
 function buildCreateTableSql(tableName: string, columns: ColumnDef[]): string {
   const safeName = tableName.trim() || 'new_table';
@@ -100,17 +111,25 @@ export default function TableBuilderPage() {
             </Form>
 
             <Space direction="vertical" style={{ width: '100%' }} size="middle">
+              <Row gutter={8} style={{ fontSize: 12, color: '#8c8c8c', padding: '0 4px' }}>
+                <Col span={5}>Column</Col>
+                <Col span={5}>Type</Col>
+                <Col span={3}>PK</Col>
+                <Col span={3}>Null</Col>
+                <Col span={6}>Default</Col>
+                <Col span={2} />
+              </Row>
               {columns.map((col) => (
                 <Card key={col.key} size="small" type="inner">
                   <Row gutter={8} align="middle">
-                    <Col span={6}>
+                    <Col span={5}>
                       <Input
                         placeholder="column"
                         value={col.name}
                         onChange={(e) => updateColumn(col.key, { name: e.target.value })}
                       />
                     </Col>
-                    <Col span={6}>
+                    <Col span={5}>
                       <Select
                         style={{ width: '100%' }}
                         value={col.type}
@@ -118,7 +137,7 @@ export default function TableBuilderPage() {
                         onChange={(v) => updateColumn(col.key, { type: v })}
                       />
                     </Col>
-                    <Col span={4}>
+                    <Col span={3}>
                       <Checkbox
                         checked={col.primaryKey}
                         onChange={(e) => updateColumn(col.key, { primaryKey: e.target.checked })}
@@ -126,15 +145,27 @@ export default function TableBuilderPage() {
                         PK
                       </Checkbox>
                     </Col>
-                    <Col span={4}>
+                    <Col span={3}>
                       <Checkbox
                         checked={col.nullable}
                         onChange={(e) => updateColumn(col.key, { nullable: e.target.checked })}
                       >
-                        Nullable
+                        Null
                       </Checkbox>
                     </Col>
-                    <Col span={3}>
+                    <Col span={6}>
+                      <AutoComplete
+                        style={{ width: '100%' }}
+                        placeholder="e.g. now()"
+                        value={col.defaultValue}
+                        options={DEFAULT_PRESETS}
+                        onChange={(v) => updateColumn(col.key, { defaultValue: v })}
+                        filterOption={(input, option) =>
+                          (option?.value?.toString() ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                      />
+                    </Col>
+                    <Col span={2}>
                       <Button
                         danger
                         type="text"
@@ -143,12 +174,6 @@ export default function TableBuilderPage() {
                       />
                     </Col>
                   </Row>
-                  <Input
-                    style={{ marginTop: 8 }}
-                    placeholder="Default (optional)"
-                    value={col.defaultValue}
-                    onChange={(e) => updateColumn(col.key, { defaultValue: e.target.value })}
-                  />
                 </Card>
               ))}
             </Space>
