@@ -40,6 +40,31 @@ export type WorkspaceDatabaseCreateBody = {
   name: string;
 };
 
+export type WorkspaceDatabaseTableSummary = {
+  name: string;
+};
+
+export type WorkspaceDatabaseTableListResponse = {
+  database_id: number;
+  schema_name: string;
+  tables: WorkspaceDatabaseTableSummary[];
+};
+
+export type WorkspaceDatabaseTableColumn = {
+  name: string;
+  type: string;
+  nullable: boolean;
+  default?: string | null;
+  primary_key: boolean;
+};
+
+export type WorkspaceDatabaseTableDetail = {
+  database_id: number;
+  schema_name: string;
+  table_name: string;
+  columns: WorkspaceDatabaseTableColumn[];
+};
+
 export const WorkspaceDatabaseService = {
   async getCatalog(): Promise<WorkspaceDatabaseCatalog> {
     const res = await api.get<WorkspaceDatabaseCatalog>('/workspaces/catalog/workspace-databases');
@@ -63,6 +88,27 @@ export const WorkspaceDatabaseService = {
     const res = await api.post<WorkspaceDatabaseStatus>(
       `/workspaces/${workspaceId}/databases`,
       body,
+    );
+    return res.data;
+  },
+
+  async listTables(
+    workspaceId: number,
+    databaseId: number,
+  ): Promise<WorkspaceDatabaseTableListResponse> {
+    const res = await api.get<WorkspaceDatabaseTableListResponse>(
+      `/workspaces/${workspaceId}/databases/${databaseId}/tables`,
+    );
+    return res.data;
+  },
+
+  async getTableDetail(
+    workspaceId: number,
+    databaseId: number,
+    tableName: string,
+  ): Promise<WorkspaceDatabaseTableDetail> {
+    const res = await api.get<WorkspaceDatabaseTableDetail>(
+      `/workspaces/${workspaceId}/databases/${databaseId}/tables/${encodeURIComponent(tableName)}`,
     );
     return res.data;
   },

@@ -13,9 +13,10 @@ import {
 } from 'antd';
 import { DatabaseOutlined, PlusOutlined } from '@ant-design/icons';
 import WorkspaceDatabaseSetup from '@/features/baas-prototype/WorkspaceDatabaseSetup';
+import WorkspaceDatabaseExplorer from '@/features/baas-prototype/WorkspaceDatabaseExplorer';
 import {
-  WorkspaceDatabaseItem,
   WorkspaceDatabaseStatus,
+  WorkspaceDatabaseTableDetail,
 } from '@/services/workspaceDatabase.service';
 
 const { Text } = Typography;
@@ -27,26 +28,6 @@ type Props = {
   children: React.ReactNode;
 };
 
-function formatProvisionedAt(value?: string) {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleString();
-}
-
-function DatabaseLocation({ db }: { db: WorkspaceDatabaseItem }) {
-  const parts = [
-    db.engine === 'postgres' ? 'PostgreSQL schema' : db.engine,
-    db.instance_ref ? `container ${db.instance_ref}` : null,
-  ].filter(Boolean);
-
-  return (
-    <Text type="secondary" style={{ fontSize: 12 }}>
-      {parts.join(' · ')}
-    </Text>
-  );
-}
-
 export default function WorkspaceDatabaseShell({
   workspaceId,
   status,
@@ -54,51 +35,50 @@ export default function WorkspaceDatabaseShell({
   children,
 }: Props) {
   const [addOpen, setAddOpen] = useState(false);
+  const [selectedTable, setSelectedTable] = useState<WorkspaceDatabaseTableDetail | null>(null);
+  const [showExplorer, setShowExplorer] = useState(true);
   const databases = status.databases ?? [];
 
   return (
     <div>
       <Card size="small" style={{ margin: '16px 16px 0', borderRadius: 8 }}>
-        <Flex justify="space-between" align="flex-start" wrap="gap" gap={12}>
-          <Space direction="vertical" size={4} style={{ flex: 1, minWidth: 240 }}>
-            <Flex align="center" gap={8}>
-              <DatabaseOutlined style={{ color: '#1677ff' }} />
-              <Text strong>Project databases</Text>
-              <Badge count={databases.length} showZero color="#1677ff" />
-            </Flex>
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              Each database is a PostgreSQL schema inside your project&apos;s database container.
-            </Text>
+        <Flex justify="space-between" align="center" wrap="gap" gap={12}>
+          <Space>
+            <DatabaseOutlined style={{ color: '#1677ff' }} />
+            <Text strong>Project databases</Text>
+            <Badge count={databases.length} showZero color="#1677ff" />
+            {databases.map((db) => (
+              <Tag key={db.id} color="blue">
+                {db.name}
+              </Tag>
+            ))}
           </Space>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>
-            Add database
-          </Button>
+          <Space>
+            <Button
+              type={showExplorer ? 'primary' : 'default'}
+              onClick={() => setShowExplorer((v) => !v)}
+            >
+              {showExplorer ? 'Hide browser' : 'Browse schemas'}
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>
+              Add database
+            </Button>
+          </Space>
         </Flex>
-
-        <Space direction="vertical" size="small" style={{ width: '100%', marginTop: 12 }}>
-          {databases.map((db) => (
-            <Card key={db.id} size="small" type="inner" styles={{ body: { padding: '10px 12px' } }}>
-              <Flex justify="space-between" align="center" wrap="gap" gap={8}>
-                <Space direction="vertical" size={0}>
-                  <Space size={8}>
-                    <Text strong>{db.name}</Text>
-                    <Tag color="blue">{db.engine}</Tag>
-                    <Tag color={db.status === 'ready' ? 'success' : 'default'}>{db.status}</Tag>
-                  </Space>
-                  <DatabaseLocation db={db} />
-                </Space>
-                {formatProvisionedAt(db.provisioned_at) && (
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    Created {formatProvisionedAt(db.provisioned_at)}
-                  </Text>
-                )}
-              </Flex>
-            </Card>
-          ))}
-        </Space>
       </Card>
 
-      {children}
+      {showExplorer && (
+        <div style={{ margin: '0 16px', border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden' }}>
+          <WorkspaceDatabaseExplorer
+            workspaceId={workspaceId}
+            databases={databases}
+            selectedTable={selectedTable}
+            onSelectTable={setSelectedTable}
+          />
+        </div>
+      )}
+
+      <div style={{ padding: children ? 16 : 0 }}>{children}</div>
 
       <Modal
         title="Add database"
