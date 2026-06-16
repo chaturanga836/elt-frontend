@@ -42,7 +42,7 @@ export default function WorkspaceDatabaseShell({
   return (
     <div>
       <Card size="small" style={{ margin: '16px 16px 0', borderRadius: 8 }}>
-        <Flex justify="space-between" align="center" wrap="gap" gap={12}>
+        <Flex justify="space-between" align="center" wrap gap={12}>
           <Space>
             <DatabaseOutlined style={{ color: '#1677ff' }} />
             <Text strong>Project databases</Text>
