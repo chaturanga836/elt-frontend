@@ -58,11 +58,33 @@ export type WorkspaceDatabaseTableColumn = {
   primary_key: boolean;
 };
 
+export type WorkspaceDatabaseTableIndex = {
+  name: string;
+  columns: string[];
+  unique: boolean;
+};
+
+export type WorkspaceDatabaseTableForeignKey = {
+  name: string;
+  constrained_columns: string[];
+  referred_schema: string;
+  referred_table: string;
+  referred_columns: string[];
+  on_delete?: string | null;
+};
+
 export type WorkspaceDatabaseTableDetail = {
   database_id: number;
   schema_name: string;
   table_name: string;
   columns: WorkspaceDatabaseTableColumn[];
+  indexes?: WorkspaceDatabaseTableIndex[];
+  foreign_keys?: WorkspaceDatabaseTableForeignKey[];
+};
+
+export type WorkspaceDatabaseDdlResponse = {
+  ok: boolean;
+  statements_executed: number;
 };
 
 export const WorkspaceDatabaseService = {
@@ -109,6 +131,18 @@ export const WorkspaceDatabaseService = {
   ): Promise<WorkspaceDatabaseTableDetail> {
     const res = await api.get<WorkspaceDatabaseTableDetail>(
       `/workspaces/${workspaceId}/databases/${databaseId}/tables/${encodeURIComponent(tableName)}`,
+    );
+    return res.data;
+  },
+
+  async executeDdl(
+    workspaceId: number,
+    databaseId: number,
+    sql: string,
+  ): Promise<WorkspaceDatabaseDdlResponse> {
+    const res = await api.post<WorkspaceDatabaseDdlResponse>(
+      `/workspaces/${workspaceId}/databases/${databaseId}/ddl`,
+      { sql },
     );
     return res.data;
   },

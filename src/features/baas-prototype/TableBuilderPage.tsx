@@ -1,213 +1,129 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Flex, Select, Spin, Typography, notification } from 'antd';
+import { useRouter } from 'next/navigation';
+import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { projectPath } from '@/lib/paths';
+import TableSchemaEditor from '@/features/baas-prototype/TableSchemaEditor';
 import {
-  Button,
-  AutoComplete,
-  Card,
-  Checkbox,
-  Col,
-  Form,
-  Input,
-  Row,
-  Select,
-  Space,
-  Typography,
-  notification,
-} from 'antd';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
-import Editor from '@monaco-editor/react';
+  WorkspaceDatabaseItem,
+  WorkspaceDatabaseService,
+} from '@/services/workspaceDatabase.service';
+import { getApiErrorMessage } from '@/lib/formatApiError';
 
 const { Title, Text } = Typography;
 
-type ColumnDef = {
-  key: string;
-  name: string;
-  type: string;
-  nullable: boolean;
-  primaryKey: boolean;
-  defaultValue: string;
-};
+export default function TableBuilderPage() {
+  const workspaceId = useWorkspaceId();
+  const router = useRouter();
+  const [databases, setDatabases] = useState<WorkspaceDatabaseItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [databaseId, setDatabaseId] = useState<number | null>(null);
+  const [schemaName, setSchemaName] = useState<string>('');
+  const [availableTables, setAvailableTables] = useState<string[]>([]);
 
-const COLUMN_TYPES = ['SERIAL', 'INTEGER', 'BIGINT', 'TEXT', 'VARCHAR(255)', 'BOOLEAN', 'TIMESTAMPTZ', 'JSONB'];
+  const loadDatabases = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await WorkspaceDatabaseService.list(workspaceId);
+      setDatabases(res.databases);
+      if (res.databases.length > 0) {
+        const first = res.databases[0];
+        setDatabaseId(first.id);
+        setSchemaName(first.name);
+      }
+    } catch (err) {
+      notification.error({
+        message: 'Could not load databases',
+        description: getApiErrorMessage(err),
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [workspaceId]);
 
-const DEFAULT_PRESETS = [
-  { label: 'now()', value: 'now()' },
-  { label: "'active'", value: "'active'" },
-  { label: 'true', value: 'true' },
-  { label: 'false', value: 'false' },
-  { label: '0', value: '0' },
-  { label: "''", value: "''" },
-  { label: 'gen_random_uuid()', value: 'gen_random_uuid()' },
-];
+  const loadTables = useCallback(
+    async (dbId: number) => {
+      try {
+        const res = await WorkspaceDatabaseService.listTables(workspaceId, dbId);
+        setAvailableTables(res.tables.map((t) => t.name));
+        setSchemaName(res.schema_name);
+      } catch (err) {
+        notification.error({
+          message: 'Could not load tables',
+          description: getApiErrorMessage(err),
+        });
+      }
+    },
+    [workspaceId],
+  );
 
-function buildCreateTableSql(tableName: string, columns: ColumnDef[]): string {
-  const safeName = tableName.trim() || 'new_table';
-  const lines = columns
-    .filter((c) => c.name.trim())
-    .map((c) => {
-      let line = `  ${c.name.trim()} ${c.type}`;
-      if (c.primaryKey && c.type !== 'SERIAL') line += ' PRIMARY KEY';
-      if (!c.nullable) line += ' NOT NULL';
-      if (c.defaultValue.trim()) line += ` DEFAULT ${c.defaultValue.trim()}`;
-      return line;
-    });
+  useEffect(() => {
+    void loadDatabases();
+  }, [loadDatabases]);
 
-  if (lines.length === 0) {
-    return `-- Add at least one column to generate DDL`;
+  useEffect(() => {
+    if (databaseId !== null) {
+      void loadTables(databaseId);
+    }
+  }, [databaseId, loadTables]);
+
+  const onDatabaseChange = (value: number) => {
+    setDatabaseId(value);
+    const db = databases.find((d) => d.id === value);
+    if (db) setSchemaName(db.name);
+  };
+
+  if (loading) {
+    return (
+      <Flex align="center" justify="center" style={{ minHeight: 360 }}>
+        <Spin size="large" />
+      </Flex>
+    );
   }
 
-  return `CREATE TABLE IF NOT EXISTS ${safeName} (\n${lines.join(',\n')}\n);`;
-}
-
-let colKey = 0;
-function newColumn(): ColumnDef {
-  colKey += 1;
-  return {
-    key: `col-${colKey}`,
-    name: '',
-    type: 'TEXT',
-    nullable: true,
-    primaryKey: false,
-    defaultValue: '',
-  };
-}
-
-export default function TableBuilderPage() {
-  const [tableName, setTableName] = useState('users');
-  const [columns, setColumns] = useState<ColumnDef[]>([
-    { key: 'col-1', name: 'id', type: 'SERIAL', nullable: false, primaryKey: true, defaultValue: '' },
-    { key: 'col-2', name: 'name', type: 'TEXT', nullable: false, primaryKey: false, defaultValue: '' },
-    { key: 'col-3', name: 'email', type: 'TEXT', nullable: false, primaryKey: false, defaultValue: '' },
-  ]);
-
-  const generatedSql = useMemo(() => buildCreateTableSql(tableName, columns), [tableName, columns]);
-
-  const updateColumn = (key: string, patch: Partial<ColumnDef>) => {
-    setColumns((prev) => prev.map((c) => (c.key === key ? { ...c, ...patch } : c)));
-  };
-
-  const onApply = () => {
-    notification.success({
-      message: 'Table created (prototype mock)',
-      description: `Applied DDL for "${tableName}"`,
-    });
-  };
+  if (databaseId === null || !schemaName) {
+    return (
+      <Flex align="center" justify="center" style={{ minHeight: 360 }}>
+        <Text type="secondary">No database available. Add a database first.</Text>
+      </Flex>
+    );
+  }
 
   return (
-    <div style={{ padding: 24 }}>
-      <Title level={3} style={{ marginTop: 0 }}>
-        Table Builder
-      </Title>
-      <Text type="secondary">Design tables visually and preview generated SQL before applying.</Text>
+    <div>
+      <Flex justify="space-between" align="center" style={{ padding: '16px 24px 0' }}>
+        <div>
+          <Title level={3} style={{ marginTop: 0, marginBottom: 4 }}>
+            Table Builder
+          </Title>
+          <Text type="secondary">Design tables visually and apply DDL to your project database.</Text>
+        </div>
+        <Select
+          style={{ minWidth: 200 }}
+          value={databaseId}
+          options={databases.map((db) => ({ label: db.name, value: db.id }))}
+          onChange={onDatabaseChange}
+        />
+      </Flex>
 
-      <Row gutter={24} style={{ marginTop: 16 }}>
-        <Col xs={24} xl={14}>
-          <Card title="Table definition">
-            <Form layout="vertical">
-              <Form.Item label="Table name">
-                <Input value={tableName} onChange={(e) => setTableName(e.target.value)} placeholder="users" />
-              </Form.Item>
-            </Form>
-
-            <Space direction="vertical" style={{ width: '100%' }} size="middle">
-              <Row gutter={8} style={{ fontSize: 12, color: '#8c8c8c', padding: '0 4px' }}>
-                <Col span={5}>Column</Col>
-                <Col span={5}>Type</Col>
-                <Col span={3}>PK</Col>
-                <Col span={3}>Null</Col>
-                <Col span={6}>Default</Col>
-                <Col span={2} />
-              </Row>
-              {columns.map((col) => (
-                <Card key={col.key} size="small" type="inner">
-                  <Row gutter={8} align="middle">
-                    <Col span={5}>
-                      <Input
-                        placeholder="column"
-                        value={col.name}
-                        onChange={(e) => updateColumn(col.key, { name: e.target.value })}
-                      />
-                    </Col>
-                    <Col span={5}>
-                      <Select
-                        style={{ width: '100%' }}
-                        value={col.type}
-                        options={COLUMN_TYPES.map((t) => ({ label: t, value: t }))}
-                        onChange={(v) => updateColumn(col.key, { type: v })}
-                      />
-                    </Col>
-                    <Col span={3}>
-                      <Checkbox
-                        checked={col.primaryKey}
-                        onChange={(e) => updateColumn(col.key, { primaryKey: e.target.checked })}
-                      >
-                        PK
-                      </Checkbox>
-                    </Col>
-                    <Col span={3}>
-                      <Checkbox
-                        checked={col.nullable}
-                        onChange={(e) => updateColumn(col.key, { nullable: e.target.checked })}
-                      >
-                        Null
-                      </Checkbox>
-                    </Col>
-                    <Col span={6}>
-                      <AutoComplete
-                        style={{ width: '100%' }}
-                        placeholder="e.g. now()"
-                        value={col.defaultValue}
-                        options={DEFAULT_PRESETS}
-                        onChange={(v) => updateColumn(col.key, { defaultValue: v })}
-                        filterOption={(input, option) =>
-                          (option?.value?.toString() ?? '').toLowerCase().includes(input.toLowerCase())
-                        }
-                      />
-                    </Col>
-                    <Col span={2}>
-                      <Button
-                        danger
-                        type="text"
-                        icon={<DeleteOutlined />}
-                        onClick={() => setColumns((prev) => prev.filter((c) => c.key !== col.key))}
-                      />
-                    </Col>
-                  </Row>
-                </Card>
-              ))}
-            </Space>
-
-            <Button
-              type="dashed"
-              icon={<PlusOutlined />}
-              style={{ marginTop: 16 }}
-              onClick={() => setColumns((prev) => [...prev, newColumn()])}
-            >
-              Add column
-            </Button>
-
-            <div style={{ marginTop: 24 }}>
-              <Button type="primary" onClick={onApply}>
-                Apply table
-              </Button>
-            </div>
-          </Card>
-        </Col>
-
-        <Col xs={24} xl={10}>
-          <Card title="Generated SQL">
-            <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden' }}>
-              <Editor
-                height="400px"
-                defaultLanguage="sql"
-                value={generatedSql}
-                options={{ readOnly: true, minimap: { enabled: false }, fontSize: 13 }}
-              />
-            </div>
-          </Card>
-        </Col>
-      </Row>
+      <TableSchemaEditor
+        mode="create"
+        workspaceId={workspaceId}
+        databaseId={databaseId}
+        schemaName={schemaName}
+        availableTables={availableTables}
+        fullPage
+        onCancel={() => router.push(projectPath(workspaceId, 'db/sql'))}
+        onSaved={(tableName) => {
+          void loadTables(databaseId);
+          notification.info({
+            message: 'Table saved',
+            description: `Open the schema browser to view "${tableName}".`,
+          });
+        }}
+      />
     </div>
   );
 }
