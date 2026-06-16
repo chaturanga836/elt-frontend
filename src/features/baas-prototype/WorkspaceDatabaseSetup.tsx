@@ -87,7 +87,7 @@ export default function WorkspaceDatabaseSetup({
   if (step === 'intro') {
     return (
       <Flex align="center" justify="center" style={{ minHeight: 360 }}>
-        <Space direction="vertical" align="center" size="large">
+        <Space orientation="vertical" align="center" size="large">
           <DatabaseOutlined style={{ fontSize: 48, color: '#1677ff' }} />
           <Title level={3} style={{ margin: 0 }}>
             No database yet
@@ -128,7 +128,7 @@ export default function WorkspaceDatabaseSetup({
   if (step === 'engine') {
     return (
       <Flex align="center" justify="center" style={{ minHeight }}>
-        <Space direction="vertical" size="large" style={{ width: '100%', maxWidth: 520 }}>
+        <Space orientation="vertical" size="large" style={{ width: '100%', maxWidth: 520 }}>
           <div>
             <Title level={4} style={{ marginBottom: 4 }}>
               Choose database engine
@@ -139,7 +139,7 @@ export default function WorkspaceDatabaseSetup({
                 : 'One engine type per database. You can create multiple databases (schemas) per engine.'}
             </Text>
           </div>
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
             {engines.map((engine) => (
               <Card
                 key={engine.key}
@@ -183,7 +183,7 @@ export default function WorkspaceDatabaseSetup({
 
   return (
     <Flex align="center" justify="center" style={{ minHeight }}>
-      <Space direction="vertical" size="large" style={{ width: '100%', maxWidth: 420 }}>
+      <Space orientation="vertical" size="large" style={{ width: '100%', maxWidth: 420 }}>
         <div>
           <Title level={4} style={{ marginBottom: 4 }}>
             Name your database

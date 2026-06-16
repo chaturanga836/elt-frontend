@@ -85,7 +85,7 @@ export default function WorkspaceDatabaseShell({
         open={addOpen}
         onCancel={() => setAddOpen(false)}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
         width={520}
       >
         <WorkspaceDatabaseSetup
