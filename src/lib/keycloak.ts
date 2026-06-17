@@ -148,6 +148,9 @@ type TokenResponse = {
 /** Prevents parallel refresh calls from invalidating each other's tokens in Keycloak. */
 let refreshInFlight: Promise<string | null> | null = null;
 
+/** Prevents duplicate OAuth callback handling (e.g. React Strict Mode double-mount). */
+let oauthCallbackInFlight: Promise<boolean> | null = null;
+
 function persistTokens(tokens: TokenResponse): string {
   localStorage.setItem('token', tokens.access_token);
   if (tokens.refresh_token) {
@@ -212,10 +215,10 @@ export async function refreshManualAccessToken(): Promise<string | null> {
 
 /** Resolve the access token to send on API requests (manual or keycloak-js). */
 export async function resolveAccessToken(): Promise<string | null> {
-  if (shouldUseManualAuthFlow()) {
-    return ensureValidAccessToken();
-  }
-  return (await refreshTokenIfNeeded()) || localStorage.getItem('token');
+  const resolved = shouldUseManualAuthFlow()
+    ? await ensureValidAccessToken()
+    : await refreshTokenIfNeeded();
+  return resolved || localStorage.getItem('token');
 }
 
 /** Returns a valid access token, refreshing when near expiry (manual flow). */
@@ -232,32 +235,51 @@ export async function ensureValidAccessToken(): Promise<string | null> {
   }
 
   const refreshed = await refreshManualAccessToken();
-  if (refreshed) return refreshed;
-  if (!isAccessTokenExpiringSoon(existing, 0)) return existing;
-  return null;
+  return refreshed ?? existing;
+}
+
+function finishOAuthCallbackUrl(): void {
+  window.history.replaceState({}, '', '/auth/callback');
+  sessionStorage.removeItem(AUTH_STATE_KEY);
 }
 
 /** Complete manual OAuth callback; returns true if this page was a callback. */
 export async function completeManualOAuthCallback(): Promise<boolean> {
-  const parsed = parseOAuthCallbackFromUrl();
-  if (!parsed) return false;
-
-  const raw = sessionStorage.getItem(AUTH_STATE_KEY);
-  if (!raw) {
-    throw new Error('Missing login state. Start sign-in again from /login.');
+  if (oauthCallbackInFlight) {
+    return oauthCallbackInFlight;
   }
 
-  const expected: ManualAuthState = JSON.parse(raw);
-  if (parsed.state !== expected.state) {
-    throw new Error('Invalid OAuth state.');
-  }
+  oauthCallbackInFlight = (async () => {
+    try {
+      const parsed = parseOAuthCallbackFromUrl();
+      if (!parsed) return false;
 
-  const tokens = await exchangeCodeForTokens(parsed.code, expected.redirectUri);
-  sessionStorage.removeItem(AUTH_STATE_KEY);
-  persistTokens(tokens);
+      // A concurrent init may have already exchanged the authorization code.
+      if (localStorage.getItem('token')) {
+        finishOAuthCallbackUrl();
+        return true;
+      }
 
-  window.history.replaceState({}, '', '/auth/callback');
-  return true;
+      const raw = sessionStorage.getItem(AUTH_STATE_KEY);
+      if (!raw) {
+        throw new Error('Missing login state. Start sign-in again from /login.');
+      }
+
+      const expected: ManualAuthState = JSON.parse(raw);
+      if (parsed.state !== expected.state) {
+        throw new Error('Invalid OAuth state.');
+      }
+
+      const tokens = await exchangeCodeForTokens(parsed.code, expected.redirectUri);
+      finishOAuthCallbackUrl();
+      persistTokens(tokens);
+      return true;
+    } finally {
+      oauthCallbackInFlight = null;
+    }
+  })();
+
+  return oauthCallbackInFlight;
 }
 
 export async function initializeKeycloak(): Promise<boolean> {

@@ -80,9 +80,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         }
       } catch (error) {
         console.error('Auth initialization failed:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('refresh_token');
-        clearAuth();
+        const token = localStorage.getItem('token');
+        if (token) {
+          // OAuth callback may have succeeded before a duplicate init run failed.
+          setAuth({ token });
+        } else {
+          localStorage.removeItem('refresh_token');
+          clearAuth();
+        }
       } finally {
         if (alive) setInitialized(true);
       }

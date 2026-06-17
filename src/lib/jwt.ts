@@ -38,6 +38,6 @@ export function getAccessTokenExpiry(token: string): number | null {
 /** True when the access token is expired or within skewSeconds of expiry. */
 export function isAccessTokenExpiringSoon(token: string, skewSeconds = 30): boolean {
   const exp = getAccessTokenExpiry(token);
-  if (exp === null) return true;
+  if (exp === null) return false;
   return Date.now() / 1000 >= exp - skewSeconds;
 }
