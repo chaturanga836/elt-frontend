@@ -21,7 +21,7 @@ export function primaryKeyColumns(columns: WorkspaceDatabaseTableColumn[]): stri
   return columns.map((col) => col.name);
 }
 
-export function buildDeleteSql(
+export function buildInsertSql(
   schemaName: string,
   tableName: string,
   columns: WorkspaceDatabaseTableColumn[],
