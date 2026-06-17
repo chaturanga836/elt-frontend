@@ -82,9 +82,30 @@ export type WorkspaceDatabaseTableDetail = {
   foreign_keys?: WorkspaceDatabaseTableForeignKey[];
 };
 
+export type WorkspaceDatabaseTableDataResponse = {
+  database_id: number;
+  schema_name: string;
+  table_name: string;
+  columns: string[];
+  rows: Record<string, unknown>[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
 export type WorkspaceDatabaseDdlResponse = {
   ok: boolean;
   statements_executed: number;
+};
+
+export type WorkspaceDatabaseSqlResponse = {
+  ok: boolean;
+  statement_type: 'select' | 'insert' | 'update' | 'delete';
+  rows_affected?: number;
+  columns?: string[];
+  rows?: Record<string, unknown>[];
+  row_count?: number;
+  truncated?: boolean;
 };
 
 export const WorkspaceDatabaseService = {
@@ -135,6 +156,19 @@ export const WorkspaceDatabaseService = {
     return res.data;
   },
 
+  async getTableData(
+    workspaceId: number,
+    databaseId: number,
+    tableName: string,
+    params?: { limit?: number; offset?: number },
+  ): Promise<WorkspaceDatabaseTableDataResponse> {
+    const res = await api.get<WorkspaceDatabaseTableDataResponse>(
+      `/workspaces/${workspaceId}/databases/${databaseId}/tables/${encodeURIComponent(tableName)}/data`,
+      { params },
+    );
+    return res.data;
+  },
+
   async executeDdl(
     workspaceId: number,
     databaseId: number,
@@ -142,6 +176,18 @@ export const WorkspaceDatabaseService = {
   ): Promise<WorkspaceDatabaseDdlResponse> {
     const res = await api.post<WorkspaceDatabaseDdlResponse>(
       `/workspaces/${workspaceId}/databases/${databaseId}/ddl`,
+      { sql },
+    );
+    return res.data;
+  },
+
+  async executeSql(
+    workspaceId: number,
+    databaseId: number,
+    sql: string,
+  ): Promise<WorkspaceDatabaseSqlResponse> {
+    const res = await api.post<WorkspaceDatabaseSqlResponse>(
+      `/workspaces/${workspaceId}/databases/${databaseId}/sql`,
       { sql },
     );
     return res.data;

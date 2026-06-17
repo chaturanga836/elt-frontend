@@ -4,12 +4,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Button,
   Card,
-  Descriptions,
   Empty,
   Flex,
   Space,
   Spin,
   Table,
+  Tabs,
   Tag,
   Tree,
   Typography,
@@ -18,6 +18,7 @@ import {
 import type { DataNode, EventDataNode } from 'antd/es/tree';
 import { DatabaseOutlined, PlusOutlined, TableOutlined } from '@ant-design/icons';
 import TableSchemaEditor from '@/features/baas-prototype/TableSchemaEditor';
+import TableDataPanel from '@/features/baas-prototype/TableDataPanel';
 import {
   WorkspaceDatabaseItem,
   WorkspaceDatabaseService,
@@ -28,6 +29,7 @@ import { getApiErrorMessage } from '@/lib/formatApiError';
 const { Text, Title } = Typography;
 
 type PanelMode = 'browse' | 'create' | 'edit';
+type DetailTab = 'properties' | 'data';
 
 type SchemaTreeNode = DataNode & {
   nodeType: 'schema' | 'table';
@@ -67,6 +69,7 @@ export default function WorkspaceDatabaseExplorer({
   const [activeSchemaName, setActiveSchemaName] = useState<string | null>(null);
   const [tablesForSchema, setTablesForSchema] = useState<Record<number, string[]>>({});
   const [loadedSchemas, setLoadedSchemas] = useState<Record<number, boolean>>({});
+  const [detailTab, setDetailTab] = useState<DetailTab>('properties');
 
   useEffect(() => {
     setTreeData(
@@ -87,6 +90,7 @@ export default function WorkspaceDatabaseExplorer({
     setActiveSchemaName(null);
     setTablesForSchema({});
     setLoadedSchemas({});
+    setDetailTab('properties');
     onSelectTable(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset selection when schema list changes
   }, [databases]);
@@ -181,6 +185,7 @@ export default function WorkspaceDatabaseExplorer({
       setSelectedKeys([tableKey(databaseId, tableName)]);
       setDetailLoading(true);
       setPanelMode('browse');
+      setDetailTab('properties');
       try {
         const detail = await WorkspaceDatabaseService.getTableDetail(
           workspaceId,
@@ -222,6 +227,10 @@ export default function WorkspaceDatabaseExplorer({
     },
     [activeDatabaseId, activeSchemaName, loadTables, selectTable],
   );
+
+  const onDetailTabChange = useCallback((key: string) => {
+    setDetailTab(key as DetailTab);
+  }, []);
 
   const columnTable = useMemo(
     () =>
@@ -297,95 +306,115 @@ export default function WorkspaceDatabaseExplorer({
             </Button>
           </Flex>
 
-          <Descriptions size="small" bordered column={2}>
-            <Descriptions.Item label="Schema">{selectedTable.schema_name}</Descriptions.Item>
-            <Descriptions.Item label="Table">{selectedTable.table_name}</Descriptions.Item>
-          </Descriptions>
+          <Tabs
+            activeKey={detailTab}
+            onChange={onDetailTabChange}
+            items={[
+              {
+                key: 'properties',
+                label: 'Properties',
+                children: (
+                  <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                    <Table
+                      size="small"
+                      pagination={false}
+                      dataSource={columnTable}
+                      rowKey="name"
+                      columns={[
+                        { title: 'Column', dataIndex: 'name', key: 'name' },
+                        { title: 'Type', dataIndex: 'type', key: 'type' },
+                        {
+                          title: 'Nullable',
+                          dataIndex: 'nullable',
+                          key: 'nullable',
+                          render: (value: boolean) => (value ? 'YES' : 'NO'),
+                        },
+                        {
+                          title: 'Default',
+                          dataIndex: 'default',
+                          key: 'default',
+                          render: (value?: string | null) => value ?? '—',
+                        },
+                        {
+                          title: 'PK',
+                          dataIndex: 'primary_key',
+                          key: 'primary_key',
+                          render: (value: boolean) => (value ? <Tag color="gold">PK</Tag> : null),
+                        },
+                      ]}
+                    />
 
-          <Table
-            size="small"
-            pagination={false}
-            dataSource={columnTable}
-            rowKey="name"
-            columns={[
-              { title: 'Column', dataIndex: 'name', key: 'name' },
-              { title: 'Type', dataIndex: 'type', key: 'type' },
-              {
-                title: 'Nullable',
-                dataIndex: 'nullable',
-                key: 'nullable',
-                render: (value: boolean) => (value ? 'YES' : 'NO'),
+                    {(selectedTable.indexes?.length ?? 0) > 0 && (
+                      <Table
+                        size="small"
+                        pagination={false}
+                        title={() => 'Indexes'}
+                        dataSource={selectedTable.indexes}
+                        rowKey="name"
+                        columns={[
+                          { title: 'Name', dataIndex: 'name', key: 'name' },
+                          {
+                            title: 'Columns',
+                            dataIndex: 'columns',
+                            key: 'columns',
+                            render: (cols: string[]) => cols.join(', '),
+                          },
+                          {
+                            title: 'Unique',
+                            dataIndex: 'unique',
+                            key: 'unique',
+                            render: (v: boolean) => (v ? 'YES' : 'NO'),
+                          },
+                        ]}
+                      />
+                    )}
+
+                    {(selectedTable.foreign_keys?.length ?? 0) > 0 && (
+                      <Table
+                        size="small"
+                        pagination={false}
+                        title={() => 'Foreign keys'}
+                        dataSource={selectedTable.foreign_keys}
+                        rowKey="name"
+                        columns={[
+                          { title: 'Name', dataIndex: 'name', key: 'name' },
+                          {
+                            title: 'Column',
+                            dataIndex: 'constrained_columns',
+                            key: 'constrained_columns',
+                            render: (cols: string[]) => cols.join(', '),
+                          },
+                          {
+                            title: 'References',
+                            key: 'ref',
+                            render: (_: unknown, row) =>
+                              `${row.referred_table} (${row.referred_columns.join(', ')})`,
+                          },
+                          {
+                            title: 'On delete',
+                            dataIndex: 'on_delete',
+                            key: 'on_delete',
+                            render: (v?: string | null) => v ?? '—',
+                          },
+                        ]}
+                      />
+                    )}
+                  </Space>
+                ),
               },
               {
-                title: 'Default',
-                dataIndex: 'default',
-                key: 'default',
-                render: (value?: string | null) => value ?? '—',
-              },
-              {
-                title: 'PK',
-                dataIndex: 'primary_key',
-                key: 'primary_key',
-                render: (value: boolean) => (value ? <Tag color="gold">PK</Tag> : null),
+                key: 'data',
+                label: 'Data',
+                children: (
+                  <TableDataPanel
+                    workspaceId={workspaceId}
+                    table={selectedTable}
+                    active={detailTab === 'data'}
+                  />
+                ),
               },
             ]}
           />
-
-          {(selectedTable.indexes?.length ?? 0) > 0 && (
-            <Table
-              size="small"
-              pagination={false}
-              title={() => 'Indexes'}
-              dataSource={selectedTable.indexes}
-              rowKey="name"
-              columns={[
-                { title: 'Name', dataIndex: 'name', key: 'name' },
-                {
-                  title: 'Columns',
-                  dataIndex: 'columns',
-                  key: 'columns',
-                  render: (cols: string[]) => cols.join(', '),
-                },
-                {
-                  title: 'Unique',
-                  dataIndex: 'unique',
-                  key: 'unique',
-                  render: (v: boolean) => (v ? 'YES' : 'NO'),
-                },
-              ]}
-            />
-          )}
-
-          {(selectedTable.foreign_keys?.length ?? 0) > 0 && (
-            <Table
-              size="small"
-              pagination={false}
-              title={() => 'Foreign keys'}
-              dataSource={selectedTable.foreign_keys}
-              rowKey="name"
-              columns={[
-                { title: 'Name', dataIndex: 'name', key: 'name' },
-                {
-                  title: 'Column',
-                  dataIndex: 'constrained_columns',
-                  key: 'constrained_columns',
-                  render: (cols: string[]) => cols.join(', '),
-                },
-                {
-                  title: 'References',
-                  key: 'ref',
-                  render: (_: unknown, row) =>
-                    `${row.referred_table} (${row.referred_columns.join(', ')})`,
-                },
-                {
-                  title: 'On delete',
-                  dataIndex: 'on_delete',
-                  key: 'on_delete',
-                  render: (v?: string | null) => v ?? '—',
-                },
-              ]}
-            />
-          )}
         </Space>
       );
     }
