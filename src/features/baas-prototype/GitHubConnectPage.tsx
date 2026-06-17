@@ -22,6 +22,11 @@ const { Title, Text } = Typography;
 
 const GITHUB_OAUTH_MESSAGE_TYPE = 'github-oauth';
 
+function apiOrigin(): string {
+  const base = process.env.NEXT_PUBLIC_API_URL || 'http://144.24.127.112:8000/api/v1';
+  return new URL(base).origin;
+}
+
 export default function GitHubConnectPage() {
   const workspaceId = useWorkspaceId();
   const [connections, setConnections] = useState<GitConnection[]>([]);
@@ -46,7 +51,8 @@ export default function GitHubConnectPage() {
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
+      // OAuth popup lands on the API callback (:8000), not the app origin (:3000).
+      if (event.origin !== apiOrigin()) return;
       const data = event.data as { type?: string; ok?: boolean; message?: string } | null;
       if (!data || data.type !== GITHUB_OAUTH_MESSAGE_TYPE) return;
 
