@@ -145,6 +145,9 @@ type TokenResponse = {
   expires_in?: number;
 };
 
+/** Prevents parallel refresh calls from invalidating each other's tokens in Keycloak. */
+let refreshInFlight: Promise<string | null> | null = null;
+
 function persistTokens(tokens: TokenResponse): string {
   localStorage.setItem('token', tokens.access_token);
   if (tokens.refresh_token) {
@@ -179,17 +182,32 @@ export async function exchangeRefreshToken(
 
 /** Refresh access token using stored refresh_token (manual OAuth / HTTP deployments). */
 export async function refreshManualAccessToken(): Promise<string | null> {
-  const refreshToken = localStorage.getItem('refresh_token');
-  if (!refreshToken) return null;
-
-  try {
-    const tokens = await exchangeRefreshToken(refreshToken);
-    return persistTokens(tokens);
-  } catch {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refresh_token');
-    return null;
+  if (refreshInFlight) {
+    return refreshInFlight;
   }
+
+  refreshInFlight = (async () => {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) return null;
+
+    try {
+      const tokens = await exchangeRefreshToken(refreshToken);
+      return persistTokens(tokens);
+    } catch {
+      // A concurrent refresh may have succeeded and rotated tokens already.
+      const current = localStorage.getItem('token');
+      if (current && !isAccessTokenExpiringSoon(current, 0)) {
+        return current;
+      }
+      localStorage.removeItem('token');
+      localStorage.removeItem('refresh_token');
+      return null;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
 }
 
 /** Resolve the access token to send on API requests (manual or keycloak-js). */
@@ -214,7 +232,9 @@ export async function ensureValidAccessToken(): Promise<string | null> {
   }
 
   const refreshed = await refreshManualAccessToken();
-  return refreshed ?? existing;
+  if (refreshed) return refreshed;
+  if (!isAccessTokenExpiringSoon(existing, 0)) return existing;
+  return null;
 }
 
 /** Complete manual OAuth callback; returns true if this page was a callback. */
