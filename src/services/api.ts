@@ -3,8 +3,9 @@ import axios from 'axios';
 import { notification } from '@/lib/antd/static'; // Using the bridge we set up
 import { formatErrorDetail, getApiErrorMessage } from '@/lib/formatApiError';
 import {
-  ensureValidAccessToken,
   refreshManualAccessToken,
+  refreshTokenIfNeeded,
+  resolveAccessToken,
   shouldUseManualAuthFlow,
 } from '@/lib/keycloak';
 
@@ -17,13 +18,22 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Request Interceptor — refresh access token before expiry when using manual OAuth
-api.interceptors.request.use(async (config) => {
-  const token = shouldUseManualAuthFlow()
-    ? await ensureValidAccessToken()
-    : localStorage.getItem('token');
-  if (token) {
+function setAuthorizationHeader(
+  config: { headers: { set?: (name: string, value: string) => void; Authorization?: string } },
+  token: string,
+) {
+  if (typeof config.headers.set === 'function') {
+    config.headers.set('Authorization', `Bearer ${token}`);
+  } else {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+}
+
+// Request Interceptor — attach a fresh access token before each API call
+api.interceptors.request.use(async (config) => {
+  const token = await resolveAccessToken();
+  if (token) {
+    setAuthorizationHeader(config, token);
   }
   return config;
 });
@@ -44,21 +54,18 @@ api.interceptors.response.use(
 
     if (status === 401) {
       const config = error.config as typeof error.config & { _retriedAfterRefresh?: boolean };
-      if (shouldUseManualAuthFlow() && config && !config._retriedAfterRefresh) {
-        const newToken = await refreshManualAccessToken();
+      if (config && !config._retriedAfterRefresh) {
+        const newToken = shouldUseManualAuthFlow()
+          ? await refreshManualAccessToken()
+          : await refreshTokenIfNeeded();
         if (newToken) {
           config._retriedAfterRefresh = true;
-          config.headers.Authorization = `Bearer ${newToken}`;
+          setAuthorizationHeader(config, newToken);
           return api.request(config);
         }
       }
 
-      console.error('Session expired');
-      localStorage.removeItem('token');
-      localStorage.removeItem('refresh_token');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
+      // Let the calling page handle the error — do not clear session or redirect.
       return Promise.reject(error);
     }
 

@@ -55,6 +55,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             realmRoles = me.realm_roles;
             workspaceIds = me.workspace_ids;
           } catch {
+            if (!localStorage.getItem('token')) {
+              clearAuth();
+              return;
+            }
             /* API profile optional if backend unreachable */
           }
           try {

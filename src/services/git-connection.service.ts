@@ -47,7 +47,7 @@ export const GitConnectionService = {
   startGitHubOAuth: async (workspaceId: number) => {
     const response = await api.post<{ authorize_url: string }>(
       '/git-connections/github/start',
-      null,
+      {},
       wsParams(workspaceId),
     );
     return response.data;

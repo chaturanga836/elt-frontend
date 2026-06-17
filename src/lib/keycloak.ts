@@ -86,7 +86,7 @@ export function loginWithoutPkce(redirectUri?: string): void {
     client_id: KEYCLOAK_CLIENT_ID,
     redirect_uri: redirect,
     response_type: 'code',
-    scope: 'openid',
+    scope: 'openid offline_access',
     state,
     response_mode: 'query',
   });
@@ -190,6 +190,14 @@ export async function refreshManualAccessToken(): Promise<string | null> {
     localStorage.removeItem('refresh_token');
     return null;
   }
+}
+
+/** Resolve the access token to send on API requests (manual or keycloak-js). */
+export async function resolveAccessToken(): Promise<string | null> {
+  if (shouldUseManualAuthFlow()) {
+    return ensureValidAccessToken();
+  }
+  return (await refreshTokenIfNeeded()) || localStorage.getItem('token');
 }
 
 /** Returns a valid access token, refreshing when near expiry (manual flow). */

@@ -16,6 +16,7 @@ import {
   GitConnectionService,
 } from '@/services/git-connection.service';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
+import { getApiErrorMessage } from '@/lib/formatApiError';
 
 const { Title, Text } = Typography;
 
@@ -81,9 +82,12 @@ export default function GitHubConnectPage() {
         setConnecting(false);
         window.location.href = authorize_url;
       }
-    } catch {
+    } catch (error) {
       setConnecting(false);
-      notification.error({ message: 'Failed to start GitHub authorization' });
+      notification.error({
+        message: 'Failed to start GitHub authorization',
+        description: getApiErrorMessage(error),
+      });
     }
   };
 
