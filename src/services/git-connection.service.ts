@@ -43,4 +43,13 @@ export const GitConnectionService = {
   revoke: async (workspaceId: number, connectionId: number) => {
     await api.delete(`/git-connections/${connectionId}`, wsParams(workspaceId));
   },
+
+  startGitHubOAuth: async (workspaceId: number) => {
+    const response = await api.post<{ authorize_url: string }>(
+      '/git-connections/github/start',
+      null,
+      wsParams(workspaceId),
+    );
+    return response.data;
+  },
 };

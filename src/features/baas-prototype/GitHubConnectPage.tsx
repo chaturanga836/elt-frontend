@@ -4,9 +4,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   Button,
   Card,
-  Form,
-  Input,
-  Modal,
   Space,
   Table,
   Tag,
@@ -22,13 +19,13 @@ import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 
 const { Title, Text } = Typography;
 
+const GITHUB_OAUTH_MESSAGE_TYPE = 'github-oauth';
+
 export default function GitHubConnectPage() {
   const workspaceId = useWorkspaceId();
   const [connections, setConnections] = useState<GitConnection[]>([]);
   const [loading, setLoading] = useState(false);
-  const [connectOpen, setConnectOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [form] = Form.useForm();
+  const [connecting, setConnecting] = useState(false);
 
   const loadConnections = useCallback(async () => {
     setLoading(true);
@@ -46,26 +43,47 @@ export default function GitHubConnectPage() {
     void loadConnections();
   }, [loadConnections]);
 
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as { type?: string; ok?: boolean; message?: string } | null;
+      if (!data || data.type !== GITHUB_OAUTH_MESSAGE_TYPE) return;
+
+      setConnecting(false);
+      if (data.ok) {
+        notification.success({
+          message: 'GitHub connected',
+          description: data.message || undefined,
+        });
+        void loadConnections();
+      } else {
+        notification.error({
+          message: 'Failed to connect GitHub',
+          description: data.message || undefined,
+        });
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [loadConnections]);
+
   const handleConnect = async () => {
     try {
-      const values = await form.validateFields();
-      setSubmitting(true);
-      await GitConnectionService.create(workspaceId, {
-        provider: 'github',
-        account_login: values.account_login,
-        repo_full_name: values.repo_full_name || undefined,
-        default_branch: values.default_branch || 'main',
-        access_token: values.access_token,
-        scopes: ['repo'],
-      });
-      notification.success({ message: 'GitHub connected' });
-      setConnectOpen(false);
-      form.resetFields();
-      await loadConnections();
+      setConnecting(true);
+      const { authorize_url } = await GitConnectionService.startGitHubOAuth(workspaceId);
+      const popup = window.open(
+        authorize_url,
+        'github-oauth',
+        'width=600,height=700,scrollbars=yes',
+      );
+      if (!popup) {
+        setConnecting(false);
+        window.location.href = authorize_url;
+      }
     } catch {
-      notification.error({ message: 'Failed to connect GitHub' });
-    } finally {
-      setSubmitting(false);
+      setConnecting(false);
+      notification.error({ message: 'Failed to start GitHub authorization' });
     }
   };
 
@@ -81,12 +99,15 @@ export default function GitHubConnectPage() {
 
   const columns = [
     {
-      title: 'Account / Repository',
-      key: 'repo',
+      title: 'GitHub account',
+      key: 'account',
       render: (_: unknown, row: GitConnection) => (
         <Space>
           <GithubOutlined />
-          <Text strong>{row.repo_full_name || row.account_login || `Connection #${row.id}`}</Text>
+          <Text strong>{row.account_login || `Connection #${row.id}`}</Text>
+          {row.repo_full_name ? (
+            <Text type="secondary">({row.repo_full_name})</Text>
+          ) : null}
         </Space>
       ),
     },
@@ -128,7 +149,7 @@ export default function GitHubConnectPage() {
         GitHub
       </Title>
       <Text type="secondary">
-        Connect GitHub with a personal access token. OAuth redirect can be enabled via server env vars.
+        Authorize GitHub in the popup to link your account to this workspace.
       </Text>
 
       <Card style={{ marginTop: 16 }}>
@@ -136,7 +157,8 @@ export default function GitHubConnectPage() {
           <Button
             type="primary"
             icon={<LinkOutlined />}
-            onClick={() => setConnectOpen(true)}
+            loading={connecting}
+            onClick={() => void handleConnect()}
           >
             Connect GitHub
           </Button>
@@ -152,34 +174,6 @@ export default function GitHubConnectPage() {
           pagination={false}
         />
       </Card>
-
-      <Modal
-        title="Connect GitHub"
-        open={connectOpen}
-        onCancel={() => setConnectOpen(false)}
-        onOk={() => void handleConnect()}
-        confirmLoading={submitting}
-        okText="Connect"
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item name="account_login" label="GitHub username or org">
-            <Input placeholder="acme" />
-          </Form.Item>
-          <Form.Item name="repo_full_name" label="Repository (optional)">
-            <Input placeholder="acme/api-functions" />
-          </Form.Item>
-          <Form.Item name="default_branch" label="Default branch" initialValue="main">
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="access_token"
-            label="Personal access token"
-            rules={[{ required: true, message: 'Token is required' }]}
-          >
-            <Input.Password placeholder="ghp_..." />
-          </Form.Item>
-        </Form>
-      </Modal>
     </div>
   );
 }
