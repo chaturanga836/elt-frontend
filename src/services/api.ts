@@ -1,5 +1,5 @@
 // src/services/api.ts
-import axios from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { notification } from '@/lib/antd/static'; // Using the bridge we set up
 import { formatErrorDetail, getApiErrorMessage } from '@/lib/formatApiError';
 import {
@@ -18,15 +18,8 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-function setAuthorizationHeader(
-  config: { headers: { set?: (name: string, value: string) => void; Authorization?: string } },
-  token: string,
-) {
-  if (typeof config.headers.set === 'function') {
-    config.headers.set('Authorization', `Bearer ${token}`);
-  } else {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+function setAuthorizationHeader(config: InternalAxiosRequestConfig, token: string) {
+  config.headers.set('Authorization', `Bearer ${token}`);
 }
 
 // Request Interceptor — attach a fresh access token before each API call
