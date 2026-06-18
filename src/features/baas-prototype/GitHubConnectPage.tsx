@@ -17,6 +17,7 @@ import {
 } from '@/services/git-connection.service';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { getApiErrorMessage } from '@/lib/formatApiError';
+import ImportRepoModal from '@/features/baas-prototype/ImportRepoModal';
 
 const { Title, Text } = Typography;
 
@@ -32,6 +33,7 @@ export default function GitHubConnectPage() {
   const [connections, setConnections] = useState<GitConnection[]>([]);
   const [loading, setLoading] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [importConnection, setImportConnection] = useState<GitConnection | null>(null);
 
   const loadConnections = useCallback(async () => {
     setLoading(true);
@@ -124,7 +126,18 @@ export default function GitHubConnectPage() {
     {
       title: 'Branch',
       dataIndex: 'default_branch',
-      render: (b: string) => <Tag>{b}</Tag>,
+      render: (b: string, row: GitConnection) =>
+        row.repo_full_name ? <Tag>{b}</Tag> : <Text type="secondary">—</Text>,
+    },
+    {
+      title: 'Last sync',
+      key: 'last_sync',
+      render: (_: unknown, row: GitConnection) =>
+        row.last_sync_sha ? (
+          <Text code>{row.last_sync_sha.slice(0, 7)}</Text>
+        ) : (
+          <Text type="secondary">—</Text>
+        ),
     },
     {
       title: 'Status',
@@ -138,13 +151,15 @@ export default function GitHubConnectPage() {
       key: 'actions',
       render: (_: unknown, row: GitConnection) => (
         <Space>
-          <Button
-            size="small"
-            icon={<ImportOutlined />}
-            onClick={() => notification.info({ message: 'Import from repo (coming soon)' })}
-          >
-            Import
-          </Button>
+          {!row.repo_full_name ? (
+            <Button
+              size="small"
+              icon={<ImportOutlined />}
+              onClick={() => setImportConnection(row)}
+            >
+              Import
+            </Button>
+          ) : null}
           <Button size="small" danger onClick={() => void handleRevoke(row.id)}>
             Revoke
           </Button>
@@ -184,6 +199,14 @@ export default function GitHubConnectPage() {
           pagination={false}
         />
       </Card>
+
+      <ImportRepoModal
+        open={importConnection !== null}
+        connection={importConnection}
+        workspaceId={workspaceId}
+        onClose={() => setImportConnection(null)}
+        onImported={() => void loadConnections()}
+      />
     </div>
   );
 }

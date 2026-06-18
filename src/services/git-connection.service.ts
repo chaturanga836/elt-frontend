@@ -17,6 +17,27 @@ export interface GitConnection {
   created_at?: string | null;
 }
 
+export interface GitHubRepoSummary {
+  full_name: string;
+  name: string;
+  owner_login: string;
+  private: boolean;
+  default_branch: string;
+  description?: string | null;
+  updated_at?: string | null;
+}
+
+export interface GitHubBranchSummary {
+  name: string;
+  sha: string;
+  protected: boolean;
+}
+
+export interface GitRepoImportRequest {
+  repo_full_name: string;
+  default_branch?: string;
+}
+
 export interface GitConnectionCreate {
   provider: 'github' | 'gitlab' | 'bitbucket';
   account_login?: string;
@@ -48,6 +69,45 @@ export const GitConnectionService = {
     const response = await api.post<{ authorize_url: string }>(
       '/git-connections/github/start',
       {},
+      wsParams(workspaceId),
+    );
+    return response.data;
+  },
+
+  listGitHubRepos: async (workspaceId: number, connectionId: number, page = 1) => {
+    const response = await api.get<{ items: GitHubRepoSummary[]; page: number; per_page: number }>(
+      `/git-connections/${connectionId}/github/repos`,
+      { params: { workspace_id: workspaceId, page, per_page: 100 } },
+    );
+    return response.data;
+  },
+
+  listGitHubBranches: async (
+    workspaceId: number,
+    connectionId: number,
+    repoFullName: string,
+  ) => {
+    const response = await api.get<{ items: GitHubBranchSummary[]; repo_full_name: string }>(
+      `/git-connections/${connectionId}/github/branches`,
+      {
+        params: {
+          workspace_id: workspaceId,
+          repo_full_name: repoFullName,
+          per_page: 100,
+        },
+      },
+    );
+    return response.data;
+  },
+
+  importRepository: async (
+    workspaceId: number,
+    connectionId: number,
+    payload: GitRepoImportRequest,
+  ) => {
+    const response = await api.post<GitConnection>(
+      `/git-connections/${connectionId}/import`,
+      payload,
       wsParams(workspaceId),
     );
     return response.data;
