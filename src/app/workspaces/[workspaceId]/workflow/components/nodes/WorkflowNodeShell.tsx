@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Handle, Position } from '@xyflow/react';
+import { theme } from 'antd';
 
 interface WorkflowNodeShellProps {
   title: string;
@@ -20,14 +21,18 @@ export default function WorkflowNodeShell({
   target = true,
   source = true,
 }: WorkflowNodeShellProps) {
+  const {
+    token: { colorBgContainer },
+  } = theme.useToken();
+
   return (
     <div
       style={{
         minWidth: 220,
         borderRadius: 8,
         border: `2px solid ${color}`,
-        background: '#fff',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        background: colorBgContainer,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
         fontSize: 12,
       }}
     >

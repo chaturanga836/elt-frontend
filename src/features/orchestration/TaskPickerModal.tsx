@@ -12,6 +12,7 @@ import {
   Button,
   Divider,
   Pagination,
+  theme,
 } from 'antd';
 import { SearchOutlined, PlusOutlined, CheckCircleFilled, EditOutlined } from '@ant-design/icons';
 import { TaskService, TaskResponse } from '@/services/task.service';
@@ -49,6 +50,9 @@ export default function TaskPickerModal({
 }: TaskPickerModalProps) {
   const workspaceId = useWorkspaceId();
   const router = useRouter();
+  const {
+    token: { colorBgContainer, colorPrimary, colorBorder, colorPrimaryBg },
+  } = theme.useToken();
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const { data: taskResponse, searching, performFetch } = useDebouncedFetch(
@@ -173,9 +177,9 @@ export default function TaskPickerModal({
                   marginBottom: 8,
                   borderRadius: 8,
                   border:
-                    selectedId === task.id ? '1px solid #1890ff' : '1px solid #f0f0f0',
+                    selectedId === task.id ? `1px solid ${colorPrimary}` : `1px solid ${colorBorder}`,
                   cursor: 'pointer',
-                  background: selectedId === task.id ? '#e6f7ff' : '#fff',
+                  background: selectedId === task.id ? colorPrimaryBg : colorBgContainer,
                 }}
               >
                 <Flex align="center" justify="space-between">

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Divider, Empty, Flex, Input, Spin, Typography } from 'antd';
+import { Button, Divider, Empty, Flex, Input, Spin, Typography, theme } from 'antd';
 import { CheckCircleFilled, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { connectionService } from '@/services/connection.service';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
@@ -29,6 +29,9 @@ export default function RestConnectionPickerPanel({
 }: RestConnectionPickerPanelProps) {
   const workspaceId = useWorkspaceId();
   const router = useRouter();
+  const {
+    token: { colorBgContainer, colorInfo, colorBorder },
+  } = theme.useToken();
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<PipelineRestConnectionSummary[]>([]);
@@ -106,9 +109,12 @@ export default function RestConnectionPickerPanel({
                 marginBottom: 8,
                 borderRadius: 8,
                 border:
-                  selectedId === connection.id ? '1px solid #13c2c2' : '1px solid #f0f0f0',
+                  selectedId === connection.id ? `1px solid ${colorInfo}` : `1px solid ${colorBorder}`,
                 cursor: 'pointer',
-                background: selectedId === connection.id ? '#e6fffb' : '#fff',
+                background:
+                  selectedId === connection.id
+                    ? 'rgba(0, 212, 255, 0.12)'
+                    : colorBgContainer,
               }}
             >
               <Flex align="center" justify="space-between" gap={8}>

@@ -95,6 +95,22 @@ export function loginWithoutPkce(redirectUri?: string): void {
   window.location.assign(url);
 }
 
+export function getKeycloakForgotPasswordUrl(redirectUri?: string): string {
+  const redirect = redirectUri || `${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/login`;
+  const params = new URLSearchParams({
+    client_id: KEYCLOAK_CLIENT_ID,
+    redirect_uri: redirect,
+    response_type: 'code',
+    scope: 'openid',
+    kc_action: 'RESET_CREDENTIALS',
+  });
+  return `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth?${params}`;
+}
+
+export function redirectToKeycloakForgotPassword(redirectUri?: string): void {
+  window.location.assign(getKeycloakForgotPasswordUrl(redirectUri));
+}
+
 export function parseOAuthCallbackFromUrl(): { code: string; state: string } | null {
   if (typeof window === 'undefined') return null;
 

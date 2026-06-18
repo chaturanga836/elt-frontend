@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect } from 'react';
 import { usePipeModalLock } from '@/app/workspaces/[workspaceId]/pipe/PipeModalContext';
+import { palette } from '@/constants/theme';
 
 function blurPipelineFocus() {
   const active = document.activeElement;
@@ -81,7 +82,7 @@ export default function PipelineInterceptShell({
           zIndex: 1,
           flex: 1,
           minHeight: 0,
-          background: '#fff',
+          background: palette.bgSurface,
           overflow: 'hidden',
         }}
       >

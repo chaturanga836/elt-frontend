@@ -1,64 +1,76 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0b1e;
+  --foreground: #ffffff;
+  --card: #12142e;
+  --card-foreground: #ffffff;
+  --popover: #1a1d3a;
+  --popover-foreground: #ffffff;
+  --primary: #ff6b00;
+  --primary-foreground: #ffffff;
+  --secondary: #1a1d3a;
+  --secondary-foreground: #94a3b8;
+  --muted: #0f1128;
+  --muted-foreground: #94a3b8;
+  --accent: #1a1d3a;
+  --accent-foreground: #00d4ff;
+  --destructive: #ff4d4f;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #00d4ff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(0, 212, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(191, 0, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(255, 107, 0, 0.02) 0%, transparent 50%);
+  background-attachment: fixed;
 }
-
-/* Force the interceptor modal to be visible and on top */
-/* .fullscreen-modal {
-  display: block !important;
-  opacity: 1 !important;
-  z-index: 10000 !important;
-}
-
-.ant-modal-wrap {
-  display: flex !important; 
-  z-index: 10000 !important;
-} */
-
-/* Ensure the background blur doesn't hide the content */
-/* .ant-modal-mask {
-  z-index: 9999 !important;
-} */
 
 /* --- FULLSCREEN INTERCEPTOR STYLES --- */
 
-/* 1. Force the wrapper visibility ONLY for this specific modal type */
 .fullscreen-modal-container.ant-modal-wrap {
     display: flex !important;
     z-index: 10000 !important;
     visibility: visible !important;
 }
 
-/* 2. Scoped mask: This prevents your other modals from becoming too dark */
 .fullscreen-modal-container .ant-modal-mask {
     z-index: 9999 !important;
     backdrop-filter: blur(4px) !important;
-    background: rgba(0, 0, 0, 0.45) !important;
+    background: rgba(0, 0, 0, 0.65) !important;
 }
 
-/* 3. Force content visibility and remove default spacing */
 .fullscreen-modal-container .fullscreen-modal {
     display: block !important;
     opacity: 1 !important;
@@ -68,18 +80,16 @@ body {
     margin: 0 !important;
 }
 
-/* 4. Ensure the actual modal cards hit the screen edges */
 .fullscreen-modal-container .ant-modal-content,
 .fullscreen-modal-container .ant-modal-body {
     padding: 0 !important;
     border-radius: 0 !important;
     height: 100vh !important;
     width: 100vw !important;
-    box-shadow: none !important; /* Optional: cleaner look for fullscreen */
+    box-shadow: none !important;
     overflow: hidden !important;
 }
 
-/* Drawers / dropdowns opened from inside the fullscreen pipeline intercept modal */
 .fullscreen-modal-container ~ .ant-drawer.ant-drawer-open,
 .fullscreen-modal-container ~ div .ant-drawer.ant-drawer-open {
     z-index: 11000 !important;

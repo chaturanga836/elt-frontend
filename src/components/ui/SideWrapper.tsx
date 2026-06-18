@@ -199,6 +199,7 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
           zIndex: 1000,
           display: 'flex',
           flexDirection: 'column',
+          background: '#0f1128',
         }}
       >
         <div style={{ margin: collapsed ? '16px 12px' : '16px', minHeight: collapsed ? 56 : 48 }}>

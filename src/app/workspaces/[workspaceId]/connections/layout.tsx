@@ -7,7 +7,7 @@ export default function ConnectionsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <section className="bg-[#f5f7fa] min-h-screen">
+    <section className="bg-background min-h-screen">
       {/* You can add a specific Connection header here later */}
       {children}
     </section>

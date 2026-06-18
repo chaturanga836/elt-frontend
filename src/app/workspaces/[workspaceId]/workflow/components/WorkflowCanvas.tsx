@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
-import { Button, Input, Space } from 'antd';
+import { Button, Input, Space, theme } from 'antd';
 import {
   SaveOutlined,
   PlayCircleOutlined,
@@ -42,6 +42,9 @@ function WorkflowCanvasContent() {
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
+  const {
+    token: { colorBgContainer, colorBorder },
+  } = theme.useToken();
   const routeWorkflowUuid =
     typeof params?.id === 'string' && params.id !== 'new' ? params.id : null;
 
@@ -125,8 +128,8 @@ function WorkflowCanvasContent() {
       <div
         style={{
           padding: '10px 20px',
-          background: '#fff',
-          borderBottom: '1px solid #f0f0f0',
+          background: colorBgContainer,
+          borderBottom: `1px solid ${colorBorder}`,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
