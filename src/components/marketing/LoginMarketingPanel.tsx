@@ -4,8 +4,8 @@ import { Typography } from 'antd';
 import {
   ApiOutlined,
   CloudServerOutlined,
+  DatabaseOutlined,
   NodeIndexOutlined,
-  RobotOutlined,
   SafetyCertificateOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
@@ -17,18 +17,18 @@ const { Title, Paragraph, Text } = Typography;
 const FEATURES = [
   {
     icon: <NodeIndexOutlined className={styles.featureIcon} />,
-    title: 'Pipelines & workflows',
-    description: 'Visual orchestration for ELT jobs and multi-step automation.',
+    title: 'Workflows',
+    description: 'Visual multi-step automation for pipelines and jobs.',
   },
   {
     icon: <ApiOutlined className={styles.featureIcon} />,
     title: 'Unified connections',
-    description: 'REST, databases, storage, and plugins in one workspace catalog.',
+    description: 'REST APIs, databases, storage, and Git connections in one catalog.',
   },
   {
-    icon: <RobotOutlined className={styles.featureIcon} />,
-    title: 'AI-ready agents',
-    description: 'Optional LLM settings per workspace for research and reports.',
+    icon: <DatabaseOutlined className={styles.featureIcon} />,
+    title: 'Provisioned databases',
+    description: 'Spin up Postgres per workspace without manual DevOps.',
   },
   {
     icon: <SafetyCertificateOutlined className={styles.featureIcon} />,
@@ -40,8 +40,9 @@ const FEATURES = [
 const PILLS = [
   'Self-hosted',
   'Multi-tenant',
-  'Celery workers',
-  'Report engine',
+  'Automation',
+  'Realtime',
+  'Databases',
 ] as const;
 
 export default function LoginMarketingPanel() {
@@ -49,7 +50,7 @@ export default function LoginMarketingPanel() {
     <section className={styles.marketing}>
       <div className={styles.marketingInner}>
         <Title level={1} className={styles.heroTitle}>
-          Run your data platform on your terms
+          Your full backend stack, one click away
         </Title>
         <Paragraph className={styles.heroLead}>{BRAND_TAGLINE}</Paragraph>
 
@@ -76,7 +77,7 @@ export default function LoginMarketingPanel() {
         <TeamOutlined style={{ marginRight: 6 }} />
         <CloudServerOutlined style={{ marginRight: 6, marginLeft: 12 }} />
         <Text type="secondary">
-          Deploy on your EC2 or Docker stack — you own the data and the keys.
+          Deploy on your EC2 or Docker stack — you own the infrastructure, data, and keys.
         </Text>
       </div>
     </section>

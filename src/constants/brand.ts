@@ -3,7 +3,7 @@
 export const BRAND_NAME = 'DT Orch';
 
 export const BRAND_TAGLINE =
-  'Orchestrate your data stack — on your infrastructure.';
+  'Databases, APIs, and workflows — self-hosted on infrastructure you control.';
 
 /** Static SVG mark under public/ (favicon + external use). */
 export const BRAND_LOGO_SRC = '/brand/dt-orch-logo.svg';
