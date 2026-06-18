@@ -3,13 +3,15 @@
 import { type KeycloakProfile } from 'keycloak-js';
 import { isAccessTokenExpiringSoon, parseJwtPayload } from '@/lib/jwt';
 
-const KEYCLOAK_URL = (process.env.NEXT_PUBLIC_KC_URL || 'http://localhost:8081').replace(/\/$/, '');
+const CONFIGURED_KC_URL = (process.env.NEXT_PUBLIC_KC_URL || 'http://localhost:8081').replace(
+  /\/$/,
+  '',
+);
 const KEYCLOAK_REALM = process.env.NEXT_PUBLIC_KC_REALM || 'workspace-realm';
 const KEYCLOAK_CLIENT_ID = process.env.NEXT_PUBLIC_KC_CLIENT_ID || 'workspace-web';
 const OIDC_SCOPES = 'openid profile email';
 const TOKEN_ISSUED_AT_KEY = 'token_issued_at';
 const REFRESH_GRACE_MS = 60_000;
-
 const AUTH_STATE_KEY = 'kc_manual_auth_state';
 
 type ManualAuthState = {
@@ -17,22 +19,56 @@ type ManualAuthState = {
   redirectUri: string;
 };
 
-function keycloakHostname(): string {
+type KeycloakEndpoints = {
+  auth: string;
+  token: string;
+  logout: string;
+};
+
+function configuredKeycloakHost(): string {
   try {
-    return new URL(KEYCLOAK_URL).hostname.toLowerCase();
+    return new URL(CONFIGURED_KC_URL).hostname.toLowerCase();
   } catch {
     return '';
   }
 }
 
-/** Accept same realm on the same host (http/https or port differences behind a proxy). */
+/** Same host on :443 reverse proxy — use browser origin, not a stale build-time port. */
+function isSameHostAsApp(): boolean {
+  if (typeof window === 'undefined') return false;
+  const cfgHost = configuredKeycloakHost();
+  if (!cfgHost) return true;
+  return cfgHost === window.location.hostname.toLowerCase();
+}
+
+/** Resolve Keycloak endpoints at runtime (critical for HTTPS :443 behind nginx). */
+export function getKeycloakEndpoints(): KeycloakEndpoints {
+  const realmPath = `/realms/${KEYCLOAK_REALM}/protocol/openid-connect`;
+
+  if (typeof window !== 'undefined' && isSameHostAsApp()) {
+    const origin = window.location.origin.replace(/\/$/, '');
+    return {
+      auth: `${origin}${realmPath}/auth`,
+      token: `${realmPath}/token`,
+      logout: `${origin}${realmPath}/logout`,
+    };
+  }
+
+  const base = CONFIGURED_KC_URL;
+  return {
+    auth: `${base}${realmPath}/auth`,
+    token: `${base}${realmPath}/token`,
+    logout: `${base}${realmPath}/logout`,
+  };
+}
+
 function isAcceptedTokenIssuer(iss: string): boolean {
-  const realmSuffix = `/realms/${KEYCLOAK_REALM}`;
-  if (!iss.endsWith(realmSuffix)) return false;
+  if (!iss.endsWith(`/realms/${KEYCLOAK_REALM}`)) return false;
+  if (typeof window === 'undefined') return true;
   try {
-    return new URL(iss).hostname.toLowerCase() === keycloakHostname();
+    return new URL(iss).hostname.toLowerCase() === window.location.hostname.toLowerCase();
   } catch {
-    return iss === `${KEYCLOAK_URL}${realmSuffix}`;
+    return false;
   }
 }
 
@@ -50,18 +86,14 @@ export function getManualCallbackRedirectUri(): string {
   return `${window.location.origin}/auth/callback`;
 }
 
-/** Start a fresh Keycloak login — clears any stale local session first. */
-export function beginKeycloakLogin(redirectUri?: string): void {
+export function beginKeycloakLogin(): void {
   clearStoredTokens();
-  clearOAuthState();
-  loginWithoutPkce(redirectUri);
+  loginWithoutPkce();
 }
 
-/** OAuth redirect without PKCE — works on http://IP:port (no Web Crypto). */
 export function loginWithoutPkce(redirectUri?: string): void {
   const redirect = redirectUri || getManualCallbackRedirectUri();
   const state = randomString();
-
   const stored: ManualAuthState = { state, redirectUri: redirect };
   const serialized = JSON.stringify(stored);
   sessionStorage.setItem(AUTH_STATE_KEY, serialized);
@@ -74,15 +106,15 @@ export function loginWithoutPkce(redirectUri?: string): void {
     scope: OIDC_SCOPES,
     state,
     response_mode: 'query',
-    prompt: 'login',
   });
 
-  const url = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth?${params}`;
-  window.location.href = url;
+  window.location.href = `${getKeycloakEndpoints().auth}?${params}`;
 }
 
 export function getKeycloakForgotPasswordUrl(redirectUri?: string): string {
-  const redirect = redirectUri || `${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/login`;
+  const redirect =
+    redirectUri ||
+    `${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/login`;
   const params = new URLSearchParams({
     client_id: KEYCLOAK_CLIENT_ID,
     redirect_uri: redirect,
@@ -90,7 +122,7 @@ export function getKeycloakForgotPasswordUrl(redirectUri?: string): string {
     scope: OIDC_SCOPES,
     kc_action: 'RESET_CREDENTIALS',
   });
-  return `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth?${params}`;
+  return `${getKeycloakEndpoints().auth}?${params}`;
 }
 
 export function redirectToKeycloakForgotPassword(redirectUri?: string): void {
@@ -118,7 +150,6 @@ export async function exchangeCodeForTokens(
   code: string,
   redirectUri: string,
 ): Promise<{ access_token: string; refresh_token?: string; id_token?: string }> {
-  const tokenUrl = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token`;
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
     client_id: KEYCLOAK_CLIENT_ID,
@@ -126,7 +157,7 @@ export async function exchangeCodeForTokens(
     redirect_uri: redirectUri,
   });
 
-  const response = await fetch(tokenUrl, {
+  const response = await fetch(getKeycloakEndpoints().token, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
@@ -147,10 +178,7 @@ type TokenResponse = {
   expires_in?: number;
 };
 
-/** Prevents parallel refresh calls from invalidating each other's tokens in Keycloak. */
 let refreshInFlight: Promise<string | null> | null = null;
-
-/** Prevents duplicate OAuth callback handling (e.g. React Strict Mode double-mount). */
 let oauthCallbackInFlight: Promise<boolean> | null = null;
 
 export function clearStoredTokens(): void {
@@ -159,7 +187,6 @@ export function clearStoredTokens(): void {
   localStorage.removeItem(TOKEN_ISSUED_AT_KEY);
 }
 
-/** Drop tokens issued for a different Keycloak realm/host. */
 function discardTokenIfIssuerMismatch(token: string | null): string | null {
   if (!token) return null;
   const iss = parseJwtPayload(token)?.iss;
@@ -204,17 +231,14 @@ export function storeAuthTokens(accessToken: string, refreshToken?: string): voi
   persistTokens({ access_token: accessToken, refresh_token: refreshToken });
 }
 
-export async function exchangeRefreshToken(
-  refreshToken: string,
-): Promise<TokenResponse> {
-  const tokenUrl = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token`;
+export async function exchangeRefreshToken(refreshToken: string): Promise<TokenResponse> {
   const body = new URLSearchParams({
     grant_type: 'refresh_token',
     client_id: KEYCLOAK_CLIENT_ID,
     refresh_token: refreshToken,
   });
 
-  const response = await fetch(tokenUrl, {
+  const response = await fetch(getKeycloakEndpoints().token, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
@@ -228,11 +252,8 @@ export async function exchangeRefreshToken(
   return response.json();
 }
 
-/** Refresh access token using stored refresh_token (manual OAuth / HTTP deployments). */
 export async function refreshManualAccessToken(): Promise<string | null> {
-  if (refreshInFlight) {
-    return refreshInFlight;
-  }
+  if (refreshInFlight) return refreshInFlight;
 
   refreshInFlight = (async () => {
     const refreshToken = localStorage.getItem('refresh_token');
@@ -242,7 +263,6 @@ export async function refreshManualAccessToken(): Promise<string | null> {
       const tokens = await exchangeRefreshToken(refreshToken);
       return persistTokens(tokens);
     } catch {
-      // Rotation may have invalidated this refresh token; do not reuse a possibly inactive access token.
       clearStoredTokens();
       return null;
     } finally {
@@ -253,12 +273,10 @@ export async function refreshManualAccessToken(): Promise<string | null> {
   return refreshInFlight;
 }
 
-/** Resolve the access token to send on API requests (manual or keycloak-js). */
 export async function resolveAccessToken(): Promise<string | null> {
   return ensureValidAccessToken();
 }
 
-/** Returns a valid access token, refreshing when near expiry (manual flow). */
 export async function ensureValidAccessToken(): Promise<string | null> {
   const existing = discardTokenIfIssuerMismatch(localStorage.getItem('token'));
   if (!existing) return null;
@@ -280,11 +298,8 @@ function hasValidStoredAccessToken(): boolean {
   return Boolean(token && !isAccessTokenExpiringSoon(token, 0));
 }
 
-/** Complete manual OAuth callback; returns true if this page was a callback. */
 export async function completeManualOAuthCallback(): Promise<boolean> {
-  if (oauthCallbackInFlight) {
-    return oauthCallbackInFlight;
-  }
+  if (oauthCallbackInFlight) return oauthCallbackInFlight;
 
   oauthCallbackInFlight = (async () => {
     try {
@@ -312,7 +327,6 @@ export async function completeManualOAuthCallback(): Promise<boolean> {
         persistTokens(tokens);
         return true;
       } catch (error) {
-        // React Strict Mode or a duplicate callback may have already exchanged this code.
         if (hasValidStoredAccessToken()) {
           finishOAuthCallbackUrl();
           return true;
@@ -331,8 +345,13 @@ export async function initializeKeycloak(): Promise<boolean> {
   return Boolean(discardTokenIfIssuerMismatch(localStorage.getItem('token')));
 }
 
-export async function loginWithKeycloak(redirectUri?: string): Promise<void> {
-  beginKeycloakLogin(redirectUri);
+export function loginWithKeycloak(redirectUri?: string): void {
+  if (redirectUri) {
+    clearStoredTokens();
+    loginWithoutPkce(redirectUri);
+    return;
+  }
+  beginKeycloakLogin();
 }
 
 export async function logoutFromKeycloak(redirectUri?: string): Promise<void> {
@@ -344,12 +363,9 @@ export async function logoutFromKeycloak(redirectUri?: string): Promise<void> {
     client_id: KEYCLOAK_CLIENT_ID,
     post_logout_redirect_uri: postLogout,
   });
-  window.location.assign(
-    `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/logout?${params}`,
-  );
+  window.location.assign(`${getKeycloakEndpoints().logout}?${params}`);
 }
 
-/** Profile from JWT claims — avoids Keycloak userinfo (fails when session/token is inactive). */
 export function profileFromAccessToken(token: string): KeycloakProfile | null {
   const payload = parseJwtPayload(token);
   if (!payload?.sub) return null;

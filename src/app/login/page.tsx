@@ -18,7 +18,6 @@ export default function LoginPage() {
   const router = useRouter();
   const initialized = useAuthStore((s) => s.initialized);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const clearAuth = useAuthStore((s) => s.clearAuth);
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,12 +39,6 @@ export default function LoginPage() {
     if (!initialized || !isAuthenticated) return;
     router.replace('/workspaces');
   }, [initialized, isAuthenticated, router]);
-
-  const handleLogin = () => {
-    setAuthError(null);
-    clearAuth();
-    beginKeycloakLogin(`${window.location.origin}/auth/callback`);
-  };
 
   return (
     <AuthShell
@@ -79,7 +72,10 @@ export default function LoginPage() {
         size="large"
         block
         icon={<LoginOutlined />}
-        onClick={handleLogin}
+        onClick={() => {
+          setAuthError(null);
+          beginKeycloakLogin();
+        }}
         style={{ height: 48, fontSize: 15 }}
       >
         Continue with Keycloak
