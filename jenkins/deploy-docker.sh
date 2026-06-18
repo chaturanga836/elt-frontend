@@ -61,8 +61,15 @@ fi
 
 export DOCKER_BUILDKIT="${DOCKER_BUILDKIT:-0}"
 
+echo "=== Ensuring TLS certificates in deploy volume ==="
+docker run --rm \
+  -v "${VOL}:/app" \
+  -w /app \
+  -e "DEPLOY_HOST=${DEPLOY_HOST:-13.200.160.10}" \
+  alpine sh -ec 'apk add --no-cache openssl bash >/dev/null && bash scripts/generate-self-signed-cert.sh'
+
 echo "=== Removing legacy containers ==="
-docker rm -f etl-frontend-container etl-frontend 2>/dev/null || true
+docker rm -f etl-frontend-container etl-frontend elt-frontend-proxy 2>/dev/null || true
 
 echo "=== Stopping previous compose stack ==="
 compose_in_volume down --remove-orphans 2>/dev/null || compose_in_volume down 2>/dev/null || true
@@ -72,7 +79,7 @@ compose_in_volume up -d --build --force-recreate
 
 echo "=== Waiting for health ==="
 for i in $(seq 1 24); do
-  if curl -sf "http://${DEPLOY_HOST:-127.0.0.1}:3000"; then
+  if curl -kfs "https://${DEPLOY_HOST:-127.0.0.1}/"; then
     echo "Frontend OK"
     trap - EXIT
     cleanup_vol
@@ -81,6 +88,7 @@ for i in $(seq 1 24); do
   if [ "$i" -eq 24 ]; then
     echo "ERROR: Frontend health check failed after compose up" >&2
     docker logs etl-frontend --tail 80 2>/dev/null || true
+    docker logs elt-frontend-proxy --tail 80 2>/dev/null || true
     exit 1
   fi
   sleep 5

@@ -36,9 +36,11 @@ fi
 
 export DOCKER_BUILDKIT="${DOCKER_BUILDKIT:-0}"
 
-docker rm -f etl-frontend-container 2>/dev/null || true
+bash scripts/generate-self-signed-cert.sh
+
+docker rm -f etl-frontend-container elt-frontend-proxy 2>/dev/null || true
 
 compose down --remove-orphans 2>/dev/null || compose down 2>/dev/null || true
 compose up -d --build --force-recreate
 
-curl -sf "http://${DEPLOY_HOST:-127.0.0.1}:3000" >/dev/null
+curl -kfs "https://${DEPLOY_HOST:-127.0.0.1}/" >/dev/null
