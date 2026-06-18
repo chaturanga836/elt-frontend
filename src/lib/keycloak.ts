@@ -1,12 +1,13 @@
 'use client';
 
 import Keycloak, { type KeycloakInitOptions, type KeycloakProfile } from 'keycloak-js';
-import { isAccessTokenExpiringSoon } from '@/lib/jwt';
+import { isAccessTokenExpiringSoon, parseJwtPayload } from '@/lib/jwt';
 
 const KEYCLOAK_URL = (process.env.NEXT_PUBLIC_KC_URL || 'http://localhost:8081').replace(/\/$/, '');
 const KEYCLOAK_REALM = process.env.NEXT_PUBLIC_KC_REALM || 'workspace-realm';
 const KEYCLOAK_CLIENT_ID = process.env.NEXT_PUBLIC_KC_CLIENT_ID || 'workspace-web';
 const OIDC_SCOPES = 'openid profile email';
+const EXPECTED_TOKEN_ISSUER = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}`;
 
 const AUTH_STATE_KEY = 'kc_manual_auth_state';
 
@@ -168,6 +169,22 @@ let refreshInFlight: Promise<string | null> | null = null;
 /** Prevents duplicate OAuth callback handling (e.g. React Strict Mode double-mount). */
 let oauthCallbackInFlight: Promise<boolean> | null = null;
 
+function clearStoredTokens(): void {
+  localStorage.removeItem('token');
+  localStorage.removeItem('refresh_token');
+}
+
+/** Drop tokens issued for a different Keycloak URL (e.g. after HTTP → HTTPS migration). */
+function discardTokenIfIssuerMismatch(token: string | null): string | null {
+  if (!token) return null;
+  const iss = parseJwtPayload(token)?.iss;
+  if (iss && iss !== EXPECTED_TOKEN_ISSUER) {
+    clearStoredTokens();
+    return null;
+  }
+  return token;
+}
+
 function persistTokens(tokens: TokenResponse): string {
   localStorage.setItem('token', tokens.access_token);
   if (tokens.refresh_token) {
@@ -240,7 +257,7 @@ export async function resolveAccessToken(): Promise<string | null> {
 
 /** Returns a valid access token, refreshing when near expiry (manual flow). */
 export async function ensureValidAccessToken(): Promise<string | null> {
-  const existing = localStorage.getItem('token');
+  const existing = discardTokenIfIssuerMismatch(localStorage.getItem('token'));
   if (!existing) return null;
 
   if (!shouldUseManualAuthFlow()) {
@@ -301,7 +318,7 @@ export async function completeManualOAuthCallback(): Promise<boolean> {
 
 export async function initializeKeycloak(): Promise<boolean> {
   if (shouldUseManualAuthFlow()) {
-    return Boolean(localStorage.getItem('token'));
+    return Boolean(discardTokenIfIssuerMismatch(localStorage.getItem('token')));
   }
 
   const client = getKeycloakClient();
@@ -324,8 +341,7 @@ export async function loginWithKeycloak(redirectUri?: string): Promise<void> {
 }
 
 export async function logoutFromKeycloak(redirectUri?: string): Promise<void> {
-  localStorage.removeItem('token');
-  localStorage.removeItem('refresh_token');
+  clearStoredTokens();
   sessionStorage.removeItem(AUTH_STATE_KEY);
 
   const postLogout = redirectUri || `${window.location.origin}/login`;
