@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import {
   clearStoredTokens,
   completeManualOAuthCallback,
@@ -16,7 +17,11 @@ import { UserService } from '@/services/user.service';
 import { OrganizationService } from '@/services/organization.service';
 import { isSuperAdminToken } from '@/lib/jwt';
 
+const AUTH_ERROR_KEY = 'auth_error';
+const PUBLIC_AUTH_PAGES = new Set(['/login', '/register', '/forgot-password']);
+
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const setAuth = useAuthStore((s) => s.setAuth);
   const setProfile = useAuthStore((s) => s.setProfile);
   const clearAuth = useAuthStore((s) => s.clearAuth);
@@ -27,8 +32,19 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     let alive = true;
 
     const run = async () => {
+      const isOAuthCallback =
+        pathname === '/auth/callback' || Boolean(parseOAuthCallbackFromUrl());
+
+      // Never restore a stale browser session on sign-in pages — it races with Keycloak redirect.
+      if (PUBLIC_AUTH_PAGES.has(pathname) && !isOAuthCallback) {
+        clearStoredTokens();
+        clearAuth();
+        if (alive) setInitialized(true);
+        return;
+      }
+
       try {
-        if (parseOAuthCallbackFromUrl()) {
+        if (isOAuthCallback) {
           await completeManualOAuthCallback();
         }
 
@@ -47,7 +63,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           const kcProfile = profileFromAccessToken(token);
           const isSuperAdmin = isSuperAdminToken(token);
 
-          // Sign in immediately so /auth/callback → /workspaces works even if the API is down.
           setAuth({
             token,
             username: kcProfile?.username || null,
@@ -80,6 +95,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         }
       } catch (error) {
         console.error('Auth initialization failed:', error);
+        sessionStorage.setItem(
+          AUTH_ERROR_KEY,
+          error instanceof Error ? error.message : 'Sign-in failed',
+        );
         const recovered = await refreshTokenIfNeeded();
         if (recovered) {
           const kcProfile = profileFromAccessToken(recovered);
@@ -102,17 +121,19 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     return () => {
       alive = false;
     };
-  }, [setAuth, setProfile, clearAuth, setInitialized, setOrgId]);
+  }, [pathname, setAuth, setProfile, clearAuth, setInitialized, setOrgId]);
 
-  // Proactive refresh so idle tabs stay signed in
   useEffect(() => {
     const intervalMs = 60_000;
     const tick = () => {
+      if (PUBLIC_AUTH_PAGES.has(pathname)) return;
       void ensureValidAccessToken();
     };
     const id = window.setInterval(tick, intervalMs);
     return () => window.clearInterval(id);
-  }, []);
+  }, [pathname]);
 
   return <>{children}</>;
 }
+
+export { AUTH_ERROR_KEY };

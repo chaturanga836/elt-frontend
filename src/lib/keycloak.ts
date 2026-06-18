@@ -50,6 +50,13 @@ export function getManualCallbackRedirectUri(): string {
   return `${window.location.origin}/auth/callback`;
 }
 
+/** Start a fresh Keycloak login — clears any stale local session first. */
+export function beginKeycloakLogin(redirectUri?: string): void {
+  clearStoredTokens();
+  clearOAuthState();
+  loginWithoutPkce(redirectUri);
+}
+
 /** OAuth redirect without PKCE — works on http://IP:port (no Web Crypto). */
 export function loginWithoutPkce(redirectUri?: string): void {
   const redirect = redirectUri || getManualCallbackRedirectUri();
@@ -67,10 +74,11 @@ export function loginWithoutPkce(redirectUri?: string): void {
     scope: OIDC_SCOPES,
     state,
     response_mode: 'query',
+    prompt: 'login',
   });
 
   const url = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth?${params}`;
-  window.location.assign(url);
+  window.location.href = url;
 }
 
 export function getKeycloakForgotPasswordUrl(redirectUri?: string): string {
@@ -324,8 +332,7 @@ export async function initializeKeycloak(): Promise<boolean> {
 }
 
 export async function loginWithKeycloak(redirectUri?: string): Promise<void> {
-  const redirect = redirectUri || getManualCallbackRedirectUri();
-  loginWithoutPkce(redirect);
+  beginKeycloakLogin(redirectUri);
 }
 
 export async function logoutFromKeycloak(redirectUri?: string): Promise<void> {

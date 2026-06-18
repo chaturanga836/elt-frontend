@@ -11,6 +11,12 @@ import {
 let lastNotificationTime = 0;
 const NOTIFICATION_DEBOUNCE = 2000; // 2 seconds
 
+function isAuthFlowPage(): boolean {
+  if (typeof window === 'undefined') return false;
+  const path = window.location.pathname;
+  return path === '/login' || path === '/auth/callback' || path === '/register';
+}
+
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://144.24.127.112:8000/api/v1',
   headers: { 'Content-Type': 'application/json' },
@@ -58,7 +64,10 @@ api.interceptors.response.use(
     }
 
     // 2. Global Notification Logic (Debounced)
-    // Only show one notification every 2 seconds to avoid "error spam"
+    if (isAuthFlowPage()) {
+      return Promise.reject(error);
+    }
+
     if (now - lastNotificationTime > NOTIFICATION_DEBOUNCE) {
       let message = 'Request Failed';
       let description = 'An unexpected error occurred.';
