@@ -1,14 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { Alert, Button, Divider, Typography } from 'antd';
+import { Button, Divider, Typography } from 'antd';
 import { LoginOutlined, LockOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import AuthShell from '@/components/auth/AuthShell';
 import LoginMarketingPanel from '@/components/marketing/LoginMarketingPanel';
-import { AUTH_ERROR_KEY } from '@/components/auth/AuthProvider';
-import { beginKeycloakLogin } from '@/lib/keycloak';
+import { loginWithKeycloak } from '@/lib/keycloak';
 import { useAuthStore } from '@/store/useAuthStore';
 import styles from './login.module.css';
 
@@ -16,29 +15,15 @@ const { Paragraph } = Typography;
 
 export default function LoginPage() {
   const router = useRouter();
-  const initialized = useAuthStore((s) => s.initialized);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem(AUTH_ERROR_KEY);
-    if (stored) {
-      setAuthError(stored);
-      sessionStorage.removeItem(AUTH_ERROR_KEY);
-    }
+    if (isAuthenticated) router.replace('/workspaces');
+  }, [isAuthenticated, router]);
 
-    const params = new URLSearchParams(window.location.search);
-    const oauthError = params.get('error_description') || params.get('error');
-    if (oauthError) {
-      setAuthError(oauthError);
-      window.history.replaceState({}, '', '/login');
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!initialized || !isAuthenticated) return;
-    router.replace('/workspaces');
-  }, [initialized, isAuthenticated, router]);
+  const handleLogin = () => {
+    void loginWithKeycloak(`${window.location.origin}/auth/callback`);
+  };
 
   return (
     <AuthShell
@@ -57,25 +42,12 @@ export default function LoginPage() {
         </div>
       }
     >
-      {authError ? (
-        <Alert
-          type="error"
-          message="Sign-in failed"
-          description={authError}
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-      ) : null}
-
       <Button
         type="primary"
         size="large"
         block
         icon={<LoginOutlined />}
-        onClick={() => {
-          setAuthError(null);
-          beginKeycloakLogin();
-        }}
+        onClick={handleLogin}
         style={{ height: 48, fontSize: 15 }}
       >
         Continue with Keycloak
