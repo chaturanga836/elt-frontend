@@ -1,11 +1,12 @@
 'use client';
 
-import Keycloak, { KeycloakInstance, KeycloakInitOptions, KeycloakProfile } from 'keycloak-js';
+import Keycloak, { type KeycloakInitOptions, type KeycloakProfile } from 'keycloak-js';
 import { isAccessTokenExpiringSoon } from '@/lib/jwt';
 
 const KEYCLOAK_URL = (process.env.NEXT_PUBLIC_KC_URL || 'http://localhost:8081').replace(/\/$/, '');
 const KEYCLOAK_REALM = process.env.NEXT_PUBLIC_KC_REALM || 'workspace-realm';
 const KEYCLOAK_CLIENT_ID = process.env.NEXT_PUBLIC_KC_CLIENT_ID || 'workspace-web';
+const OIDC_SCOPES = 'openid profile email';
 
 const AUTH_STATE_KEY = 'kc_manual_auth_state';
 
@@ -14,7 +15,7 @@ type ManualAuthState = {
   redirectUri: string;
 };
 
-let keycloak: KeycloakInstance | null = null;
+let keycloak: Keycloak | null = null;
 
 /** Web Crypto subtle is only available in secure contexts (HTTPS or localhost). */
 export function isSecureAuthContext(): boolean {
@@ -56,7 +57,7 @@ function getInitOptions(onLoad: KeycloakInitOptions['onLoad'] = 'check-sso'): Ke
   };
 }
 
-export function getKeycloakClient(): KeycloakInstance {
+export function getKeycloakClient(): Keycloak {
   if (!keycloak) {
     keycloak = new Keycloak({
       url: KEYCLOAK_URL,
@@ -86,7 +87,7 @@ export function loginWithoutPkce(redirectUri?: string): void {
     client_id: KEYCLOAK_CLIENT_ID,
     redirect_uri: redirect,
     response_type: 'code',
-    scope: 'openid',
+    scope: OIDC_SCOPES,
     state,
     response_mode: 'query',
   });
@@ -101,7 +102,7 @@ export function getKeycloakForgotPasswordUrl(redirectUri?: string): string {
     client_id: KEYCLOAK_CLIENT_ID,
     redirect_uri: redirect,
     response_type: 'code',
-    scope: 'openid',
+    scope: OIDC_SCOPES,
     kc_action: 'RESET_CREDENTIALS',
   });
   return `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth?${params}`;
@@ -319,7 +320,7 @@ export async function loginWithKeycloak(redirectUri?: string): Promise<void> {
   if (!client.didInitialize) {
     await client.init(getInitOptions('check-sso'));
   }
-  await client.login({ redirectUri: redirect });
+  await client.login({ redirectUri: redirect, scope: OIDC_SCOPES });
 }
 
 export async function logoutFromKeycloak(redirectUri?: string): Promise<void> {
@@ -344,28 +345,35 @@ export async function logoutFromKeycloak(redirectUri?: string): Promise<void> {
   await client.logout({ redirectUri: postLogout });
 }
 
+async function fetchUserInfo(token: string): Promise<KeycloakProfile | null> {
+  const res = await fetch(
+    `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/userinfo`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!res.ok) return null;
+  const info = await res.json();
+  return {
+    id: info.sub,
+    username: info.preferred_username,
+    email: info.email,
+    firstName: info.given_name,
+    lastName: info.family_name,
+  } as KeycloakProfile;
+}
+
+/** Load profile via OIDC userinfo — avoids Keycloak /account API (often 401 behind reverse proxies). */
 export async function loadUserProfile(): Promise<KeycloakProfile | null> {
   if (shouldUseManualAuthFlow()) {
     const token = await ensureValidAccessToken();
     if (!token) return null;
-    const res = await fetch(
-      `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/userinfo`,
-      { headers: { Authorization: `Bearer ${token}` } },
-    );
-    if (!res.ok) return null;
-    const info = await res.json();
-    return {
-      id: info.sub,
-      username: info.preferred_username,
-      email: info.email,
-      firstName: info.given_name,
-      lastName: info.family_name,
-    } as KeycloakProfile;
+    return fetchUserInfo(token);
   }
 
   const client = getKeycloakClient();
-  if (!client.authenticated) return null;
-  return client.loadUserProfile();
+  const token =
+    (client.authenticated ? client.token : null) || localStorage.getItem('token');
+  if (!token) return null;
+  return fetchUserInfo(token);
 }
 
 export async function refreshTokenIfNeeded(): Promise<string | null> {
