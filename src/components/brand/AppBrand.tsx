@@ -1,12 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import { Typography } from 'antd';
+import DtOrchLogo from '@/components/brand/DtOrchLogo';
 import {
-  BRAND_LOGO_ALT,
-  BRAND_LOGO_ASPECT,
   BRAND_LOGO_INCLUDES_WORDMARK,
-  BRAND_LOGO_SRC,
   BRAND_NAME,
   BRAND_TAGLINE,
 } from '@/constants/brand';
@@ -25,54 +22,6 @@ type AppBrandProps = {
   showTagline?: boolean;
 };
 
-function LogoPlaceholder({ size }: { size: number }) {
-  return (
-    <div
-      aria-hidden
-      style={{
-        width: size,
-        height: size,
-        borderRadius: 8,
-        border: '1px dashed rgba(255,255,255,0.35)',
-        background: 'rgba(255,255,255,0.08)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-        color: 'rgba(255,255,255,0.55)',
-        fontSize: Math.max(9, size * 0.22),
-        fontWeight: 600,
-      }}
-    >
-      LOGO
-    </div>
-  );
-}
-
-function LogoPlaceholderLight({ size }: { size: number }) {
-  return (
-    <div
-      aria-hidden
-      style={{
-        width: size,
-        height: size,
-        borderRadius: 10,
-        border: '1px dashed #d9d9d9',
-        background: '#fafafa',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-        color: '#8c8c8c',
-        fontSize: Math.max(9, size * 0.22),
-        fontWeight: 600,
-      }}
-    >
-      LOGO
-    </div>
-  );
-}
-
 type BrandLogoProps = {
   height: number;
   /** Show only the left (icon) portion — for collapsed sidebar. */
@@ -81,43 +30,12 @@ type BrandLogoProps = {
 };
 
 function BrandLogo({ height, iconOnly = false, light }: BrandLogoProps) {
-  if (!BRAND_LOGO_SRC) {
-    return light ? <LogoPlaceholderLight size={height} /> : <LogoPlaceholder size={height} />;
-  }
-
-  const width = Math.round(height * BRAND_LOGO_ASPECT);
-
-  if (iconOnly) {
-    return (
-      <div
-        style={{
-          width: height,
-          height,
-          overflow: 'hidden',
-          flexShrink: 0,
-          borderRadius: 6,
-        }}
-      >
-        <Image
-          src={BRAND_LOGO_SRC}
-          alt={BRAND_LOGO_ALT}
-          width={width}
-          height={height}
-          style={{ objectFit: 'contain', objectPosition: 'left center' }}
-          priority={light}
-        />
-      </div>
-    );
-  }
-
   return (
-    <Image
-      src={BRAND_LOGO_SRC}
-      alt={BRAND_LOGO_ALT}
-      width={width}
+    <DtOrchLogo
       height={height}
-      style={{ objectFit: 'contain', objectPosition: 'left center', maxWidth: '100%' }}
-      priority={light}
+      iconOnly={iconOnly}
+      light={light}
+      className="brand-logo"
     />
   );
 }

@@ -14,8 +14,8 @@ export const metadata: Metadata = {
   title: BRAND_NAME,
   description: BRAND_TAGLINE,
   icons: {
-    icon: '/brand/dt-orch-logo.png',
-    apple: '/brand/dt-orch-logo.png',
+    icon: '/brand/dt-orch-icon.svg',
+    apple: '/brand/dt-orch-icon.svg',
   },
 };
 
