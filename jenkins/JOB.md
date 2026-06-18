@@ -90,6 +90,17 @@ When a domain is added, repeat the same steps with `https://your-domain/...`.
 
 API (`8000`) and Keycloak (`8081`) can remain on the host; nginx reaches them via `host.docker.internal`.
 
+**Host nginx:** If `http://${DEPLOY_HOST}/` shows the default *Welcome to nginx!* page, the EC2 instance has **system nginx** bound to port 80 — not `elt-frontend-proxy`. Stop it once on the server, then redeploy:
+
+```bash
+sudo systemctl stop nginx
+sudo systemctl disable nginx
+docker rm -f elt-frontend-proxy 2>/dev/null || true
+# re-run Jenkins deploy, or: bash deploy.sh
+```
+
+After a successful deploy, `http://${DEPLOY_HOST}/` should **redirect to HTTPS** (not show the nginx welcome page). Use `https://${DEPLOY_HOST}/` for the app (accept the self-signed cert warning until Let's Encrypt is configured).
+
 ## Image tags
 
 Compose builds `etl-frontend-image:${BUILD_NUMBER}`. Cleanup runs via [`jenkins/docker-prune.sh`](docker-prune.sh):

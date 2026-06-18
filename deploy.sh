@@ -38,9 +38,13 @@ export DOCKER_BUILDKIT="${DOCKER_BUILDKIT:-0}"
 
 bash scripts/generate-self-signed-cert.sh
 
-docker rm -f etl-frontend-container elt-frontend-proxy 2>/dev/null || true
+# shellcheck source=jenkins/free-edge-ports.sh
+source "${REPO_ROOT}/jenkins/free-edge-ports.sh"
 
 compose down --remove-orphans 2>/dev/null || compose down 2>/dev/null || true
+docker rm -f etl-frontend-container etl-frontend elt-frontend-proxy 2>/dev/null || true
+release_edge_ports
+
 compose up -d --build --force-recreate
 
 curl -kfs "https://${DEPLOY_HOST:-127.0.0.1}/" >/dev/null

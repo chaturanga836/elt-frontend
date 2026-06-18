@@ -78,6 +78,9 @@ fi
 
 export DOCKER_BUILDKIT="${DOCKER_BUILDKIT:-0}"
 
+# shellcheck source=jenkins/free-edge-ports.sh
+source "${ROOT}/jenkins/free-edge-ports.sh"
+
 echo "=== Ensuring TLS certificates in deploy volume ==="
 docker run --rm \
   -v "${VOL_PATH}:${VOL_PATH}" \
@@ -85,11 +88,13 @@ docker run --rm \
   -e "DEPLOY_HOST=${DEPLOY_HOST:-13.200.160.10}" \
   alpine sh -ec 'apk add --no-cache openssl bash >/dev/null && bash scripts/generate-self-signed-cert.sh'
 
+echo "=== Stopping previous compose stack ==="
+compose_in_volume down --remove-orphans 2>/dev/null || compose_in_volume down 2>/dev/null || true
+
 echo "=== Removing legacy containers ==="
 docker rm -f etl-frontend-container etl-frontend elt-frontend-proxy 2>/dev/null || true
 
-echo "=== Stopping previous compose stack ==="
-compose_in_volume down --remove-orphans 2>/dev/null || compose_in_volume down 2>/dev/null || true
+release_edge_ports
 
 echo "=== Building and starting frontend (compose) ==="
 compose_in_volume up -d --build --force-recreate
