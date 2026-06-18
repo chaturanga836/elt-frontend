@@ -3,7 +3,6 @@ import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { notification } from '@/lib/antd/static'; // Using the bridge we set up
 import { formatErrorDetail, getApiErrorMessage } from '@/lib/formatApiError';
 import {
-  clearStoredTokens,
   refreshManualAccessToken,
   resolveAccessToken,
 } from '@/lib/keycloak';
@@ -55,7 +54,6 @@ api.interceptors.response.use(
         }
       }
 
-      clearStoredTokens();
       return Promise.reject(error);
     }
 

@@ -7,7 +7,6 @@ const KEYCLOAK_URL = (process.env.NEXT_PUBLIC_KC_URL || 'http://localhost:8081')
 const KEYCLOAK_REALM = process.env.NEXT_PUBLIC_KC_REALM || 'workspace-realm';
 const KEYCLOAK_CLIENT_ID = process.env.NEXT_PUBLIC_KC_CLIENT_ID || 'workspace-web';
 const OIDC_SCOPES = 'openid profile email';
-const EXPECTED_TOKEN_ISSUER = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}`;
 const TOKEN_ISSUED_AT_KEY = 'token_issued_at';
 const REFRESH_GRACE_MS = 60_000;
 
@@ -17,6 +16,25 @@ type ManualAuthState = {
   state: string;
   redirectUri: string;
 };
+
+function keycloakHostname(): string {
+  try {
+    return new URL(KEYCLOAK_URL).hostname.toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+/** Accept same realm on the same host (http/https or port differences behind a proxy). */
+function isAcceptedTokenIssuer(iss: string): boolean {
+  const realmSuffix = `/realms/${KEYCLOAK_REALM}`;
+  if (!iss.endsWith(realmSuffix)) return false;
+  try {
+    return new URL(iss).hostname.toLowerCase() === keycloakHostname();
+  } catch {
+    return iss === `${KEYCLOAK_URL}${realmSuffix}`;
+  }
+}
 
 function randomString(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -38,7 +56,9 @@ export function loginWithoutPkce(redirectUri?: string): void {
   const state = randomString();
 
   const stored: ManualAuthState = { state, redirectUri: redirect };
-  sessionStorage.setItem(AUTH_STATE_KEY, JSON.stringify(stored));
+  const serialized = JSON.stringify(stored);
+  sessionStorage.setItem(AUTH_STATE_KEY, serialized);
+  localStorage.setItem(AUTH_STATE_KEY, serialized);
 
   const params = new URLSearchParams({
     client_id: KEYCLOAK_CLIENT_ID,
@@ -131,15 +151,24 @@ export function clearStoredTokens(): void {
   localStorage.removeItem(TOKEN_ISSUED_AT_KEY);
 }
 
-/** Drop tokens issued for a different Keycloak URL (e.g. after HTTP → HTTPS migration). */
+/** Drop tokens issued for a different Keycloak realm/host. */
 function discardTokenIfIssuerMismatch(token: string | null): string | null {
   if (!token) return null;
   const iss = parseJwtPayload(token)?.iss;
-  if (iss && iss !== EXPECTED_TOKEN_ISSUER) {
+  if (iss && !isAcceptedTokenIssuer(iss)) {
     clearStoredTokens();
     return null;
   }
   return token;
+}
+
+function readOAuthState(): string | null {
+  return sessionStorage.getItem(AUTH_STATE_KEY) || localStorage.getItem(AUTH_STATE_KEY);
+}
+
+function clearOAuthState(): void {
+  sessionStorage.removeItem(AUTH_STATE_KEY);
+  localStorage.removeItem(AUTH_STATE_KEY);
 }
 
 function markTokenIssuedNow(): void {
@@ -235,7 +264,12 @@ export async function ensureValidAccessToken(): Promise<string | null> {
 
 function finishOAuthCallbackUrl(): void {
   window.history.replaceState({}, '', '/auth/callback');
-  sessionStorage.removeItem(AUTH_STATE_KEY);
+  clearOAuthState();
+}
+
+function hasValidStoredAccessToken(): boolean {
+  const token = discardTokenIfIssuerMismatch(localStorage.getItem('token'));
+  return Boolean(token && !isAccessTokenExpiringSoon(token, 0));
 }
 
 /** Complete manual OAuth callback; returns true if this page was a callback. */
@@ -249,13 +283,12 @@ export async function completeManualOAuthCallback(): Promise<boolean> {
       const parsed = parseOAuthCallbackFromUrl();
       if (!parsed) return false;
 
-      // A concurrent init may have already exchanged the authorization code.
-      if (localStorage.getItem('token')) {
+      if (hasValidStoredAccessToken()) {
         finishOAuthCallbackUrl();
         return true;
       }
 
-      const raw = sessionStorage.getItem(AUTH_STATE_KEY);
+      const raw = readOAuthState();
       if (!raw) {
         throw new Error('Missing login state. Start sign-in again from /login.');
       }
@@ -265,10 +298,19 @@ export async function completeManualOAuthCallback(): Promise<boolean> {
         throw new Error('Invalid OAuth state.');
       }
 
-      const tokens = await exchangeCodeForTokens(parsed.code, expected.redirectUri);
-      finishOAuthCallbackUrl();
-      persistTokens(tokens);
-      return true;
+      try {
+        const tokens = await exchangeCodeForTokens(parsed.code, expected.redirectUri);
+        finishOAuthCallbackUrl();
+        persistTokens(tokens);
+        return true;
+      } catch (error) {
+        // React Strict Mode or a duplicate callback may have already exchanged this code.
+        if (hasValidStoredAccessToken()) {
+          finishOAuthCallbackUrl();
+          return true;
+        }
+        throw error;
+      }
     } finally {
       oauthCallbackInFlight = null;
     }
@@ -288,7 +330,7 @@ export async function loginWithKeycloak(redirectUri?: string): Promise<void> {
 
 export async function logoutFromKeycloak(redirectUri?: string): Promise<void> {
   clearStoredTokens();
-  sessionStorage.removeItem(AUTH_STATE_KEY);
+  clearOAuthState();
 
   const postLogout = redirectUri || `${window.location.origin}/login`;
   const params = new URLSearchParams({

@@ -18,6 +18,7 @@ import { isSuperAdminToken } from '@/lib/jwt';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const setAuth = useAuthStore((s) => s.setAuth);
+  const setProfile = useAuthStore((s) => s.setProfile);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const setInitialized = useAuthStore((s) => s.setInitialized);
   const setOrgId = useWorkspaceStore((s) => s.setOrgId);
@@ -44,20 +45,29 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
         if (token) {
           const kcProfile = profileFromAccessToken(token);
-          let isSuperAdmin = isSuperAdminToken(token);
-          let realmRoles: string[] = [];
-          let workspaceIds: number[] = [];
+          const isSuperAdmin = isSuperAdminToken(token);
+
+          // Sign in immediately so /auth/callback → /workspaces works even if the API is down.
+          setAuth({
+            token,
+            username: kcProfile?.username || null,
+            email: kcProfile?.email || null,
+            isSuperAdmin,
+            realmRoles: [],
+            workspaceIds: [],
+          });
+
           try {
             const me = await UserService.getMe();
-            isSuperAdmin = me.is_super_admin;
-            realmRoles = me.realm_roles;
-            workspaceIds = me.workspace_ids;
+            setProfile({
+              isSuperAdmin: me.is_super_admin,
+              realmRoles: me.realm_roles,
+              workspaceIds: me.workspace_ids,
+              username: me.username,
+              email: me.email,
+            });
           } catch {
-            if (!localStorage.getItem('token')) {
-              clearAuth();
-              return;
-            }
-            /* API profile optional if backend unreachable */
+            /* Backend profile is optional during sign-in */
           }
           try {
             const org = await OrganizationService.getDefault();
@@ -65,21 +75,24 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           } catch {
             /* Default org optional if backend unreachable */
           }
-          setAuth({
-            token,
-            username: kcProfile?.username || null,
-            email: kcProfile?.email || null,
-            isSuperAdmin,
-            realmRoles,
-            workspaceIds,
-          });
         } else {
           clearAuth();
         }
       } catch (error) {
         console.error('Auth initialization failed:', error);
-        clearStoredTokens();
-        clearAuth();
+        const recovered = await refreshTokenIfNeeded();
+        if (recovered) {
+          const kcProfile = profileFromAccessToken(recovered);
+          setAuth({
+            token: recovered,
+            username: kcProfile?.username || null,
+            email: kcProfile?.email || null,
+            isSuperAdmin: isSuperAdminToken(recovered),
+          });
+        } else {
+          clearStoredTokens();
+          clearAuth();
+        }
       } finally {
         if (alive) setInitialized(true);
       }
@@ -89,7 +102,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     return () => {
       alive = false;
     };
-  }, [setAuth, clearAuth, setInitialized, setOrgId]);
+  }, [setAuth, setProfile, clearAuth, setInitialized, setOrgId]);
 
   // Proactive refresh so idle tabs stay signed in
   useEffect(() => {
