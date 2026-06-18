@@ -6,7 +6,7 @@ import { UserAddOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AuthShell from '@/components/auth/AuthShell';
-import { loadUserProfile } from '@/lib/keycloak';
+import { profileFromAccessToken, storeAuthTokens } from '@/lib/keycloak';
 import { isSuperAdminToken } from '@/lib/jwt';
 import { AuthService } from '@/services/auth.service';
 import { OrganizationService } from '@/services/organization.service';
@@ -53,12 +53,9 @@ export default function RegisterPage() {
         return;
       }
 
-      localStorage.setItem('token', result.access_token);
-      if (result.refresh_token) {
-        localStorage.setItem('refresh_token', result.refresh_token);
-      }
+      storeAuthTokens(result.access_token, result.refresh_token ?? undefined);
 
-      const kcProfile = await loadUserProfile();
+      const kcProfile = profileFromAccessToken(result.access_token);
       let isSuperAdmin = isSuperAdminToken(result.access_token);
       let realmRoles: string[] = [];
       let workspaceIds: number[] = [];

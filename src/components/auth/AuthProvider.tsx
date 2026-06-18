@@ -2,13 +2,13 @@
 
 import { useEffect } from 'react';
 import {
+  clearStoredTokens,
   completeManualOAuthCallback,
   ensureValidAccessToken,
   initializeKeycloak,
-  loadUserProfile,
   parseOAuthCallbackFromUrl,
+  profileFromAccessToken,
   refreshTokenIfNeeded,
-  shouldUseManualAuthFlow,
 } from '@/lib/keycloak';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
@@ -27,25 +27,23 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     const run = async () => {
       try {
-        if (shouldUseManualAuthFlow() && parseOAuthCallbackFromUrl()) {
+        if (parseOAuthCallbackFromUrl()) {
           await completeManualOAuthCallback();
         }
 
         const authenticated = await initializeKeycloak();
         if (!alive) return;
 
-        const token = (await refreshTokenIfNeeded()) || localStorage.getItem('token');
+        const token = await refreshTokenIfNeeded();
 
         if (!authenticated && !token) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('refresh_token');
+          clearStoredTokens();
           clearAuth();
           return;
         }
 
         if (token) {
-          localStorage.setItem('token', token);
-          const kcProfile = await loadUserProfile();
+          const kcProfile = profileFromAccessToken(token);
           let isSuperAdmin = isSuperAdminToken(token);
           let realmRoles: string[] = [];
           let workspaceIds: number[] = [];
@@ -80,14 +78,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         }
       } catch (error) {
         console.error('Auth initialization failed:', error);
-        const token = localStorage.getItem('token');
-        if (token) {
-          // OAuth callback may have succeeded before a duplicate init run failed.
-          setAuth({ token });
-        } else {
-          localStorage.removeItem('refresh_token');
-          clearAuth();
-        }
+        clearStoredTokens();
+        clearAuth();
       } finally {
         if (alive) setInitialized(true);
       }
@@ -99,9 +91,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     };
   }, [setAuth, clearAuth, setInitialized, setOrgId]);
 
-  // Proactive refresh on HTTP/manual Keycloak so idle tabs stay signed in
+  // Proactive refresh so idle tabs stay signed in
   useEffect(() => {
-    if (!shouldUseManualAuthFlow()) return;
     const intervalMs = 60_000;
     const tick = () => {
       void ensureValidAccessToken();

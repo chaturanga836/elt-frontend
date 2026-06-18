@@ -3,10 +3,9 @@ import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { notification } from '@/lib/antd/static'; // Using the bridge we set up
 import { formatErrorDetail, getApiErrorMessage } from '@/lib/formatApiError';
 import {
+  clearStoredTokens,
   refreshManualAccessToken,
-  refreshTokenIfNeeded,
   resolveAccessToken,
-  shouldUseManualAuthFlow,
 } from '@/lib/keycloak';
 
 // Helper to prevent duplicate notifications in a short window
@@ -48,9 +47,7 @@ api.interceptors.response.use(
     if (status === 401) {
       const config = error.config as typeof error.config & { _retriedAfterRefresh?: boolean };
       if (config && !config._retriedAfterRefresh) {
-        const newToken = shouldUseManualAuthFlow()
-          ? await refreshManualAccessToken()
-          : await refreshTokenIfNeeded();
+        const newToken = await refreshManualAccessToken();
         if (newToken) {
           config._retriedAfterRefresh = true;
           setAuthorizationHeader(config, newToken);
@@ -58,7 +55,7 @@ api.interceptors.response.use(
         }
       }
 
-      // Let the calling page handle the error — do not clear session or redirect.
+      clearStoredTokens();
       return Promise.reject(error);
     }
 

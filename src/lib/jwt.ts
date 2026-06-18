@@ -3,7 +3,10 @@ export type JwtPayload = {
   sub?: string;
   email?: string;
   preferred_username?: string;
+  given_name?: string;
+  family_name?: string;
   exp?: number;
+  iat?: number;
   realm_access?: { roles?: string[] };
   groups?: string[];
   workspace_groups?: string[];
