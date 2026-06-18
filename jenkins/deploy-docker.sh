@@ -16,6 +16,14 @@ cleanup_vol() {
   docker volume rm -f "$VOL" >/dev/null 2>&1 || true
 }
 
+# Compose bind mounts must use paths the *host* daemon can read. Mounting the
+# deploy volume at /app inside the CLI container makes compose pass /app/nginx/...
+# to the daemon, which does not exist on the host (Docker may create directories
+# there and break the next deploy). Use the volume's host mountpoint instead.
+vol_host_path() {
+  docker volume inspect -f '{{ .Mountpoint }}' "$VOL"
+}
+
 compose_in_volume() {
   local -a env_args=(-e "COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME}")
   for key in DOCKER_BUILDKIT NEXT_PUBLIC_BUILD_ID NEXT_PUBLIC_API_URL \
@@ -27,15 +35,24 @@ compose_in_volume() {
 
   docker run --rm \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v "${VOL}:/app" \
-    -w /app \
+    -v "${VOL_PATH}:${VOL_PATH}" \
+    -w "${VOL_PATH}" \
     "${env_args[@]}" \
     "$COMPOSE_CLI_IMAGE" \
     sh -ec 'apk add --no-cache docker-cli-compose >/dev/null && exec docker compose "$@"' sh "$@"
 }
 
+echo "=== Cleaning stale host bind-mount paths (Jenkins-in-Docker) ==="
+for stale in /app/nginx/default.conf /app/nginx/ssl.conf; do
+  if [ -d "$stale" ]; then
+    echo "Removing erroneous directory ${stale}"
+    rm -rf "$stale"
+  fi
+done
+
 echo "=== Creating deploy volume ${VOL} ==="
 docker volume create "$VOL" >/dev/null
+VOL_PATH="$(vol_host_path)"
 trap cleanup_vol EXIT
 
 echo "=== Copying workspace into volume ==="
@@ -63,8 +80,8 @@ export DOCKER_BUILDKIT="${DOCKER_BUILDKIT:-0}"
 
 echo "=== Ensuring TLS certificates in deploy volume ==="
 docker run --rm \
-  -v "${VOL}:/app" \
-  -w /app \
+  -v "${VOL_PATH}:${VOL_PATH}" \
+  -w "${VOL_PATH}" \
   -e "DEPLOY_HOST=${DEPLOY_HOST:-13.200.160.10}" \
   alpine sh -ec 'apk add --no-cache openssl bash >/dev/null && bash scripts/generate-self-signed-cert.sh'
 
