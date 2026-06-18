@@ -9,10 +9,7 @@ export const BRAND_TAGLINE =
 export const BRAND_LOGO_SRC = '/brand/dt-orch-logo.svg';
 export const BRAND_ICON_SRC = '/brand/dt-orch-icon.svg';
 
-/** Pitch / marketing cover (1080×450). */
-export const BRAND_BANNER_SRC = '/brand/dt-orch-pitch-banner.png';
-
-/** Logo image already includes the DT-Orch wordmark; hide duplicate text beside it. */
+/** Logo image already includes the wordmark; hide duplicate text beside it. */
 export const BRAND_LOGO_INCLUDES_WORDMARK = true;
 
 export const BRAND_LOGO_ALT = `${BRAND_NAME} logo`;

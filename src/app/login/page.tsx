@@ -1,14 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Button, Divider, Typography } from 'antd';
 import { LoginOutlined, LockOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import AuthShell from '@/components/auth/AuthShell';
 import LoginMarketingPanel from '@/components/marketing/LoginMarketingPanel';
-import { BRAND_BANNER_SRC, BRAND_NAME } from '@/constants/brand';
 import { loginWithKeycloak } from '@/lib/keycloak';
 import { useAuthStore } from '@/store/useAuthStore';
 import styles from './login.module.css';
@@ -29,25 +27,10 @@ export default function LoginPage() {
 
   return (
     <AuthShell
+      layout="split"
       title="Welcome back"
       subtitle="Sign in to manage workspaces, pipelines, and connections."
-      marketing={
-        <>
-          <div className={styles.bannerWrap}>
-            <Image
-              src={BRAND_BANNER_SRC}
-              alt={`${BRAND_NAME} platform`}
-              fill
-              priority
-              sizes="(max-width: 960px) 100vw, 960px"
-              className={styles.bannerImg}
-            />
-            <div className={styles.bannerOverlay} />
-          </div>
-          <LoginMarketingPanel />
-        </>
-      }
-      footer={
+      marketing={<LoginMarketingPanel />}      footer={
         <div className={styles.authLinks}>
           <span>
             New here? <Link href="/register">Create account</Link>
