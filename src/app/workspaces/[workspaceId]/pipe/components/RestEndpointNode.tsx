@@ -271,7 +271,7 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
           <Alert
             type="info"
             showIcon
-            message="Select or create a connection to configure pipeline variables."
+            title="Select or create a connection to configure pipeline variables."
             style={{ marginTop: 16 }}
           />
         ) : detailLoading ? (

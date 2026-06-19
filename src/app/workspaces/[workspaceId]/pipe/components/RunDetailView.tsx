@@ -110,11 +110,11 @@ export default function RunDetailView({ runId }: RunDetailViewProps) {
     }
 
     if (error && !runDetail) {
-        return <Alert type="error" message={error} showIcon />;
+        return <Alert type="error" title={error} showIcon />;
     }
 
     if (!runDetail) {
-        return <Alert type="warning" message="Run not found." showIcon />;
+        return <Alert type="warning" title="Run not found." showIcon />;
     }
 
     const { run } = runDetail;
@@ -178,7 +178,7 @@ export default function RunDetailView({ runId }: RunDetailViewProps) {
             </Space>
         ),
         children: (
-            <Space direction="vertical" style={{ width: '100%' }} size="middle">
+            <Space orientation="vertical" style={{ width: '100%' }} size="middle">
                 <div>
                     <Text strong>Node UUID:</Text> <Text code>{log.node_uuid}</Text>
                 </div>
@@ -230,7 +230,7 @@ export default function RunDetailView({ runId }: RunDetailViewProps) {
     ];
 
     return (
-        <Space direction="vertical" style={{ width: '100%' }} size="large">
+        <Space orientation="vertical" style={{ width: '100%' }} size="large">
             <Space wrap>
                 {resumeAllowed ? (
                     <Popconfirm
@@ -265,7 +265,7 @@ export default function RunDetailView({ runId }: RunDetailViewProps) {
                 <Alert
                     type="info"
                     showIcon
-                    message="Run in progress"
+                    title="Run in progress"
                     description="This page refreshes automatically until the run finishes."
                 />
             ) : null}

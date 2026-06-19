@@ -89,7 +89,7 @@ export default function StorageBrowserPage() {
           notification.success({ message: 'Bucket selected (prototype)' });
         }}
       >
-        <Space direction="vertical" style={{ width: '100%' }}>
+        <Space orientation="vertical" style={{ width: '100%' }}>
           <Button block type={bucket === 'project-assets' ? 'primary' : 'default'} onClick={() => setBucket('project-assets')}>
             project-assets
           </Button>

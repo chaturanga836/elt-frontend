@@ -105,7 +105,7 @@ export default function CodeEdge({
             type="error"
             showIcon
             icon={<WarningOutlined />}
-            message={`${violations.length} unauthorized URL(s) detected`}
+            title={`${violations.length} unauthorized URL(s) detected`}
             description={
               <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12 }}>
                 {violations.map((v, i) => (

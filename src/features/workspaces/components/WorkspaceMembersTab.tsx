@@ -73,7 +73,7 @@ export default function WorkspaceMembersTab({ workspaceId }: Props) {
   };
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+    <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       <Form
         form={form}
         layout="inline"

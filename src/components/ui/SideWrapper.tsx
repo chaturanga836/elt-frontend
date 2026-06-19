@@ -258,7 +258,7 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
               Out
             </Button>
           ) : (
-            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+            <Space orientation="vertical" size={8} style={{ width: '100%' }}>
               <Space>
                 <Avatar size="small">{(username || email || 'U').slice(0, 1).toUpperCase()}</Avatar>
                 <div style={{ lineHeight: 1.2 }}>

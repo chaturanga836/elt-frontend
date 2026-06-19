@@ -37,6 +37,14 @@ const theme: ThemeConfig = {
       darkItemBg: palette.bgMuted,
       darkSubMenuItemBg: palette.bgBase,
     },
+    Tree: {
+      nodeHoverBg: 'rgba(255, 255, 255, 0.06)',
+      nodeHoverColor: palette.text,
+      nodeSelectedBg: 'rgba(255, 107, 0, 0.2)',
+      nodeSelectedColor: palette.text,
+      directoryNodeSelectedBg: 'rgba(255, 107, 0, 0.2)',
+      directoryNodeSelectedColor: palette.text,
+    },
   },
 };
 

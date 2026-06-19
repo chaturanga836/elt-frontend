@@ -107,7 +107,7 @@ export default function RunReportPanel({ runId, pipelineUuid }: Props) {
   return (
     <>
       <Card size="small" title="Export report">
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+        <Space orientation="vertical" style={{ width: '100%' }} size="middle">
           <Select
             style={{ width: '100%', maxWidth: 400 }}
             placeholder="Select report template"

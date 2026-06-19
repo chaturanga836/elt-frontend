@@ -68,7 +68,7 @@ export default function QueuePage() {
         onClose={() => setPeekOpen(false)}
         width={480}
       >
-        <Space direction="vertical" style={{ width: '100%' }}>
+        <Space orientation="vertical" style={{ width: '100%' }}>
           {MOCK_MESSAGES.map((m) => (
             <Card key={m.id} size="small">
               <Text code>{m.id}</Text>

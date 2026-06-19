@@ -290,7 +290,7 @@ export default function WorkspaceDatabaseExplorer({
 
     if (selectedTable) {
       return (
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="large" style={{ width: '100%' }}>
           <Flex justify="space-between" align="start">
             <div>
               <Title level={4} style={{ marginBottom: 4 }}>
@@ -314,7 +314,7 @@ export default function WorkspaceDatabaseExplorer({
                 key: 'properties',
                 label: 'Properties',
                 children: (
-                  <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                  <Space orientation="vertical" size="large" style={{ width: '100%' }}>
                     <Table
                       size="small"
                       pagination={false}

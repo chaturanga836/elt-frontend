@@ -60,7 +60,7 @@ export default function LoginPage() {
       {authError ? (
         <Alert
           type="error"
-          message="Sign-in failed"
+          title="Sign-in failed"
           description={authError}
           showIcon
           style={{ marginBottom: 16 }}

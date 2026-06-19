@@ -186,7 +186,7 @@ export default function WorkflowDebugDrawer({ open, workflowUuid, onClose }: Pro
       styles={{ body: { padding: '12px 20px', overflow: 'auto' } }}
     >
       {!workflowUuid ? (
-        <Alert type="warning" showIcon message="Save the workflow before debugging." />
+        <Alert type="warning" showIcon title="Save the workflow before debugging." />
       ) : (
         <>
           <Space wrap style={{ marginBottom: 12 }}>
@@ -214,7 +214,7 @@ export default function WorkflowDebugDrawer({ open, workflowUuid, onClose }: Pro
           </Space>
 
           {error ? (
-            <Alert type="error" showIcon message={error} style={{ marginBottom: 12 }} />
+            <Alert type="error" showIcon title={error} style={{ marginBottom: 12 }} />
           ) : null}
 
           {loadingPlan ? <Spin size="small" /> : null}
@@ -249,7 +249,7 @@ export default function WorkflowDebugDrawer({ open, workflowUuid, onClose }: Pro
               type="info"
               showIcon
               style={{ marginBottom: 12 }}
-              message="Step through each parallel branch before running the join step."
+              title="Step through each parallel branch before running the join step."
             />
           ) : null}
 
@@ -267,7 +267,7 @@ export default function WorkflowDebugDrawer({ open, workflowUuid, onClose }: Pro
                 <Alert
                   type="error"
                   showIcon
-                  message="Step failed"
+                  title="Step failed"
                   description={
                     <pre style={{ margin: 0, fontSize: 11, whiteSpace: 'pre-wrap' }}>
                       {latestLog.error_traceback}

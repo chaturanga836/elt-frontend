@@ -58,7 +58,7 @@ export default function NewWorkspacePage() {
 
   return (
     <div className="p-8 max-w-xl">
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <Space orientation="vertical" size="large" style={{ width: '100%' }}>
         <Link href="/projects">
           <Button type="text" icon={<ArrowLeftOutlined />}>
             Back

@@ -362,7 +362,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
       {contextHolder}
       <div style={{ padding: '24px', height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Space direction="vertical" size={0}>
+          <Space orientation="vertical" size={0}>
             <Breadcrumb
               items={[
                 { title: <Link href={workspacePath(workspaceId, 'task')}>Tasks</Link> },
@@ -398,7 +398,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
             type="error"
             showIcon
             icon={<WarningOutlined />}
-            message={`${violations.length} unauthorized external URL(s) detected`}
+            title={`${violations.length} unauthorized external URL(s) detected`}
             description={
               <div>
                 <span>External links must be registered before use. </span>
@@ -421,7 +421,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
 
         <div style={{ display: 'flex', gap: '20px', flex: 1, minHeight: 0 }}>
           <Card style={{ width: '350px' }} title="Task Details">
-            <Space direction="vertical" style={{ width: '100%' }} size="large">
+            <Space orientation="vertical" style={{ width: '100%' }} size="large">
               <div>
                 <label style={{ fontWeight: 'bold', display: 'block', marginBottom: 8 }}>Task Name</label>
                 <Input
@@ -479,7 +479,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
         footer={null}
         width={720}
       >
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+        <Space orientation="vertical" style={{ width: '100%' }} size="middle">
           <Input
             placeholder="Search by name, type, or prototype"
             value={connectionSearch}
@@ -490,7 +490,7 @@ export default function TaskCanvas({ taskId }: { taskId?: number } = {}) {
             <Alert
               type="error"
               showIcon
-              message={connectionsError}
+              title={connectionsError}
               action={
                 <Button size="small" onClick={() => void loadConnections()} loading={connectionsLoading}>
                   Retry

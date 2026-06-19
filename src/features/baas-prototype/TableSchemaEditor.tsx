@@ -200,7 +200,7 @@ export default function TableSchemaEditor({
         </Card>
 
         <Card size="small" title="Columns" style={{ marginBottom: 16 }}>
-          <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <Space orientation="vertical" style={{ width: '100%' }} size="middle">
             <Row gutter={8} style={{ fontSize: 12, color: '#8c8c8c', padding: '0 4px' }}>
               <Col span={4}>Column</Col>
               <Col span={4}>Type</Col>
@@ -323,7 +323,7 @@ export default function TableSchemaEditor({
         </Card>
 
         <Card size="small" title="Indexes" style={{ marginBottom: 16 }}>
-          <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <Space orientation="vertical" style={{ width: '100%' }} size="middle">
             {state.indexes.map((idx) => (
               <IndexRow
                 key={idx.key}
@@ -355,7 +355,7 @@ export default function TableSchemaEditor({
         </Card>
 
         <Card size="small" title="Foreign keys" style={{ marginBottom: 16 }}>
-          <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <Space orientation="vertical" style={{ width: '100%' }} size="middle">
             {state.foreignKeys.map((fk) => (
               <ForeignKeyRow
                 key={fk.key}

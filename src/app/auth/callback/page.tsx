@@ -29,7 +29,7 @@ export default function AuthCallbackPage() {
   if (error) {
     return (
       <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 }}>
-        <Alert type="error" message="Sign-in failed" description={error} showIcon />
+        <Alert type="error" title="Sign-in failed" description={error} showIcon />
       </div>
     );
   }

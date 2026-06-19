@@ -89,11 +89,11 @@ export default function WorkspacePluginsTab({ workspaceId }: Props) {
   };
 
   if (error) {
-    return <Alert type="error" message={error} />;
+    return <Alert type="error" title={error} />;
   }
 
   return (
-    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+    <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
       <Paragraph type="secondary">
         Activate plugins to unlock scraping, AI templates, and related Task Canvas tools for
         this workspace.

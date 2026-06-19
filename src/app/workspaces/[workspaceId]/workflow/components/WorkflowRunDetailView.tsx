@@ -69,8 +69,8 @@ export default function WorkflowRunDetailView({ runId }: { runId: number }) {
   }, [runId, workspaceId]);
 
   if (loading) return <Spin tip="Loading workflow run…" />;
-  if (error) return <Alert type="error" message={error} showIcon />;
-  if (!detail) return <Alert type="warning" message="Run not found." showIcon />;
+  if (error) return <Alert type="error" title={error} showIcon />;
+  if (!detail) return <Alert type="warning" title="Run not found." showIcon />;
 
   const status = STATUS_MAP[detail.run.status] || STATUS_MAP[0];
 
@@ -97,7 +97,7 @@ export default function WorkflowRunDetailView({ runId }: { runId: number }) {
       {detail.run.error_summary ? (
         <Alert
           type="error"
-          message="Run failed"
+          title="Run failed"
           description={
             <Paragraph style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}>
               {detail.run.error_summary}

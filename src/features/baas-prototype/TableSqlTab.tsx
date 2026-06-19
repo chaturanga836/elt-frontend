@@ -28,7 +28,7 @@ export default function TableSqlTab({ sql, onSqlChange, sqlResult }: Props) {
     sqlResult?.rows.map((row, index) => ({ key: `sql-${index}`, ...row })) ?? [];
 
   return (
-    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+    <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
       <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden' }}>
         <Editor
           height="240px"

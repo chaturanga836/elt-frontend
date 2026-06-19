@@ -99,7 +99,7 @@ export default function BoundaryHookSettingsModal({
             <Title level={5} style={{ marginTop: 0, marginBottom: 8, fontSize: 13 }}>
               {variant === 'start' ? 'Setup task' : 'Teardown task'}
             </Title>
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space orientation="vertical" style={{ width: '100%' }}>
               <Button type="default" block onClick={() => setTaskPickerOpen(true)}>
                 {draftTask ? `Selected: ${draftTask.name}` : 'Choose task…'}
               </Button>

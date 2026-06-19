@@ -128,7 +128,7 @@ export default function ConnectionsTable() {
       dataIndex: 'source_type',
       key: 'source_type',
       render: (type: string, record: ConnectionRecord) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Tag color="geekblue">{SOURCE_LABELS[type] || type}</Tag>
           {record.prototype_id && (
             <Text type="secondary" style={{ fontSize: 11 }}>

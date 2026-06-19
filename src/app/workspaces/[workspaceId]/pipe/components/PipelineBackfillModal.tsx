@@ -78,7 +78,7 @@ export default function PipelineBackfillModal({
         type="info"
         showIcon
         style={{ marginBottom: 16 }}
-        message="One run per day"
+        title="One run per day"
         description={
           <>
             Each day gets its own pipeline run with{' '}
