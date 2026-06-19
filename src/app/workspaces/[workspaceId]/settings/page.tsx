@@ -10,6 +10,7 @@ import { WorkspaceItem, WorkspaceService } from '@/services/workspace.service';
 import WorkspaceGeneralTab from '@/features/workspaces/components/WorkspaceGeneralTab';
 import WorkspaceMembersTab from '@/features/workspaces/components/WorkspaceMembersTab';
 import WorkspacePluginsTab from '@/features/workspaces/components/WorkspacePluginsTab';
+import WorkspaceCredentialsTab from '@/features/workspaces/components/WorkspaceCredentialsTab';
 import WorkspaceAgentSettingsTab from '@/features/workspaces/components/WorkspaceAgentSettingsTab';
 import { workspacePath } from '@/lib/paths';
 
@@ -83,6 +84,11 @@ export default function WorkspaceSettingsPage() {
               key: 'members',
               label: 'Users & invitations',
               children: <WorkspaceMembersTab workspaceId={workspace.id} />,
+            },
+            {
+              key: 'credentials',
+              label: 'API credentials',
+              children: <WorkspaceCredentialsTab workspaceId={workspace.id} />,
             },
             {
               key: 'plugins',

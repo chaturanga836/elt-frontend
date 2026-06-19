@@ -29,6 +29,18 @@ export type StudioAccount = {
   project_ids: number[];
 };
 
+export type ProjectCredentialsCreated = {
+  client_key: string;
+  client_secret: string;
+};
+
+export type ProjectCredentialsMeta = {
+  client_key: string;
+  secret_prefix: string;
+  created_at?: string | null;
+  rotated_at?: string | null;
+};
+
 export type StudioProject = {
   project_id: number;
   org_id: number;
@@ -39,6 +51,8 @@ export type StudioProject = {
   region?: string | null;
   settings: Record<string, unknown>;
   created_at?: string | null;
+  credentials?: ProjectCredentialsCreated | null;
+  credentials_meta?: ProjectCredentialsMeta | null;
 };
 
 export const StudioService = {
@@ -54,6 +68,22 @@ export const StudioService = {
     const res = await api.post<StudioProject>('/studio/projects', body, {
       params: orgId ? { org_id: orgId } : undefined,
     });
+    return res.data;
+  },
+
+  getProjectCredentials: async (projectId: number): Promise<ProjectCredentialsMeta> => {
+    const res = await api.get<ProjectCredentialsMeta>(
+      `/studio/projects/${projectId}/credentials`,
+    );
+    return res.data;
+  },
+
+  regenerateProjectCredentials: async (
+    projectId: number,
+  ): Promise<ProjectCredentialsCreated> => {
+    const res = await api.post<ProjectCredentialsCreated>(
+      `/studio/projects/${projectId}/credentials/regenerate`,
+    );
     return res.data;
   },
 };

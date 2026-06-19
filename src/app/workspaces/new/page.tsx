@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Button, Card, Form, Input, Space, Spin, Typography, notification } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { Button, Card, Form, Input, Modal, Space, Spin, Typography, notification } from 'antd';
+import { ArrowLeftOutlined, CopyOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -11,7 +11,7 @@ import { StudioService } from '@/services/studio.service';
 import { projectPath } from '@/lib/paths';
 import { getApiErrorMessage } from '@/lib/formatApiError';
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
 export default function NewWorkspacePage() {
   const router = useRouter();
@@ -21,6 +21,10 @@ export default function NewWorkspacePage() {
   const [loading, setLoading] = useState(false);
   const [accountLoading, setAccountLoading] = useState(true);
   const [canCreateProject, setCanCreateProject] = useState(false);
+  const [credentialsModalOpen, setCredentialsModalOpen] = useState(false);
+  const [createdProjectId, setCreatedProjectId] = useState<number | null>(null);
+  const [clientKey, setClientKey] = useState('');
+  const [clientSecret, setClientSecret] = useState('');
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -45,6 +49,22 @@ export default function NewWorkspacePage() {
       cancelled = true;
     };
   }, [isSuperAdmin]);
+
+  const copyValue = async (label: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      notification.success({ message: `${label} copied` });
+    } catch {
+      notification.error({ message: 'Could not copy to clipboard' });
+    }
+  };
+
+  const continueToProject = () => {
+    if (createdProjectId) {
+      router.push(projectPath(createdProjectId, 'workflow'));
+    }
+    setCredentialsModalOpen(false);
+  };
 
   if (accountLoading) {
     return (
@@ -87,8 +107,15 @@ export default function NewWorkspacePage() {
         orgId,
       );
       setCurrentWorkspaceId(project.project_id);
-      notification.success({ message: 'Project created' });
-      router.push(projectPath(project.project_id, 'workflow'));
+      setCreatedProjectId(project.project_id);
+      if (project.credentials?.client_key && project.credentials?.client_secret) {
+        setClientKey(project.credentials.client_key);
+        setClientSecret(project.credentials.client_secret);
+        setCredentialsModalOpen(true);
+      } else {
+        notification.success({ message: 'Project created' });
+        router.push(projectPath(project.project_id, 'workflow'));
+      }
     } catch (err: unknown) {
       notification.error({
         message: getApiErrorMessage(err, 'Failed to create project'),
@@ -132,6 +159,56 @@ export default function NewWorkspacePage() {
           </Form>
         </Card>
       </Space>
+
+      <Modal
+        title="Save your SDK credentials"
+        open={credentialsModalOpen}
+        onCancel={continueToProject}
+        footer={[
+          <Button key="continue" type="primary" onClick={continueToProject}>
+            I saved them — continue
+          </Button>,
+        ]}
+        maskClosable={false}
+      >
+        <Paragraph type="secondary">
+          These credentials authenticate your apps and CLI against the platform database API.
+          The secret is shown only once.
+        </Paragraph>
+        <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+          <div>
+            <Text type="secondary">Project key</Text>
+            <Input
+              readOnly
+              value={clientKey}
+              suffix={
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<CopyOutlined />}
+                  onClick={() => copyValue('Project key', clientKey)}
+                />
+              }
+            />
+          </div>
+          <div>
+            <Text type="secondary">Project secret</Text>
+            <Input.Password
+              readOnly
+              value={clientSecret}
+              visibilityToggle
+              suffix={
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<CopyOutlined />}
+                  onClick={() => copyValue('Project secret', clientSecret)}
+                />
+              }
+            />
+          </div>
+        </Space>
+      </Modal>
     </div>
   );
 }
