@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Button, Card, Col, Row, Select, Space, Table, Tag, Typography, notification } from 'antd';
 import { PlayCircleOutlined } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
+import { palette } from '@/constants/theme';
 
 const { Title, Text } = Typography;
 
@@ -99,10 +100,18 @@ export default function SqlEditorPage() {
           </Col>
         </Row>
 
-        <div style={{ marginTop: 16, border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden' }}>
+        <div
+          style={{
+            marginTop: 16,
+            border: `1px solid ${palette.borderSubtle}`,
+            borderRadius: 8,
+            overflow: 'hidden',
+          }}
+        >
           <Editor
             height="280px"
             defaultLanguage="sql"
+            theme="vs-dark"
             value={sql}
             onChange={(v) => setSql(v ?? '')}
             options={{ minimap: { enabled: false }, fontSize: 13 }}

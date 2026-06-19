@@ -8,6 +8,7 @@ import { connectionService } from '@/services/connection.service';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
 import type { PipelineRestConnectionSummary } from '@/lib/pipelineConnectionPick';
+import { palette } from '@/constants/theme';
 
 const { Text } = Typography;
 
@@ -113,7 +114,7 @@ export default function RestConnectionPickerPanel({
                 cursor: 'pointer',
                 background:
                   selectedId === connection.id
-                    ? 'rgba(0, 212, 255, 0.12)'
+                    ? palette.accentBg
                     : colorBgContainer,
               }}
             >
@@ -131,7 +132,7 @@ export default function RestConnectionPickerPanel({
                   </Text>
                 </Flex>
                 {selectedId === connection.id ? (
-                  <CheckCircleFilled style={{ color: '#13c2c2', fontSize: 16, flexShrink: 0 }} />
+                  <CheckCircleFilled style={{ color: palette.accentCyan, fontSize: 16, flexShrink: 0 }} />
                 ) : null}
               </Flex>
             </div>

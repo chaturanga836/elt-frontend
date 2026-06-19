@@ -26,6 +26,7 @@ import TaskPickerModal from '@/features/orchestration/TaskPickerModal';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
 import { consumePipelineTaskPick } from '@/lib/pipelineTaskPick';
+import { palette } from '@/constants/theme';
 import PipelineScriptVariablesEditor, {
   rowsFromInputVariables,
   rowsFromTaskOutputVariables,
@@ -203,7 +204,7 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
   return (
     <div className={`custom-node ${styles.pipelineNodeWrap}`}>
       <PipelineNodeDeleteButton nodeId={id} nodeLabel={nodeLabel} />
-      <Handle type="target" position={Position.Left} style={{ background: '#1890ff' }} />
+      <Handle type="target" position={Position.Left} style={{ background: palette.primary }} />
 
       <Card
         size="small"
@@ -214,7 +215,7 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
           borderRadius: 6,
           display: 'flex',
           alignItems: 'center',
-          border: selected ? '1px solid #1890ff' : '1px dashed #d9d9d9',
+          border: selected ? `1px solid ${palette.primary}` : `1px dashed ${palette.textMuted}`,
           cursor: 'pointer',
         }}
         styles={{ body: { padding: '4px 8px', width: '100%' } }}
@@ -222,8 +223,8 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
       >
         {!selected ? (
           <Flex align="center" gap={4} justify="center" style={{ width: '100%' }}>
-            <PlusOutlined style={{ fontSize: 10, color: '#8c8c8c' }} />
-            <Text style={{ fontSize: 10, color: '#8c8c8c' }}>Select script</Text>
+            <PlusOutlined style={{ fontSize: 10, color: palette.textMuted }} />
+            <Text style={{ fontSize: 10, color: palette.textMuted }}>Select script</Text>
           </Flex>
         ) : (
           <Flex align="center" gap={4} style={{ width: '100%' }}>
@@ -231,7 +232,7 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
               size={20}
               shape="square"
               icon={<SettingOutlined />}
-              style={{ backgroundColor: '#1890ff', flexShrink: 0 }}
+              style={{ backgroundColor: palette.primary, flexShrink: 0 }}
             />
             <div style={{ minWidth: 0, flex: 1 }}>
               <Text strong style={{ fontSize: 10, display: 'block' }} ellipsis>
@@ -273,7 +274,7 @@ const TaskNode = ({ id, data }: { id: string; data: Record<string, unknown> }) =
         )}
       </Card>
 
-      <Handle type="source" position={Position.Right} style={{ background: '#1890ff' }} />
+      <Handle type="source" position={Position.Right} style={{ background: palette.primary }} />
 
       <TaskPickerModal
         title={selected ? 'Change script' : 'Select script'}

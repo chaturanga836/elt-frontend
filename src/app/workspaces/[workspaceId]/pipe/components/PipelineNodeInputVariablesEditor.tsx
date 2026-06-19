@@ -2,6 +2,7 @@
 
 import { Input, Switch, Tag, Typography } from 'antd';
 import type { PipelineInputVariableDef, UpstreamOutputField } from '@/lib/pipelineNodeVariables';
+import { palette } from '@/constants/theme';
 
 const { Text } = Typography;
 
@@ -39,8 +40,8 @@ export default function PipelineNodeInputVariablesEditor({
           style={{
             marginBottom: 12,
             padding: '10px 12px',
-            background: '#e6f4ff',
-            border: '1px solid #91caff',
+            background: palette.accentBg,
+            border: `1px solid ${palette.border}`,
             borderRadius: 6,
           }}
         >

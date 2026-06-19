@@ -38,12 +38,35 @@ const theme: ThemeConfig = {
       darkSubMenuItemBg: palette.bgBase,
     },
     Tree: {
-      nodeHoverBg: 'rgba(255, 255, 255, 0.06)',
+      nodeHoverBg: palette.hoverOverlay,
       nodeHoverColor: palette.text,
-      nodeSelectedBg: 'rgba(255, 107, 0, 0.2)',
+      nodeSelectedBg: palette.selectedBg,
       nodeSelectedColor: palette.text,
-      directoryNodeSelectedBg: 'rgba(255, 107, 0, 0.2)',
+      directoryNodeSelectedBg: palette.selectedBg,
       directoryNodeSelectedColor: palette.text,
+    },
+    Table: {
+      headerBg: palette.bgElevated,
+      headerColor: palette.textSecondary,
+      rowHoverBg: palette.hoverOverlay,
+      borderColor: palette.borderSubtle,
+      colorBgContainer: palette.bgSurface,
+    },
+    Tabs: {
+      inkBarColor: palette.primary,
+      itemActiveColor: palette.primary,
+      itemSelectedColor: palette.primary,
+      itemHoverColor: palette.accentCyan,
+    },
+    Divider: {
+      colorSplit: palette.borderSubtle,
+    },
+    Input: {
+      activeBorderColor: palette.accentCyan,
+      hoverBorderColor: palette.border,
+    },
+    Badge: {
+      colorPrimary: palette.primary,
     },
   },
 };

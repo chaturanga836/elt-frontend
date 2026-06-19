@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { projectPath } from '@/lib/paths';
+import { palette } from '@/constants/theme';
 
 export default function PipelineListPage() {
   const workspaceId = useWorkspaceId();
@@ -79,7 +80,7 @@ export default function PipelineListPage() {
       key: 'name',
       render: (text: string, record: any) => (
         <Link href={projectPath(workspaceId, `${flowSegment}/${record.pipeline_uuid}`)}>
-          <span style={{ color: '#1890ff', fontWeight: 600 }}>{text}</span>
+          <span style={{ color: palette.accentCyan, fontWeight: 600 }}>{text}</span>
         </Link>
       ),
     },
@@ -94,7 +95,7 @@ export default function PipelineListPage() {
       title: 'Latest Version',
       dataIndex: 'version',
       key: 'version',
-      render: (v: number) => <Tag color="blue">v{v}</Tag>
+      render: (v: number) => <Tag color={palette.accentCyan}>v{v}</Tag>
     },
     {
       title: 'Last Modified',

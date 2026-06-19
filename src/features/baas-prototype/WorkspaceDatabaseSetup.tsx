@@ -10,6 +10,7 @@ import {
   WorkspaceDatabaseStatus,
 } from '@/services/workspaceDatabase.service';
 import { getApiErrorMessage } from '@/lib/formatApiError';
+import { palette } from '@/constants/theme';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -88,7 +89,7 @@ export default function WorkspaceDatabaseSetup({
     return (
       <Flex align="center" justify="center" style={{ minHeight: 360 }}>
         <Space orientation="vertical" align="center" size="large">
-          <DatabaseOutlined style={{ fontSize: 48, color: '#1677ff' }} />
+          <DatabaseOutlined style={{ fontSize: 48, color: palette.accentCyan }} />
           <Title level={3} style={{ margin: 0 }}>
             No database yet
           </Title>
@@ -147,7 +148,7 @@ export default function WorkspaceDatabaseSetup({
                 style={{
                   opacity: engine.available ? 1 : 0.55,
                   cursor: engine.available ? 'pointer' : 'not-allowed',
-                  borderColor: selectedEngine === engine.key ? '#1677ff' : undefined,
+                  borderColor: selectedEngine === engine.key ? palette.accentCyan : undefined,
                 }}
                 onClick={() => {
                   if (!engine.available) return;

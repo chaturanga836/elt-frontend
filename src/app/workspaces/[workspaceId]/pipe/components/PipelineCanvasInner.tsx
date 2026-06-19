@@ -18,6 +18,7 @@ import RestEndpointNode from './RestEndpointNode';
 import DatabaseNode from './DatabaseNode';
 import { isValidPipelineConnection } from '@/lib/pipelineChain';
 import { usePipeModalActive } from '../PipeModalContext';
+import { palette } from '@/constants/theme';
 
 const GRID_SIZE_X = 200;
 const GRID_SIZE_Y = 20;
@@ -80,7 +81,7 @@ const PipelineCanvasInner = () => {
         snapToGrid={true}
         snapGrid={[GRID_SIZE_X, GRID_SIZE_Y]}
         connectionLineType={ConnectionLineType.Step}
-        connectionLineStyle={{ stroke: '#1890ff', strokeWidth: 2 }}
+        connectionLineStyle={{ stroke: palette.primary, strokeWidth: 2 }}
         edgesReconnectable
         fitView
         deleteKeyCode={['Backspace', 'Delete']}
@@ -98,7 +99,7 @@ const PipelineCanvasInner = () => {
           id="lanes"
           variant={BackgroundVariant.Lines}
           gap={[10000, GRID_SIZE_Y]}
-          color="#f0f0f0"
+          color={palette.borderSubtle}
           size={1}
         />
         <Controls />

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Button, Card, Form, Input, Select, Space, Switch, Table, Tag, Typography, notification } from 'antd';
 import { PlayCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { palette } from '@/constants/theme';
 
 const { Title, Text } = Typography;
 
@@ -95,7 +96,7 @@ export default function CronPage() {
       </Title>
       <Text type="secondary">Schedule workflows and functions. Prototype — jobs are stored in local state only.</Text>
 
-      <Card title="Jobs" style={{ marginTop: 16 }} extra={<Tag color="blue">{jobs.filter((j) => j.enabled).length} active</Tag>}>
+      <Card title="Jobs" style={{ marginTop: 16 }} extra={<Tag color={palette.primary}>{jobs.filter((j) => j.enabled).length} active</Tag>}>
         <Table columns={columns} dataSource={jobs} pagination={false} />
       </Card>
 

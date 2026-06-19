@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { buildPipelineSavePayload } from '@/lib/pipelineSavePayload';
+import { palette } from '@/constants/theme';
 import {
   PIPELINE_NAME_PLACEHOLDER,
   isPipelineNameValid,
@@ -290,7 +291,7 @@ const clickAddNode = (nodeType: 'taskNode' | 'restNode' | 'dbNode' = 'taskNode')
             Connect edges to set run order (Delete removes a link)
           </Text>
 
-          <div style={{ width: 1, height: 24, background: '#f0f0f0', margin: '0 4px' }} />
+          <div style={{ width: 1, height: 24, background: palette.borderSubtle, margin: '0 4px' }} />
 
           <Input
             prefix={<EditOutlined style={{ color: '#bfbfbf' }} />}

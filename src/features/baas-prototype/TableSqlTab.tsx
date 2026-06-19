@@ -5,6 +5,7 @@ import { Space, Table, Typography } from 'antd';
 import Editor from '@monaco-editor/react';
 import type { SqlResultState } from '@/features/baas-prototype/tableDataPanelTypes';
 import { formatCellValue } from '@/features/baas-prototype/tableDataPanelUtils';
+import { palette } from '@/constants/theme';
 
 const { Text } = Typography;
 
@@ -29,10 +30,17 @@ export default function TableSqlTab({ sql, onSqlChange, sqlResult }: Props) {
 
   return (
     <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
-      <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden' }}>
+      <div
+        style={{
+          border: `1px solid ${palette.borderSubtle}`,
+          borderRadius: 8,
+          overflow: 'hidden',
+        }}
+      >
         <Editor
           height="240px"
           defaultLanguage="sql"
+          theme="vs-dark"
           value={sql}
           onChange={(value) => onSqlChange(value ?? '')}
           options={{ minimap: { enabled: false }, fontSize: 13 }}

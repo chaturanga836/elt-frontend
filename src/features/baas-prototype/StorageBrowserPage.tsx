@@ -14,6 +14,7 @@ import {
   notification,
 } from 'antd';
 import { CloudUploadOutlined, FolderAddOutlined, FolderOutlined, FileOutlined } from '@ant-design/icons';
+import { palette } from '@/constants/theme';
 
 const { Title, Text } = Typography;
 
@@ -61,7 +62,7 @@ export default function StorageBrowserPage() {
         <Space wrap style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
           <Space>
             <Text strong>Bucket:</Text>
-            <Tag color="blue">{bucket}</Tag>
+            <Tag color={palette.accentCyan}>{bucket}</Tag>
             <Button size="small" onClick={() => setCreateOpen(true)}>
               Switch / create bucket
             </Button>

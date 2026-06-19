@@ -21,6 +21,7 @@ import { notification } from '@/lib/antd/static';
 import { buildWorkflowSavePayload } from '@/lib/buildWorkflowSavePayload';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { workspacePath } from '@/lib/paths';
+import { palette } from '@/constants/theme';
 
 function WorkflowCanvasContent() {
   const workspaceId = useWorkspaceId();
@@ -43,7 +44,7 @@ function WorkflowCanvasContent() {
   const [running, setRunning] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const {
-    token: { colorBgContainer, colorBorder },
+    token: { colorBgContainer, colorBorder, colorBgElevated },
   } = theme.useToken();
   const routeWorkflowUuid =
     typeof params?.id === 'string' && params.id !== 'new' ? params.id : null;
@@ -171,14 +172,20 @@ function WorkflowCanvasContent() {
             icon={<SaveOutlined />}
             loading={saving}
             onClick={handleSave}
-            style={{ background: '#722ed1', borderColor: '#722ed1' }}
+            style={{ background: palette.accentPurple, borderColor: palette.accentPurple }}
           >
             Save Workflow
           </Button>
         </Space>
       </div>
       <div style={{ flex: 1, display: 'flex' }}>
-        <div style={{ padding: 12, background: '#fafafa', borderRight: '1px solid #eee' }}>
+        <div
+          style={{
+            padding: 12,
+            background: colorBgElevated,
+            borderRight: `1px solid ${colorBorder}`,
+          }}
+        >
           <WorkflowNodePalette />
         </div>
         <div style={{ flex: 1 }}>

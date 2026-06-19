@@ -19,6 +19,11 @@ export const palette = {
   border: 'rgba(0, 212, 255, 0.2)',
   borderSubtle: 'rgba(255, 255, 255, 0.08)',
 
+  hoverOverlay: 'rgba(255, 255, 255, 0.06)',
+  selectedBg: 'rgba(255, 107, 0, 0.2)',
+  selectedBorder: 'rgba(255, 107, 0, 0.4)',
+  accentBg: 'rgba(0, 212, 255, 0.12)',
+
   glowCyan: '0 0 20px rgba(0, 212, 255, 0.25)',
   glowOrange: '0 0 20px rgba(255, 107, 0, 0.3)',
 } as const;

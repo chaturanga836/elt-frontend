@@ -122,13 +122,13 @@
   width: 48px;
   height: 4px;
   border-radius: 999px;
-  background: #d9d9d9;
+  background: #64748b;
   transition: background-color 0.15s ease;
 }
 
 .debugDrawerResizeHandle:hover::before,
 .debugDrawerResizeHandle:active::before {
-  background: #8c8c8c;
+  background: #94a3b8;
 }
 
 .debugDrawerToolbar {

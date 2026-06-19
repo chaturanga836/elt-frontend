@@ -2,6 +2,7 @@
 
 import { useWorkflowStore } from '@/store/useWorkflowStore';
 import WorkflowNodeShell from './WorkflowNodeShell';
+import { palette } from '@/constants/theme';
 
 export default function WfParallelForkNode({
   id,
@@ -17,7 +18,7 @@ export default function WfParallelForkNode({
   return (
     <WorkflowNodeShell
       title="Parallel Split"
-      color="#13c2c2"
+      color={palette.accentCyan}
       sourceHandles={[
         { id: 'branch-0' },
         { id: 'branch-1' },

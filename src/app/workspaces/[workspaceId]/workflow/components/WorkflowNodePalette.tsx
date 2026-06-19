@@ -5,18 +5,19 @@ import { v4 as uuidv4 } from 'uuid';
 import { Node } from '@xyflow/react';
 import { computeWorkflowNodePosition } from '@/lib/workflowNodePlacement';
 import { useWorkflowStore } from '@/store/useWorkflowStore';
+import { palette } from '@/constants/theme';
 
 const { Text } = Typography;
 
 const PRIMARY_PALETTE = [
-  { type: 'pipelineNode', label: 'Pipeline', color: '#722ed1' },
-  { type: 'parallelForkNode', label: 'Parallel Split', color: '#13c2c2' },
-  { type: 'parallelJoinNode', label: 'Parallel Join', color: '#08979c' },
+  { type: 'pipelineNode', label: 'Pipeline', color: palette.accentPurple },
+  { type: 'parallelForkNode', label: 'Parallel Split', color: palette.accentCyan },
+  { type: 'parallelJoinNode', label: 'Parallel Join', color: palette.accentCyan },
 ] as const;
 
 const SECONDARY_PALETTE = [
-  { type: 'taskNode', label: 'Task (glue)', color: '#1890ff' },
-  { type: 'conditionNode', label: 'If / Else (rare)', color: '#fa8c16' },
+  { type: 'taskNode', label: 'Task (glue)', color: palette.primary },
+  { type: 'conditionNode', label: 'If / Else (rare)', color: palette.primaryLight },
 ] as const;
 
 export default function WorkflowNodePalette() {

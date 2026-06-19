@@ -8,6 +8,7 @@ import {
   formatInputTemplate,
   parseInputTemplateValue,
 } from '@/lib/pipelineNodeVariables';
+import { palette } from '@/constants/theme';
 import { generateId } from '@/lib/generateId';
 
 const { Text } = Typography;
@@ -118,7 +119,7 @@ export default function PipelineConnectionVariablesEditor({
             marginBottom: 8,
             alignItems: 'center',
             fontSize: 11,
-            color: '#8c8c8c',
+            color: palette.textMuted,
           }}
         >
           <span />

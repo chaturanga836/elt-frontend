@@ -18,6 +18,7 @@ import {
   WorkspaceDatabaseStatus,
   WorkspaceDatabaseTableDetail,
 } from '@/services/workspaceDatabase.service';
+import { palette } from '@/constants/theme';
 
 const { Text } = Typography;
 
@@ -44,11 +45,11 @@ export default function WorkspaceDatabaseShell({
       <Card size="small" style={{ margin: '16px 16px 0', borderRadius: 8 }}>
         <Flex justify="space-between" align="center" wrap gap={12}>
           <Space>
-            <DatabaseOutlined style={{ color: '#1677ff' }} />
+            <DatabaseOutlined style={{ color: palette.accentCyan }} />
             <Text strong>Project databases</Text>
-            <Badge count={databases.length} showZero color="#1677ff" />
+            <Badge count={databases.length} showZero color={palette.primary} />
             {databases.map((db) => (
-              <Tag key={db.id} color="blue">
+              <Tag key={db.id} color={palette.accentCyan}>
                 {db.name}
               </Tag>
             ))}
@@ -68,7 +69,14 @@ export default function WorkspaceDatabaseShell({
       </Card>
 
       {showExplorer && (
-        <div style={{ margin: '0 16px', border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden' }}>
+        <div
+          style={{
+            margin: '0 16px',
+            border: `1px solid ${palette.borderSubtle}`,
+            borderRadius: 8,
+            overflow: 'hidden',
+          }}
+        >
           <WorkspaceDatabaseExplorer
             workspaceId={workspaceId}
             databases={databases}

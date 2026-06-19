@@ -7,6 +7,7 @@ import { useWorkflowStore } from '@/store/useWorkflowStore';
 import { TaskResponse } from '@/services/task.service';
 import TaskPickerModal from '@/features/orchestration/TaskPickerModal';
 import WorkflowNodeShell from './WorkflowNodeShell';
+import { palette } from '@/constants/theme';
 
 export default function WfTaskNode({
   id,
@@ -39,7 +40,7 @@ export default function WfTaskNode({
   };
 
   return (
-    <WorkflowNodeShell title="Task" color="#1890ff">
+    <WorkflowNodeShell title="Task" color={palette.primary}>
       <div className="text-xs font-medium mb-2 truncate" title={label}>
         {label}
       </div>

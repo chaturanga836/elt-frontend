@@ -25,6 +25,7 @@ import {
   WorkspaceDatabaseTableDetail,
 } from '@/services/workspaceDatabase.service';
 import { getApiErrorMessage } from '@/lib/formatApiError';
+import { palette } from '@/constants/theme';
 
 const { Text, Title } = Typography;
 
@@ -445,7 +446,7 @@ export default function WorkspaceDatabaseExplorer({
   };
 
   return (
-    <Flex style={{ minHeight: 480, borderTop: '1px solid #f0f0f0' }}>
+    <Flex style={{ minHeight: 480, borderTop: `1px solid ${palette.borderSubtle}` }}>
       <Card
         size="small"
         title="Schemas"

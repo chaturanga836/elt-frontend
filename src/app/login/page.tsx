@@ -10,6 +10,7 @@ import LoginMarketingPanel from '@/components/marketing/LoginMarketingPanel';
 import { AUTH_ERROR_KEY } from '@/components/auth/AuthProvider';
 import { loginWithKeycloak } from '@/lib/keycloak';
 import { useAuthStore } from '@/store/useAuthStore';
+import { palette } from '@/constants/theme';
 import styles from './login.module.css';
 
 const { Paragraph } = Typography;
@@ -81,11 +82,11 @@ export default function LoginPage() {
         Continue with Keycloak
       </Button>
 
-      <Divider plain style={{ margin: '20px 0 16px', fontSize: 12, color: '#64748b' }}>
+      <Divider plain style={{ margin: '20px 0 16px', fontSize: 12, color: palette.textMuted }}>
         Secure access
       </Divider>
 
-      <Paragraph style={{ fontSize: 13, marginBottom: 0, color: '#94a3b8' }}>
+      <Paragraph style={{ fontSize: 13, marginBottom: 0, color: palette.textSecondary }}>
         <LockOutlined style={{ marginRight: 6 }} />
         SSO via your identity provider. After sign-in, pick or create a workspace.
       </Paragraph>

@@ -24,6 +24,7 @@ import {
   type PipelineRestConnectionSummary,
 } from '@/lib/pipelineConnectionPick';
 import PipelineConnectionVariablesEditor from './PipelineConnectionVariablesEditor';
+import { palette } from '@/constants/theme';
 import PipelineNodeGlobalBindingsEditor, {
   rowsFromGlobalBindings,
   toGlobalBindingPayload,
@@ -215,7 +216,7 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
   return (
     <div className={`rest-endpoint-node ${styles.pipelineNodeWrap}`}>
       <PipelineNodeDeleteButton nodeId={id} nodeLabel={displayName} />
-      <Handle type="target" position={Position.Left} style={{ background: '#13c2c2' }} />
+      <Handle type="target" position={Position.Left} style={{ background: palette.accentCyan }} />
 
       <Card
         size="small"
@@ -223,14 +224,14 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
         style={{
           width: 148,
           borderRadius: 6,
-          border: selected ? '1px solid #13c2c2' : '1px dashed #d9d9d9',
+          border: selected ? `1px solid ${palette.accentCyan}` : `1px dashed ${palette.textMuted}`,
           cursor: 'pointer',
         }}
         styles={{ body: { padding: '4px 8px' } }}
         onClick={openModal}
       >
         <Flex align="center" gap={8}>
-          <Avatar size={20} shape="square" icon={<ApiOutlined />} style={{ backgroundColor: '#13c2c2' }} />
+          <Avatar size={20} shape="square" icon={<ApiOutlined />} style={{ backgroundColor: palette.accentCyan }} />
           <div style={{ minWidth: 0 }}>
             <Text strong style={{ fontSize: 11 }} ellipsis>
               {displayName}
@@ -248,7 +249,7 @@ export default function RestEndpointNode({ id, data }: { id: string; data: Recor
         </Flex>
       </Card>
 
-      <Handle type="source" position={Position.Right} style={{ background: '#13c2c2' }} />
+      <Handle type="source" position={Position.Right} style={{ background: palette.accentCyan }} />
 
       <Modal
         title="Connection node"

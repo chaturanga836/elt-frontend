@@ -25,6 +25,7 @@ import {
   WorkspaceDatabaseTableDetail,
 } from '@/services/workspaceDatabase.service';
 import { getApiErrorMessage } from '@/lib/formatApiError';
+import { palette } from '@/constants/theme';
 import {
   COLUMN_BASE_TYPES,
   ColumnBaseType,
@@ -201,7 +202,7 @@ export default function TableSchemaEditor({
 
         <Card size="small" title="Columns" style={{ marginBottom: 16 }}>
           <Space orientation="vertical" style={{ width: '100%' }} size="middle">
-            <Row gutter={8} style={{ fontSize: 12, color: '#8c8c8c', padding: '0 4px' }}>
+            <Row gutter={8} style={{ fontSize: 12, color: palette.textMuted, padding: '0 4px' }}>
               <Col span={4}>Column</Col>
               <Col span={4}>Type</Col>
               <Col span={3}>Length</Col>
@@ -399,10 +400,17 @@ export default function TableSchemaEditor({
               key: 'sql',
               label: 'Generated SQL',
               children: (
-                <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden' }}>
+                <div
+                  style={{
+                    border: `1px solid ${palette.borderSubtle}`,
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                  }}
+                >
                   <Editor
                     height="280px"
                     defaultLanguage="sql"
+                    theme="vs-dark"
                     value={generatedSql}
                     options={{ readOnly: true, minimap: { enabled: false }, fontSize: 13 }}
                   />

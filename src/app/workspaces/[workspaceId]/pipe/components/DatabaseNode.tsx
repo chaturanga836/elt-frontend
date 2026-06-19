@@ -18,6 +18,7 @@ import {
 } from '@/lib/dbColumnMap';
 import type { StoredColumnMappings } from '@/lib/dbColumnMap';
 import styles from '../pipeline-editor.module.css';
+import { palette } from '@/constants/theme';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -345,7 +346,7 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
   return (
     <div className={`database-node ${styles.pipelineNodeWrap}`}>
       <PipelineNodeDeleteButton nodeId={id} nodeLabel={displayName} />
-      <Handle type="target" position={Position.Left} style={{ background: '#722ed1' }} />
+      <Handle type="target" position={Position.Left} style={{ background: palette.accentPurple }} />
 
       <Card
         size="small"
@@ -353,7 +354,7 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
         style={{
           width: 148,
           borderRadius: 6,
-          border: selected ? '1px solid #722ed1' : '1px dashed #d9d9d9',
+          border: selected ? `1px solid ${palette.accentPurple}` : `1px dashed ${palette.textMuted}`,
           cursor: 'pointer',
         }}
         styles={{ body: { padding: '4px 8px' } }}
@@ -364,7 +365,7 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
             size={20}
             shape="square"
             icon={<DatabaseOutlined />}
-            style={{ backgroundColor: '#722ed1' }}
+            style={{ backgroundColor: palette.accentPurple }}
           />
           <div style={{ minWidth: 0 }}>
             <Text strong style={{ fontSize: 11 }} ellipsis>
@@ -384,7 +385,7 @@ export default function DatabaseNode({ id, data }: { id: string; data: Record<st
         </Flex>
       </Card>
 
-      <Handle type="source" position={Position.Right} style={{ background: '#722ed1' }} />
+      <Handle type="source" position={Position.Right} style={{ background: palette.accentPurple }} />
 
       <Modal
         title="Database connection node"
