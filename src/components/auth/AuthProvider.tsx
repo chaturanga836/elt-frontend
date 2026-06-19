@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import {
+  clearStoredTokens,
   completeManualOAuthCallback,
   ensureValidAccessToken,
-  initializeKeycloak,
-  loadUserProfile,
   parseOAuthCallbackFromUrl,
+  profileFromAccessToken,
   refreshTokenIfNeeded,
-  shouldUseManualAuthFlow,
 } from '@/lib/keycloak';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
@@ -16,8 +16,12 @@ import { UserService } from '@/services/user.service';
 import { OrganizationService } from '@/services/organization.service';
 import { isSuperAdminToken } from '@/lib/jwt';
 
+export const AUTH_ERROR_KEY = 'auth_error';
+
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const setProfile = useAuthStore((s) => s.setProfile);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const setInitialized = useAuthStore((s) => s.setInitialized);
   const setOrgId = useWorkspaceStore((s) => s.setOrgId);
@@ -27,56 +31,58 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     const run = async () => {
       try {
-        if (shouldUseManualAuthFlow() && parseOAuthCallbackFromUrl()) {
+        if (parseOAuthCallbackFromUrl()) {
           await completeManualOAuthCallback();
         }
 
-        const authenticated = await initializeKeycloak();
+        const token = await refreshTokenIfNeeded();
         if (!alive) return;
 
-        const token = (await refreshTokenIfNeeded()) || localStorage.getItem('token');
-
-        if (!authenticated && !token) {
+        if (!token) {
           clearAuth();
           return;
         }
 
-        if (token) {
-          localStorage.setItem('token', token);
-          const kcProfile = await loadUserProfile();
-          let isSuperAdmin = isSuperAdminToken(token);
-          let realmRoles: string[] = [];
-          let workspaceIds: number[] = [];
+        const kcProfile = profileFromAccessToken(token);
 
-          try {
-            const me = await UserService.getMe();
-            isSuperAdmin = me.is_super_admin;
-            realmRoles = me.realm_roles;
-            workspaceIds = me.workspace_ids;
-          } catch {
-            /* Backend profile optional — keep session even if /users/me fails */
-          }
+        // Sign in immediately — do not wait for /users/me (backend may still be misconfigured).
+        setAuth({
+          token,
+          username: kcProfile?.username || null,
+          email: kcProfile?.email || null,
+          isSuperAdmin: isSuperAdminToken(token),
+          realmRoles: [],
+          workspaceIds: [],
+        });
 
-          try {
-            const org = await OrganizationService.getDefault();
-            setOrgId(org.organization_id);
-          } catch {
-            /* Default org optional */
-          }
-
-          setAuth({
-            token,
-            username: kcProfile?.username || null,
-            email: kcProfile?.email || null,
-            isSuperAdmin,
-            realmRoles,
-            workspaceIds,
+        try {
+          const me = await UserService.getMe();
+          if (!alive) return;
+          setProfile({
+            isSuperAdmin: me.is_super_admin,
+            realmRoles: me.realm_roles,
+            workspaceIds: me.workspace_ids,
+            username: me.username,
+            email: me.email,
           });
-        } else {
-          clearAuth();
+        } catch {
+          /* keep JWT-based session */
+        }
+
+        try {
+          const org = await OrganizationService.getDefault();
+          if (!alive) return;
+          setOrgId(org.organization_id);
+        } catch {
+          /* optional */
         }
       } catch (error) {
         console.error('Auth initialization failed:', error);
+        sessionStorage.setItem(
+          AUTH_ERROR_KEY,
+          error instanceof Error ? error.message : 'Sign-in failed',
+        );
+        clearStoredTokens();
         clearAuth();
       } finally {
         if (alive) setInitialized(true);
@@ -87,13 +93,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     return () => {
       alive = false;
     };
-  }, [setAuth, clearAuth, setInitialized, setOrgId]);
+  }, [pathname, setAuth, setProfile, clearAuth, setInitialized, setOrgId]);
 
   useEffect(() => {
-    if (!shouldUseManualAuthFlow()) return;
+    if (pathname === '/login' || pathname === '/auth/callback') return;
     const id = window.setInterval(() => void ensureValidAccessToken(), 60_000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [pathname]);
 
   return <>{children}</>;
 }
