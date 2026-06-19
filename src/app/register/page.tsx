@@ -45,6 +45,7 @@ export default function RegisterPage() {
         first_name: values.first_name,
         last_name: values.last_name,
         org_name: values.org_name,
+        create_default_project: false,
       });
 
       if (!result.access_token) {

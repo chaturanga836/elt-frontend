@@ -6,7 +6,6 @@ import {
   Card,
   Empty,
   Input,
-  Space,
   Spin,
   Table,
   Tag,
@@ -19,6 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { WorkspaceItem, WorkspaceService } from '@/services/workspace.service';
+import { StudioService } from '@/services/studio.service';
 import AppBrand from '@/components/brand/AppBrand';
 import { projectPath } from '@/lib/paths';
 
@@ -35,6 +35,8 @@ export default function WorkspacesPage() {
     total: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [accountLoading, setAccountLoading] = useState(true);
+  const [canCreateProject, setCanCreateProject] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [params, setParams] = useState({ page: 1, limit: 100 });
   const autoEntered = useRef(false);
@@ -69,6 +71,29 @@ export default function WorkspacesPage() {
       setLoading(false);
     }
   }, [orgId, searchText, params, openWorkspace]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const account = await StudioService.getAccount();
+        if (!cancelled) {
+          setCanCreateProject(isSuperAdmin || account.user.role === 'admin');
+        }
+      } catch {
+        if (!cancelled) {
+          setCanCreateProject(isSuperAdmin);
+        }
+      } finally {
+        if (!cancelled) {
+          setAccountLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isSuperAdmin]);
 
   useEffect(() => {
     const t = setTimeout(() => void fetchWorkspaces(), 300);
@@ -120,9 +145,9 @@ export default function WorkspacesPage() {
     },
   ];
 
-  const showEmpty = !loading && data.total === 0;
+  const showEmpty = !loading && !accountLoading && data.total === 0;
 
-  if (loading && data.total === 0) {
+  if ((loading || accountLoading) && data.total === 0) {
     return (
       <div
         style={{
@@ -151,12 +176,12 @@ export default function WorkspacesPage() {
         <Card style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}>
           <Empty
             description={
-              isSuperAdmin
-                ? 'No projects yet. Create your first project to get started.'
+              canCreateProject
+                ? "You don't have a project yet. Create your first project to get started."
                 : 'You are not assigned to any project yet. Contact your administrator.'
             }
           >
-            {isSuperAdmin && (
+            {canCreateProject && (
               <Link href="/projects/new">
                 <Button type="primary" size="large" icon={<PlusOutlined />}>
                   Create project
@@ -181,7 +206,7 @@ export default function WorkspacesPage() {
           </Title>
           <Text type="secondary">Select a project to manage API, database, storage, and workflows.</Text>
         </div>
-        {isSuperAdmin && (
+        {canCreateProject && (
           <Link href="/projects/new">
             <Button type="primary" icon={<PlusOutlined />} size="large">
               Create project
