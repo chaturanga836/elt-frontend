@@ -3,12 +3,15 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import {
+  clearOAuthState,
   clearStoredTokens,
   completeManualOAuthCallback,
   ensureValidAccessToken,
+  initializeKeycloak,
   parseOAuthCallbackFromUrl,
   profileFromAccessToken,
   refreshTokenIfNeeded,
+  shouldUseManualAuthFlow,
 } from '@/lib/keycloak';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
@@ -17,6 +20,12 @@ import { OrganizationService } from '@/services/organization.service';
 import { isSuperAdminToken } from '@/lib/jwt';
 
 export const AUTH_ERROR_KEY = 'auth_error';
+
+function isOAuthErrorOnLogin(): boolean {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  return Boolean(params.get('error') || params.get('error_description'));
+}
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -27,15 +36,27 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const setOrgId = useWorkspaceStore((s) => s.setOrgId);
 
   useEffect(() => {
+    if (pathname !== '/login') return;
+    if (parseOAuthCallbackFromUrl()) return;
+    if (isOAuthErrorOnLogin()) return;
+    clearStoredTokens();
+    clearOAuthState();
+    clearAuth();
+  }, [pathname, clearAuth]);
+
+  useEffect(() => {
     let alive = true;
 
     const run = async () => {
       try {
-        if (parseOAuthCallbackFromUrl()) {
+        if (shouldUseManualAuthFlow() && parseOAuthCallbackFromUrl()) {
           await completeManualOAuthCallback();
         }
 
-        const token = await refreshTokenIfNeeded();
+        await initializeKeycloak();
+        if (!alive) return;
+
+        const token = (await refreshTokenIfNeeded()) || localStorage.getItem('token');
         if (!alive) return;
 
         if (!token) {
@@ -45,7 +66,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
         const kcProfile = profileFromAccessToken(token);
 
-        // Sign in immediately — do not wait for /users/me (backend may still be misconfigured).
         setAuth({
           token,
           username: kcProfile?.username || null,
@@ -66,7 +86,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             email: me.email,
           });
         } catch {
-          /* keep JWT-based session */
+          /* JWT session is enough when backend is misconfigured */
         }
 
         try {
@@ -83,6 +103,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           error instanceof Error ? error.message : 'Sign-in failed',
         );
         clearStoredTokens();
+        clearOAuthState();
         clearAuth();
       } finally {
         if (alive) setInitialized(true);
@@ -93,7 +114,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     return () => {
       alive = false;
     };
-  }, [pathname, setAuth, setProfile, clearAuth, setInitialized, setOrgId]);
+  }, [setAuth, setProfile, clearAuth, setInitialized, setOrgId]);
 
   useEffect(() => {
     if (pathname === '/login' || pathname === '/auth/callback') return;

@@ -74,7 +74,7 @@ export default function LoginPage() {
         icon={<LoginOutlined />}
         onClick={() => {
           setAuthError(null);
-          loginWithKeycloak();
+          void loginWithKeycloak();
         }}
         style={{ height: 48, fontSize: 15 }}
       >

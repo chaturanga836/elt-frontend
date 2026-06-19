@@ -1,6 +1,6 @@
 'use client';
 
-import { type KeycloakProfile } from 'keycloak-js';
+import Keycloak, { type KeycloakInitOptions, type KeycloakProfile } from 'keycloak-js';
 import { isAccessTokenExpiringSoon, parseJwtPayload } from '@/lib/jwt';
 
 const CONFIGURED_KC_URL = (process.env.NEXT_PUBLIC_KC_URL || 'http://localhost:8081').replace(
@@ -19,6 +19,7 @@ type ManualAuthState = {
   redirectUri: string;
 };
 
+let keycloak: Keycloak | null = null;
 let refreshInFlight: Promise<string | null> | null = null;
 let oauthCallbackInFlight: Promise<boolean> | null = null;
 
@@ -47,6 +48,57 @@ function isSameOriginKeycloak(): boolean {
   return !cfgHost || cfgHost === window.location.hostname.toLowerCase();
 }
 
+/** Web Crypto subtle is only available in secure contexts (HTTPS or localhost). */
+export function isSecureAuthContext(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.isSecureContext && typeof crypto?.subtle !== 'undefined';
+}
+
+function isNonLocalHttpKeycloak(): boolean {
+  try {
+    const parsed = new URL(CONFIGURED_KC_URL);
+    if (parsed.protocol !== 'http:') return false;
+    const host = parsed.hostname.toLowerCase();
+    return !['localhost', '127.0.0.1', '::1'].includes(host);
+  } catch {
+    return CONFIGURED_KC_URL.startsWith('http://');
+  }
+}
+
+/**
+ * Manual OAuth for plain HTTP Keycloak. HTTPS production uses keycloak-js
+ * (token exchange via the library; profile from JWT only).
+ */
+export function shouldUseManualAuthFlow(): boolean {
+  return !isSecureAuthContext() || isNonLocalHttpKeycloak();
+}
+
+function randomString(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function getInitOptions(onLoad: KeycloakInitOptions['onLoad'] = 'check-sso'): KeycloakInitOptions {
+  return {
+    onLoad,
+    checkLoginIframe: false,
+    pkceMethod: false,
+  };
+}
+
+export function getKeycloakClient(): Keycloak {
+  if (!keycloak) {
+    keycloak = new Keycloak({
+      url: getKeycloakBaseUrl(),
+      realm: KEYCLOAK_REALM,
+      clientId: KEYCLOAK_CLIENT_ID,
+    });
+  }
+  return keycloak;
+}
+
 function authEndpoint(): string {
   return `${getKeycloakBaseUrl()}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth`;
 }
@@ -62,16 +114,18 @@ function logoutEndpoint(): string {
   return `${getKeycloakBaseUrl()}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/logout`;
 }
 
-/** @deprecated All environments use manual OAuth now; kept for api.ts compatibility. */
-export function shouldUseManualAuthFlow(): boolean {
-  return true;
-}
-
-function randomString(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
+function syncKeycloakTokensToStorage(client: Keycloak): string | null {
+  const token = client.token ?? null;
+  if (token) {
+    localStorage.setItem('token', token);
   }
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  if (client.refreshToken) {
+    localStorage.setItem('refresh_token', client.refreshToken);
+  }
+  if (token) {
+    markTokenIssuedNow();
+  }
+  return token;
 }
 
 export function getManualCallbackRedirectUri(): string {
@@ -173,6 +227,11 @@ export function clearStoredTokens(): void {
   localStorage.removeItem(TOKEN_ISSUED_AT_KEY);
 }
 
+export function clearOAuthState(): void {
+  sessionStorage.removeItem(AUTH_STATE_KEY);
+  localStorage.removeItem(AUTH_STATE_KEY);
+}
+
 function markTokenIssuedNow(): void {
   localStorage.setItem(TOKEN_ISSUED_AT_KEY, String(Date.now()));
 }
@@ -229,6 +288,10 @@ export async function refreshManualAccessToken(): Promise<string | null> {
       const tokens = await exchangeRefreshToken(refreshToken);
       return persistTokens(tokens);
     } catch {
+      const current = localStorage.getItem('token');
+      if (current && !isAccessTokenExpiringSoon(current, 0)) {
+        return current;
+      }
       clearStoredTokens();
       return null;
     } finally {
@@ -240,12 +303,19 @@ export async function refreshManualAccessToken(): Promise<string | null> {
 }
 
 export async function resolveAccessToken(): Promise<string | null> {
-  return ensureValidAccessToken();
+  if (shouldUseManualAuthFlow()) {
+    return ensureValidAccessToken();
+  }
+  return (await refreshTokenIfNeeded()) || localStorage.getItem('token');
 }
 
 export async function ensureValidAccessToken(): Promise<string | null> {
   const existing = localStorage.getItem('token');
   if (!existing) return null;
+
+  if (!shouldUseManualAuthFlow()) {
+    return refreshTokenIfNeeded();
+  }
 
   if (isFreshlyIssuedToken() || !isAccessTokenExpiringSoon(existing, 30)) {
     return existing;
@@ -258,16 +328,6 @@ function readOAuthState(): string | null {
   return sessionStorage.getItem(AUTH_STATE_KEY) || localStorage.getItem(AUTH_STATE_KEY);
 }
 
-function clearOAuthState(): void {
-  sessionStorage.removeItem(AUTH_STATE_KEY);
-  localStorage.removeItem(AUTH_STATE_KEY);
-}
-
-function hasValidStoredAccessToken(): boolean {
-  const token = localStorage.getItem('token');
-  return Boolean(token && !isAccessTokenExpiringSoon(token, 0));
-}
-
 export async function completeManualOAuthCallback(): Promise<boolean> {
   if (oauthCallbackInFlight) return oauthCallbackInFlight;
 
@@ -275,12 +335,6 @@ export async function completeManualOAuthCallback(): Promise<boolean> {
     try {
       const parsed = parseOAuthCallbackFromUrl();
       if (!parsed) return false;
-
-      if (hasValidStoredAccessToken()) {
-        window.history.replaceState({}, '', '/auth/callback');
-        clearOAuthState();
-        return true;
-      }
 
       const raw = readOAuthState();
       if (!raw) {
@@ -292,20 +346,11 @@ export async function completeManualOAuthCallback(): Promise<boolean> {
         throw new Error('Invalid OAuth state.');
       }
 
-      try {
-        const tokens = await exchangeCodeForTokens(parsed.code, expected.redirectUri);
-        persistTokens(tokens);
-        window.history.replaceState({}, '', '/auth/callback');
-        clearOAuthState();
-        return true;
-      } catch (error) {
-        if (hasValidStoredAccessToken()) {
-          window.history.replaceState({}, '', '/auth/callback');
-          clearOAuthState();
-          return true;
-        }
-        throw error;
-      }
+      const tokens = await exchangeCodeForTokens(parsed.code, expected.redirectUri);
+      persistTokens(tokens);
+      window.history.replaceState({}, '', '/auth/callback');
+      clearOAuthState();
+      return true;
     } finally {
       oauthCallbackInFlight = null;
     }
@@ -315,12 +360,40 @@ export async function completeManualOAuthCallback(): Promise<boolean> {
 }
 
 export async function initializeKeycloak(): Promise<boolean> {
-  return Boolean(localStorage.getItem('token'));
+  if (shouldUseManualAuthFlow()) {
+    return Boolean(localStorage.getItem('token'));
+  }
+
+  const client = getKeycloakClient();
+  if (client.didInitialize) {
+    if (client.token) {
+      syncKeycloakTokensToStorage(client);
+    }
+    return client.authenticated ?? Boolean(client.token);
+  }
+
+  const authenticated = await client.init(getInitOptions('check-sso'));
+  if (client.token) {
+    syncKeycloakTokensToStorage(client);
+  }
+  return authenticated;
 }
 
-export function loginWithKeycloak(redirectUri?: string): void {
-  clearStoredTokens();
-  loginWithoutPkce(redirectUri);
+export async function loginWithKeycloak(redirectUri?: string): Promise<void> {
+  const redirect = redirectUri || getManualCallbackRedirectUri();
+
+  if (shouldUseManualAuthFlow()) {
+    clearStoredTokens();
+    clearOAuthState();
+    loginWithoutPkce(redirect);
+    return;
+  }
+
+  const client = getKeycloakClient();
+  if (!client.didInitialize) {
+    await client.init(getInitOptions('check-sso'));
+  }
+  await client.login({ redirectUri: redirect });
 }
 
 export async function logoutFromKeycloak(redirectUri?: string): Promise<void> {
@@ -328,6 +401,22 @@ export async function logoutFromKeycloak(redirectUri?: string): Promise<void> {
   clearOAuthState();
 
   const postLogout = redirectUri || `${window.location.origin}/login`;
+
+  if (shouldUseManualAuthFlow()) {
+    const params = new URLSearchParams({
+      client_id: KEYCLOAK_CLIENT_ID,
+      post_logout_redirect_uri: postLogout,
+    });
+    window.location.assign(`${logoutEndpoint()}?${params}`);
+    return;
+  }
+
+  const client = getKeycloakClient();
+  if (client.authenticated) {
+    await client.logout({ redirectUri: postLogout });
+    return;
+  }
+
   const params = new URLSearchParams({
     client_id: KEYCLOAK_CLIENT_ID,
     post_logout_redirect_uri: postLogout,
@@ -355,5 +444,21 @@ export async function loadUserProfile(): Promise<KeycloakProfile | null> {
 }
 
 export async function refreshTokenIfNeeded(): Promise<string | null> {
-  return ensureValidAccessToken();
+  if (shouldUseManualAuthFlow()) {
+    return ensureValidAccessToken();
+  }
+
+  const client = getKeycloakClient();
+  if (!client.authenticated) {
+    return localStorage.getItem('token');
+  }
+
+  try {
+    await client.updateToken(30);
+  } catch {
+    clearStoredTokens();
+    return null;
+  }
+
+  return syncKeycloakTokensToStorage(client);
 }
