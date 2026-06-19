@@ -6,14 +6,8 @@ const publicApi = axios.create({
 });
 
 export type SignupRequest = {
-  email: string;
+  username: string;
   password: string;
-  first_name?: string;
-  last_name?: string;
-  display_name?: string;
-  org_name?: string;
-  create_default_project?: boolean;
-  project_name?: string;
 };
 
 export type SignupResponse = {

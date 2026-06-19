@@ -16,12 +16,8 @@ import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { getApiErrorMessage } from '@/lib/formatApiError';
 
 type RegisterFormValues = {
-  email: string;
+  username: string;
   password: string;
-  confirmPassword: string;
-  first_name?: string;
-  last_name?: string;
-  org_name?: string;
 };
 
 export default function RegisterPage() {
@@ -40,12 +36,8 @@ export default function RegisterPage() {
     setSubmitting(true);
     try {
       const result = await AuthService.signup({
-        email: values.email,
+        username: values.username,
         password: values.password,
-        first_name: values.first_name,
-        last_name: values.last_name,
-        org_name: values.org_name,
-        create_default_project: false,
       });
 
       if (!result.access_token) {
@@ -79,8 +71,8 @@ export default function RegisterPage() {
 
       setAuth({
         token: result.access_token,
-        username: kcProfile?.username || values.email,
-        email: result.email,
+        username: kcProfile?.username || values.username,
+        email: result.email ?? undefined,
         isSuperAdmin,
         realmRoles,
         workspaceIds,
@@ -98,8 +90,7 @@ export default function RegisterPage() {
   return (
     <AuthShell
       title="Create your account"
-      subtitle="Set up your organization and default workspace in one step."
-      wide
+      subtitle="Pick a username and password to get started."
       footer={
         <div style={{ marginTop: 20, textAlign: 'center', fontSize: 13, color: '#94a3b8' }}>
           Already have an account? <Link href="/login">Sign in</Link>
@@ -114,14 +105,19 @@ export default function RegisterPage() {
         size="large"
       >
         <Form.Item
-          name="email"
-          label="Email"
+          name="username"
+          label="Username"
           rules={[
-            { required: true, message: 'Email is required' },
-            { type: 'email', message: 'Enter a valid email' },
+            { required: true, message: 'Username is required' },
+            { min: 3, message: 'At least 3 characters' },
+            { max: 50, message: 'At most 50 characters' },
+            {
+              pattern: /^[a-zA-Z0-9_-]+$/,
+              message: 'Letters, numbers, underscores, and hyphens only',
+            },
           ]}
         >
-          <Input placeholder="you@company.com" autoComplete="email" />
+          <Input placeholder="yourname" autoComplete="username" />
         </Form.Item>
 
         <Form.Item
@@ -133,37 +129,6 @@ export default function RegisterPage() {
           ]}
         >
           <Input.Password placeholder="Minimum 8 characters" autoComplete="new-password" />
-        </Form.Item>
-
-        <Form.Item
-          name="confirmPassword"
-          label="Confirm password"
-          dependencies={['password']}
-          rules={[
-            { required: true, message: 'Please confirm your password' },
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!value || getFieldValue('password') === value) {
-                  return Promise.resolve();
-                }
-                return Promise.reject(new Error('Passwords do not match'));
-              },
-            }),
-          ]}
-        >
-          <Input.Password placeholder="Repeat password" autoComplete="new-password" />
-        </Form.Item>
-
-        <Form.Item name="first_name" label="First name (optional)">
-          <Input placeholder="Jane" autoComplete="given-name" />
-        </Form.Item>
-
-        <Form.Item name="last_name" label="Last name (optional)">
-          <Input placeholder="Doe" autoComplete="family-name" />
-        </Form.Item>
-
-        <Form.Item name="org_name" label="Organization name (optional)">
-          <Input placeholder="Acme Data Team" />
         </Form.Item>
 
         <Form.Item style={{ marginBottom: 0, marginTop: 8 }}>
