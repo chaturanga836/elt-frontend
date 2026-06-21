@@ -19,8 +19,9 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { WorkspaceItem, WorkspaceService } from '@/services/workspace.service';
 import { StudioService } from '@/services/studio.service';
+import { canCreateProjects, canManageOrgSettings } from '@/services/organization-settings.service';
 import AppBrand from '@/components/brand/AppBrand';
-import { projectPath } from '@/lib/paths';
+import { organizationSettingsPath, projectPath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
 
@@ -37,6 +38,7 @@ export default function WorkspacesPage() {
   const [loading, setLoading] = useState(true);
   const [accountLoading, setAccountLoading] = useState(true);
   const [canCreateProject, setCanCreateProject] = useState(false);
+  const [canOpenOrgSettings, setCanOpenOrgSettings] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [params, setParams] = useState({ page: 1, limit: 100 });
   const autoEntered = useRef(false);
@@ -78,11 +80,13 @@ export default function WorkspacesPage() {
       try {
         const account = await StudioService.getAccount();
         if (!cancelled) {
-          setCanCreateProject(isSuperAdmin || account.user.role === 'admin');
+          setCanCreateProject(canCreateProjects(account.user.role, isSuperAdmin));
+          setCanOpenOrgSettings(canManageOrgSettings(account.user.role, isSuperAdmin));
         }
       } catch {
         if (!cancelled) {
           setCanCreateProject(isSuperAdmin);
+          setCanOpenOrgSettings(isSuperAdmin);
         }
       } finally {
         if (!cancelled) {
@@ -206,13 +210,22 @@ export default function WorkspacesPage() {
           </Title>
           <Text type="secondary">Select a project to manage API, database, storage, and workflows.</Text>
         </div>
-        {canCreateProject && (
-          <Link href="/projects/new">
-            <Button type="primary" icon={<PlusOutlined />} size="large">
-              Create project
-            </Button>
-          </Link>
-        )}
+        <div className="flex gap-2">
+          {canOpenOrgSettings && (
+            <Link href={organizationSettingsPath()}>
+              <Button icon={<SettingOutlined />} size="large">
+                Account settings
+              </Button>
+            </Link>
+          )}
+          {canCreateProject && (
+            <Link href="/projects/new">
+              <Button type="primary" icon={<PlusOutlined />} size="large">
+                Create project
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       <Card className="mb-4">

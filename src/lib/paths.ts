@@ -1,3 +1,8 @@
+/** Account-level organization settings (owners only). */
+export function organizationSettingsPath(): string {
+  return '/projects/settings';
+}
+
 /** Primary BaaS scope path (prototype uses /projects). */
 export function projectPath(projectId: number, segment = ''): string {
   const base = `/projects/${projectId}`;

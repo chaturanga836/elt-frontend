@@ -65,6 +65,10 @@ const nextConfig: NextConfig = {
         destination: '/workspaces/new',
       },
       {
+        source: '/projects/settings',
+        destination: '/workspaces/settings',
+      },
+      {
         source: '/projects',
         destination: '/workspaces',
       },
