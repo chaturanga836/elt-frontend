@@ -36,7 +36,7 @@ fi
 
 export DOCKER_BUILDKIT="${DOCKER_BUILDKIT:-0}"
 
-bash scripts/generate-self-signed-cert.sh
+bash scripts/ensure-tls-certs.sh
 
 # shellcheck source=jenkins/free-edge-ports.sh
 source "${REPO_ROOT}/jenkins/free-edge-ports.sh"
@@ -47,4 +47,5 @@ release_edge_ports
 
 compose up -d --build --force-recreate
 
-curl -kfs "https://${DEPLOY_HOST:-127.0.0.1}/" >/dev/null
+curl -fs "https://${DEPLOY_HOST:-127.0.0.1}/" >/dev/null 2>&1 \
+  || curl -kfs "https://${DEPLOY_HOST:-127.0.0.1}/" >/dev/null

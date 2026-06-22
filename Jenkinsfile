@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DEPLOY_HOST = '13.200.160.10'
-        NEXT_PUBLIC_API_URL = 'https://13.200.160.10/api/v1'
-        NEXT_PUBLIC_KC_URL = 'https://13.200.160.10'
+        DEPLOY_HOST = 'dtorch.online'
+        NEXT_PUBLIC_API_URL = 'https://dtorch.online/api/v1'
+        NEXT_PUBLIC_KC_URL = 'https://dtorch.online'
         NEXT_PUBLIC_KC_REALM = 'workspace-realm'
         NEXT_PUBLIC_KC_CLIENT_ID = 'workspace-web'
         DOCKER_BUILDKIT = '0'
@@ -54,7 +54,8 @@ pipeline {
                     echo "=== Frontend health ==="
                     sleep 5
                     for i in $(seq 1 24); do
-                      if curl -kfs "https://${DEPLOY_HOST}/"; then
+                      if curl -fs "https://${DEPLOY_HOST}/" 2>/dev/null \
+                        || curl -kfs "https://${DEPLOY_HOST}/"; then
                         echo "Frontend OK"
                         exit 0
                       fi

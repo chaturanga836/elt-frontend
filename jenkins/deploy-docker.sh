@@ -27,7 +27,8 @@ vol_host_path() {
 compose_in_volume() {
   local -a env_args=(-e "COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME}")
   for key in DOCKER_BUILDKIT NEXT_PUBLIC_BUILD_ID NEXT_PUBLIC_API_URL \
-    NEXT_PUBLIC_KC_URL NEXT_PUBLIC_KC_REALM NEXT_PUBLIC_KC_CLIENT_ID; do
+    NEXT_PUBLIC_KC_URL NEXT_PUBLIC_KC_REALM NEXT_PUBLIC_KC_CLIENT_ID \
+    ELT_NGINX_CERT_DIR ELT_NGINX_ACME_DIR; do
     if [ -n "${!key:-}" ]; then
       env_args+=(-e "${key}=${!key}")
     fi
@@ -81,12 +82,8 @@ export DOCKER_BUILDKIT="${DOCKER_BUILDKIT:-0}"
 # shellcheck source=jenkins/free-edge-ports.sh
 source "${ROOT}/jenkins/free-edge-ports.sh"
 
-echo "=== Ensuring TLS certificates in deploy volume ==="
-docker run --rm \
-  -v "${VOL_PATH}:${VOL_PATH}" \
-  -w "${VOL_PATH}" \
-  -e "DEPLOY_HOST=${DEPLOY_HOST:-13.200.160.10}" \
-  alpine sh -ec 'apk add --no-cache openssl bash >/dev/null && bash scripts/generate-self-signed-cert.sh'
+echo "=== Ensuring TLS certificates on persistent host paths ==="
+bash scripts/ensure-tls-certs.sh
 
 echo "=== Stopping previous compose stack ==="
 compose_in_volume down --remove-orphans 2>/dev/null || compose_in_volume down 2>/dev/null || true
@@ -101,7 +98,8 @@ compose_in_volume up -d --build --force-recreate
 
 echo "=== Waiting for health ==="
 for i in $(seq 1 24); do
-  if curl -kfs "https://${DEPLOY_HOST:-127.0.0.1}/"; then
+  if curl -fs "https://${DEPLOY_HOST:-127.0.0.1}/" 2>/dev/null \
+    || curl -kfs "https://${DEPLOY_HOST:-127.0.0.1}/"; then
     echo "Frontend OK"
     trap - EXIT
     cleanup_vol

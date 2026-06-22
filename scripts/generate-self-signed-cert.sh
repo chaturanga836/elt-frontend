@@ -5,7 +5,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CERT_DIR="${ROOT}/nginx/certs"
+CERT_DIR="${CERT_DIR:-${ELT_NGINX_CERT_DIR:-${ROOT}/nginx/certs}}"
 HOST="${DEPLOY_HOST:-13.200.160.10}"
 DAYS="${CERT_DAYS:-825}"
 

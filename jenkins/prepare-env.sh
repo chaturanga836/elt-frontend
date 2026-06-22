@@ -6,7 +6,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-: "${DEPLOY_HOST:=13.200.160.10}"
+: "${DEPLOY_HOST:=dtorch.online}"
 : "${NEXT_PUBLIC_API_URL:=https://${DEPLOY_HOST}/api/v1}"
 : "${NEXT_PUBLIC_KC_URL:=https://${DEPLOY_HOST}}"
 : "${NEXT_PUBLIC_KC_REALM:=workspace-realm}"

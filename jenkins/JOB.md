@@ -17,9 +17,9 @@ Production `.env` is generated in **Prepare Environment** (same pattern as the l
 
 | Variable | Default |
 |----------|---------|
-| `DEPLOY_HOST` | `13.200.160.10` |
-| `NEXT_PUBLIC_API_URL` | `https://13.200.160.10/api/v1` |
-| `NEXT_PUBLIC_KC_URL` | `https://13.200.160.10` |
+| `DEPLOY_HOST` | `dtorch.online` |
+| `NEXT_PUBLIC_API_URL` | `https://dtorch.online/api/v1` |
+| `NEXT_PUBLIC_KC_URL` | `https://dtorch.online` |
 | `NEXT_PUBLIC_KC_REALM` | `workspace-realm` |
 | `NEXT_PUBLIC_KC_CLIENT_ID` | `workspace-web` |
 | `DOCKER_BUILDKIT` | `0` |
@@ -36,43 +36,47 @@ nginx proxies browser traffic on the same HTTPS origin:
 | `/api/` | `host.docker.internal:8000` |
 | `/realms/`, `/resources/` | `host.docker.internal:8081` (Keycloak) |
 
-## TLS certificates
+## TLS certificates (persistent host paths)
 
-Before the first deploy (or automatically in [`deploy-docker.sh`](deploy-docker.sh) / [`deploy.sh`](../deploy.sh)):
+Certs live on the **EC2 host**, not in the ephemeral Jenkins deploy volume:
+
+| Host path | Purpose |
+|-----------|---------|
+| `/opt/elt-nginx/certs` | `fullchain.pem` + `privkey.pem` mounted into `elt-frontend-proxy` |
+| `/opt/elt-nginx/acme` | Let's Encrypt HTTP-01 webroot |
+
+[`deploy-docker.sh`](deploy-docker.sh) runs [`scripts/ensure-tls-certs.sh`](../scripts/ensure-tls-certs.sh) before each deploy. It **skips** generation when real certs already exist in `/opt/elt-nginx/certs`.
+
+### One-time server setup
 
 ```bash
-DEPLOY_HOST=13.200.160.10 bash scripts/generate-self-signed-cert.sh
+# On EC2 (once) — create dirs and issue Let's Encrypt cert
+sudo mkdir -p /opt/elt-nginx/certs /opt/elt-nginx/acme
+sudo bash scripts/setup-tls.sh dtorch.online www.dtorch.online
 ```
 
-Certs are written to `nginx/certs/` (gitignored). Browsers will show a certificate warning until you replace them with Let's Encrypt certificates after a domain is configured.
+`setup-tls.sh` installs a renewal hook that copies renewed certs to `/opt/elt-nginx/certs` and reloads nginx.
 
-Future domain cutover:
+Until Let's Encrypt is configured, the first Jenkins deploy generates a **self-signed** cert in `/opt/elt-nginx/certs` (browsers will warn).
 
-1. Point DNS A record to `DEPLOY_HOST`.
-2. Run certbot with webroot `nginx/acme` (HTTP-01 via `/.well-known/acme-challenge/`).
-3. Replace `nginx/certs/fullchain.pem` and `privkey.pem`, or mount Let's Encrypt paths in `docker-compose.yml`.
-4. Update Jenkins `DEPLOY_HOST` / `NEXT_PUBLIC_*` to the domain and rebuild.
+Override paths with `ELT_NGINX_CERT_DIR` / `ELT_NGINX_ACME_DIR` if needed.
 
 ## Keycloak client (`workspace-web`)
 
-After switching to HTTPS, update redirect URIs in the Keycloak admin console (**Clients → workspace-web → Valid redirect URIs**):
+Update redirect URIs in the Keycloak admin console (**Clients → workspace-web → Valid redirect URIs**):
 
-- `https://13.200.160.10/auth/callback`
-- `https://13.200.160.10/login`
-- `https://13.200.160.10/*` (post-logout and wildcard during transition)
+- `https://dtorch.online/auth/callback`
+- `https://dtorch.online/login`
+- `https://dtorch.online/*`
 
-Also add **Web origins**: `https://13.200.160.10`
-
-Keep existing `http://13.200.160.10:3000/*` entries until migration is complete, then remove them.
-
-When a domain is added, repeat the same steps with `https://your-domain/...`.
+Also add **Web origins**: `https://dtorch.online`
 
 ## Pipeline stages
 
 1. **Test** — all branches: [`run-tests.sh`](run-tests.sh) (`npm ci`, lint, build in `node:22.13.1-alpine`)
 2. **Prepare Environment** — `master` only: [`prepare-env.sh`](prepare-env.sh) → writes `.env`
 3. **Deploy** — `master` only: [`deploy.sh`](../deploy.sh) → [`deploy-docker.sh`](deploy-docker.sh) in CI (workspace copied into a Docker volume; host daemon cannot bind-mount Jenkins workspace paths)
-4. **Health** — `master` only: `curl -kfs https://${DEPLOY_HOST}/` with retries (`-k` accepts self-signed cert)
+4. **Health** — `master` only: `curl -fs https://${DEPLOY_HOST}/` (falls back to `-k` for self-signed)
 
 ## Deploy ordering
 
@@ -99,7 +103,7 @@ docker rm -f elt-frontend-proxy 2>/dev/null || true
 # re-run Jenkins deploy, or: bash deploy.sh
 ```
 
-After a successful deploy, `http://${DEPLOY_HOST}/` should **redirect to HTTPS** (not show the nginx welcome page). Use `https://${DEPLOY_HOST}/` for the app (accept the self-signed cert warning until Let's Encrypt is configured).
+After a successful deploy, `http://${DEPLOY_HOST}/` should **redirect to HTTPS**. Use `https://${DEPLOY_HOST}/` for the app.
 
 ## Image tags
 
@@ -115,9 +119,10 @@ Prune runs on **every** pipeline build (`post { always }`) and again via `trap` 
 ## Verification
 
 ```bash
-curl -kI https://13.200.160.10/
-curl -kI https://13.200.160.10/health
+curl -I https://dtorch.online/
+curl -I https://dtorch.online/health
 docker ps | grep -E 'etl-frontend|elt-frontend-proxy'
+docker inspect elt-frontend-proxy --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}'
 ```
 
-Open `https://13.200.160.10/login` in a browser, accept the self-signed certificate warning, and confirm Keycloak login completes.
+Open `https://dtorch.online/login` and confirm Keycloak login completes.
