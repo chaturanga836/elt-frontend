@@ -74,6 +74,7 @@ export const StudioService = {
   getProjectCredentials: async (projectId: number): Promise<ProjectCredentialsMeta> => {
     const res = await api.get<ProjectCredentialsMeta>(
       `/studio/projects/${projectId}/credentials`,
+      { params: { workspace_id: projectId } },
     );
     return res.data;
   },
@@ -83,6 +84,8 @@ export const StudioService = {
   ): Promise<ProjectCredentialsCreated> => {
     const res = await api.post<ProjectCredentialsCreated>(
       `/studio/projects/${projectId}/credentials/regenerate`,
+      undefined,
+      { params: { workspace_id: projectId } },
     );
     return res.data;
   },
