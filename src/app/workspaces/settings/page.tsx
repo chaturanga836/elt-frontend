@@ -7,6 +7,7 @@ import Link from 'next/link';
 import AppBrand from '@/components/brand/AppBrand';
 import { StudioService } from '@/services/studio.service';
 import {
+  canManageOrgQueue,
   canManageOrgSettings,
 } from '@/services/organization-settings.service';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -14,13 +15,15 @@ import OrgProjectsTab from '@/features/organization/components/OrgProjectsTab';
 import OrgMembersTab from '@/features/organization/components/OrgMembersTab';
 import OrgAuditLogsTab from '@/features/organization/components/OrgAuditLogsTab';
 import OrgIntegrationsTab from '@/features/organization/components/OrgIntegrationsTab';
+import OrgQueueTab from '@/features/organization/components/OrgQueueTab';
 
 const { Title, Text } = Typography;
 
 export default function OrganizationSettingsPage() {
   const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
   const [loading, setLoading] = useState(true);
-  const [allowed, setAllowed] = useState(false);
+  const [ownerAccess, setOwnerAccess] = useState(false);
+  const [queueAdmin, setQueueAdmin] = useState(false);
   const [orgName, setOrgName] = useState('');
 
   useEffect(() => {
@@ -30,11 +33,15 @@ export default function OrganizationSettingsPage() {
         const account = await StudioService.getAccount();
         if (!cancelled) {
           setOrgName(account.organization.name);
-          setAllowed(canManageOrgSettings(account.user.role, isSuperAdmin));
+          const owner = canManageOrgSettings(account.user.role, isSuperAdmin);
+          const queueAccess = canManageOrgQueue(account.user.role, isSuperAdmin);
+          setOwnerAccess(owner);
+          setQueueAdmin(queueAccess);
         }
       } catch {
         if (!cancelled) {
-          setAllowed(isSuperAdmin);
+          setOwnerAccess(isSuperAdmin);
+          setQueueAdmin(isSuperAdmin);
         }
       } finally {
         if (!cancelled) {
@@ -62,13 +69,13 @@ export default function OrganizationSettingsPage() {
     );
   }
 
-  if (!allowed) {
+  if (!ownerAccess && !queueAdmin) {
     return (
       <div className="p-8">
         <Result
           status="403"
           title="Access denied"
-          subTitle="Only account owners can manage organization settings."
+          subTitle="Only account owners and admins can manage account settings."
           extra={
             <Link href="/projects">
               <Button type="primary">Back to projects</Button>
@@ -95,32 +102,45 @@ export default function OrganizationSettingsPage() {
       </Title>
       <Text type="secondary">
         {orgName ? `${orgName} · ` : ''}
-        Manage projects, members, integrations, and audit logs for your account.
+        Manage projects, members, queue, integrations, and audit logs for your account.
       </Text>
 
       <Card className="mt-6">
         <Tabs
           items={[
-            {
-              key: 'projects',
-              label: 'Projects',
-              children: <OrgProjectsTab />,
-            },
-            {
-              key: 'members',
-              label: 'Members',
-              children: <OrgMembersTab />,
-            },
-            {
-              key: 'audit',
-              label: 'Audit logs',
-              children: <OrgAuditLogsTab />,
-            },
-            {
-              key: 'integrations',
-              label: 'Integrations',
-              children: <OrgIntegrationsTab />,
-            },
+            ...(ownerAccess
+              ? [
+                  {
+                    key: 'projects',
+                    label: 'Projects',
+                    children: <OrgProjectsTab />,
+                  },
+                  {
+                    key: 'members',
+                    label: 'Members',
+                    children: <OrgMembersTab />,
+                  },
+                  {
+                    key: 'audit',
+                    label: 'Audit logs',
+                    children: <OrgAuditLogsTab />,
+                  },
+                  {
+                    key: 'integrations',
+                    label: 'Integrations',
+                    children: <OrgIntegrationsTab />,
+                  },
+                ]
+              : []),
+            ...(queueAdmin
+              ? [
+                  {
+                    key: 'queue',
+                    label: 'Queue',
+                    children: <OrgQueueTab />,
+                  },
+                ]
+              : []),
           ]}
         />
       </Card>

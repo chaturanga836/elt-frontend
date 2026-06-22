@@ -52,6 +52,7 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
   const realtimeBase = projectPath(workspaceId, 'realtime');
   const workflowBase = projectPath(workspaceId, 'workflow');
   const queueBase = projectPath(workspaceId, 'queue');
+  const queueLogsBase = projectPath(workspaceId, 'queue/logs');
   const cronBase = projectPath(workspaceId, 'cron');
   const servicesBase = projectPath(workspaceId, 'services');
   const servicesGithub = projectPath(workspaceId, 'services/github');
@@ -113,9 +114,13 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
       ],
     },
     {
-      key: queueBase,
+      key: 'queue-group',
       icon: <InboxOutlined />,
       label: 'Queue',
+      children: [
+        { key: queueBase, icon: <UnorderedListOutlined />, label: 'Queues' },
+        { key: queueLogsBase, icon: <HistoryOutlined />, label: 'Logs' },
+      ],
     },
     {
       key: cronBase,
@@ -159,6 +164,7 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
     if (path.includes('/db/tables')) return dbTables;
     if (path.includes('/storage') && !path.includes('/connections/storage')) return storageBase;
     if (path.includes('/realtime')) return realtimeBase;
+    if (path.includes('/queue/logs')) return queueLogsBase;
     if (path.includes('/queue')) return queueBase;
     if (path.includes('/cron')) return cronBase;
     if (path.includes('/services/github')) return servicesGithub;
@@ -176,6 +182,7 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
     if (path.includes('/api/rest') || path.includes('/connections')) keys.push('api-group');
     if (path.includes('/db/')) keys.push('db-group');
     if (path.includes('/pipe') || path.includes('/workflow')) keys.push('workflow-group');
+    if (path.includes('/queue')) keys.push('queue-group');
     if (path.includes('/task') || path.includes('/services')) keys.push('services-group');
     return keys;
   };

@@ -42,6 +42,12 @@ export function normalizeOrgRole(role: string): OrgRole {
   return 'developer';
 }
 
+export function canManageOrgQueue(role: string, isSuperAdmin: boolean): boolean {
+  if (isSuperAdmin) return true;
+  const normalized = normalizeOrgRole(role);
+  return normalized === 'owner' || normalized === 'admin';
+}
+
 export function canManageOrgSettings(role: string, isSuperAdmin: boolean): boolean {
   if (isSuperAdmin) return true;
   return normalizeOrgRole(role) === 'owner';
@@ -105,5 +111,38 @@ export const OrganizationSettingsService = {
 
   revokeGitConnection: async (connectionId: number): Promise<void> => {
     await api.delete(`/organization/settings/git-connections/${connectionId}`);
+  },
+
+  getQueueSettings: async (): Promise<{
+    enabled: boolean;
+    broker: 'postgres' | 'redis' | 'rabbitmq';
+    provisioned_at?: string | null;
+    broker_instance_ref?: string | null;
+  }> => {
+    const res = await api.get('/organization/settings/queue');
+    return res.data;
+  },
+
+  updateQueueSettings: async (body: {
+    enabled: boolean;
+    broker: 'postgres' | 'redis' | 'rabbitmq';
+  }) => {
+    const res = await api.put('/organization/settings/queue', body);
+    return res.data;
+  },
+
+  listOrgQueues: async (): Promise<{
+    items: Array<{
+      workspace_id: number;
+      workspace_name: string;
+      queue_id: number;
+      queue_name: string;
+      depth: number;
+      created_at?: string | null;
+    }>;
+    total: number;
+  }> => {
+    const res = await api.get('/organization/settings/queues');
+    return res.data;
   },
 };
