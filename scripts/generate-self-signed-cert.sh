@@ -9,6 +9,21 @@ CERT_DIR="${CERT_DIR:-${ELT_NGINX_CERT_DIR:-${ROOT}/nginx/certs}}"
 HOST="${DEPLOY_HOST:-13.200.160.10}"
 DAYS="${CERT_DAYS:-825}"
 
+is_ip_address() {
+  [[ "$1" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]
+}
+
+build_alt_names() {
+  if is_ip_address "$HOST"; then
+    printf 'IP.1 = %s\nDNS.1 = %s\n' "$HOST" "$HOST"
+  else
+    printf 'DNS.1 = %s\n' "$HOST"
+    if [[ "$HOST" != www.* ]]; then
+      printf 'DNS.2 = www.%s\n' "$HOST"
+    fi
+  fi
+}
+
 mkdir -p "${CERT_DIR}"
 
 if [ -f "${CERT_DIR}/fullchain.pem" ] && [ -f "${CERT_DIR}/privkey.pem" ]; then
@@ -18,6 +33,7 @@ fi
 
 OPENSSL_CONFIG="$(mktemp)"
 trap 'rm -f "${OPENSSL_CONFIG}"' EXIT
+ALT_NAMES="$(build_alt_names)"
 
 cat > "${OPENSSL_CONFIG}" <<EOF
 [req]
@@ -34,8 +50,7 @@ CN = ${HOST}
 subjectAltName = @alt_names
 
 [alt_names]
-IP.1 = ${HOST}
-DNS.1 = ${HOST}
+${ALT_NAMES}
 EOF
 
 openssl req -x509 -nodes -days "${DAYS}" -newkey rsa:2048 \
