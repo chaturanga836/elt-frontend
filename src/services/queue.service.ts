@@ -35,6 +35,17 @@ export const QueueService = {
     return res.data;
   },
 
+  updateOrgSettings: async (
+    workspaceId: number,
+    body: { enabled: boolean; broker: QueueBroker },
+  ): Promise<WorkspaceQueueStatus> => {
+    const res = await api.put<WorkspaceQueueStatus>(
+      `/workspaces/${workspaceId}/queue-settings`,
+      body,
+    );
+    return res.data;
+  },
+
   list: async (workspaceId: number): Promise<{ items: QueueItem[]; total: number }> => {
     const res = await api.get<{ items: QueueItem[]; total: number }>(
       `/workspaces/${workspaceId}/queues`,

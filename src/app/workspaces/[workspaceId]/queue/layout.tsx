@@ -36,7 +36,13 @@ export default function QueueLayout({ children }: { children: React.ReactNode })
   }
 
   if (!status?.enabled) {
-    return <QueueSetupGate status={status ?? { enabled: false, broker: 'postgres' }} />;
+    return (
+      <QueueSetupGate
+        workspaceId={workspaceId}
+        status={status ?? { enabled: false, broker: 'postgres' }}
+        onEnabled={loadStatus}
+      />
+    );
   }
 
   return <>{children}</>;
