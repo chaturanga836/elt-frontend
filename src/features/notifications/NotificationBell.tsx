@@ -4,12 +4,12 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Badge, Button, Dropdown, List, Space, Typography } from 'antd';
 import { BellOutlined } from '@ant-design/icons';
 import { NotificationItem, NotificationService } from '@/services/notification.service';
-import { useRealtime } from '@/features/notifications/RealtimeProvider';
 
 const { Text } = Typography;
 
+const POLL_MS = 60_000;
+
 export default function NotificationBell() {
-  const { inboxVersion, refreshInbox } = useRealtime();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
@@ -27,33 +27,49 @@ export default function NotificationBell() {
 
   useEffect(() => {
     void load();
-  }, [load, inboxVersion]);
+  }, [load]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void load();
+      }
+    }, POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [load]);
+
+  useEffect(() => {
+    if (open) {
+      void load();
+    }
+  }, [open, load]);
 
   const markRead = async (id: number) => {
     await NotificationService.markRead(id);
-    refreshInbox();
     await load();
   };
 
   const markAllRead = async () => {
     await NotificationService.markAllRead();
-    refreshInbox();
     await load();
   };
 
   const dropdownContent = (
     <div style={{ width: 360, maxHeight: 400, overflow: 'auto', padding: 8 }}>
       <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Text strong>Notifications</Text>
+        <Text strong>Platform alerts</Text>
         {unread > 0 && (
           <Button type="link" size="small" onClick={() => void markAllRead()}>
             Mark all read
           </Button>
         )}
       </Space>
+      <Text type="secondary" style={{ display: 'block', marginBottom: 8, fontSize: 12 }}>
+        Pipeline/workflow alerts for your account. Customer app realtime uses the SDK.
+      </Text>
       <List
         size="small"
-        locale={{ emptyText: 'No notifications' }}
+        locale={{ emptyText: 'No alerts' }}
         dataSource={items}
         renderItem={(item) => (
           <List.Item
@@ -93,7 +109,7 @@ export default function NotificationBell() {
       trigger={['click']}
     >
       <Badge count={unread} size="small" offset={[-2, 2]}>
-        <Button type="text" icon={<BellOutlined />} aria-label="Notifications" />
+        <Button type="text" icon={<BellOutlined />} aria-label="Platform alerts" />
       </Badge>
     </Dropdown>
   );

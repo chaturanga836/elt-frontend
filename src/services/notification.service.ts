@@ -102,13 +102,6 @@ export const NotificationService = {
     return res.data;
   },
 
-  getRealtimeToken: async (): Promise<{ token: string; ws_url: string; expires_in: number }> => {
-    const res = await api.get<{ token: string; ws_url: string; expires_in: number }>(
-      '/notifications/realtime-token',
-    );
-    return res.data;
-  },
-
   listInbox: async (params?: {
     page?: number;
     limit?: number;
@@ -128,14 +121,6 @@ export const NotificationService = {
 
   markAllRead: async (): Promise<{ marked: number }> => {
     const res = await api.post<{ marked: number }>('/notifications/read-all');
-    return res.data;
-  },
-
-  publish: async (
-    workspaceId: number,
-    body: { channel: string; payload?: Record<string, unknown> },
-  ) => {
-    const res = await api.post(`/workspaces/${workspaceId}/notifications/publish`, body);
     return res.data;
   },
 };

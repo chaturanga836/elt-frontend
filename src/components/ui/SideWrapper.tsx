@@ -106,7 +106,7 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
       icon: <ThunderboltOutlined />,
       label: 'Realtime',
       children: [
-        { key: realtimeBase, icon: <UnorderedListOutlined />, label: 'Channels' },
+        { key: realtimeBase, icon: <UnorderedListOutlined />, label: 'Overview' },
         { key: realtimeLogsBase, icon: <HistoryOutlined />, label: 'Logs' },
       ],
     },

@@ -18,7 +18,6 @@
     "@xyflow/react": "^12.10.2",
     "antd": "^6.3.0",
     "axios": "^1.13.5",
-    "centrifuge": "^5.7.0",
     "keycloak-js": "^26.2.4",
     "lodash": "^4.18.1",
     "lucide-react": "^0.575.0",
