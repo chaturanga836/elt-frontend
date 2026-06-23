@@ -12,6 +12,7 @@ export type WorkspaceNotificationStatus = {
   enabled: boolean;
   ws_url?: string | null;
   provisioning_status?: 'idle' | 'provisioning' | 'ready' | 'failed';
+  provisioning_error?: string | null;
 };
 
 export type NotificationLogItem = {

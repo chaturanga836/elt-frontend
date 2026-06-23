@@ -74,7 +74,8 @@ export default function NotificationSetupGate({
   };
 
   const subtitle = failed
-    ? 'Centrifugo could not be started. Try again or check server logs for infra-service and elt-worker.'
+    ? status.provisioning_error ||
+      'Centrifugo could not be started. Try again or check server logs for infra-service and elt-api.'
     : canManage
       ? 'Realtime notifications are turned off for this account. Enable to use channels, inbox, and SDK publish.'
       : 'An account owner or admin must enable notifications in account settings.';
