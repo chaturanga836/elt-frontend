@@ -16,6 +16,7 @@ import OrgMembersTab from '@/features/organization/components/OrgMembersTab';
 import OrgAuditLogsTab from '@/features/organization/components/OrgAuditLogsTab';
 import OrgIntegrationsTab from '@/features/organization/components/OrgIntegrationsTab';
 import OrgQueueTab from '@/features/organization/components/OrgQueueTab';
+import OrgNotificationTab from '@/features/organization/components/OrgNotificationTab';
 
 const { Title, Text } = Typography;
 
@@ -138,6 +139,11 @@ export default function OrganizationSettingsPage() {
                     key: 'queue',
                     label: 'Queue',
                     children: <OrgQueueTab />,
+                  },
+                  {
+                    key: 'notifications',
+                    label: 'Notifications',
+                    children: <OrgNotificationTab />,
                   },
                 ]
               : []),

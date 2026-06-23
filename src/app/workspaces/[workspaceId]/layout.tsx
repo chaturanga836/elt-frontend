@@ -2,6 +2,7 @@
 
 import SideWrapper from '@/components/ui/SideWrapper';
 import WorkspaceGuard from '@/components/workspace/WorkspaceGuard';
+import { RealtimeProvider } from '@/features/notifications/RealtimeProvider';
 import { useParams } from 'next/navigation';
 
 export default function WorkspaceShellLayout({ children }: { children: React.ReactNode }) {
@@ -11,7 +12,9 @@ export default function WorkspaceShellLayout({ children }: { children: React.Rea
 
   return (
     <WorkspaceGuard>
-      <SideWrapper workspaceId={workspaceId}>{children}</SideWrapper>
+      <RealtimeProvider workspaceId={workspaceId}>
+        <SideWrapper workspaceId={workspaceId}>{children}</SideWrapper>
+      </RealtimeProvider>
     </WorkspaceGuard>
   );
 }

@@ -23,6 +23,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { logoutFromKeycloak } from '@/lib/keycloak';
 import AppBrand from '@/components/brand/AppBrand';
+import NotificationBell from '@/features/notifications/NotificationBell';
 import { projectPath } from '@/lib/paths';
 import { WorkspaceService, WorkspaceItem } from '@/services/workspace.service';
 
@@ -50,6 +51,7 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
   const dbTables = projectPath(workspaceId, 'db/tables');
   const storageBase = projectPath(workspaceId, 'storage');
   const realtimeBase = projectPath(workspaceId, 'realtime');
+  const realtimeLogsBase = projectPath(workspaceId, 'realtime/logs');
   const workflowBase = projectPath(workspaceId, 'workflow');
   const queueBase = projectPath(workspaceId, 'queue');
   const queueLogsBase = projectPath(workspaceId, 'queue/logs');
@@ -100,9 +102,13 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
       label: 'Storage',
     },
     {
-      key: realtimeBase,
+      key: 'realtime-group',
       icon: <ThunderboltOutlined />,
       label: 'Realtime',
+      children: [
+        { key: realtimeBase, icon: <UnorderedListOutlined />, label: 'Channels' },
+        { key: realtimeLogsBase, icon: <HistoryOutlined />, label: 'Logs' },
+      ],
     },
     {
       key: 'workflow-group',
@@ -163,6 +169,7 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
     if (path.includes('/db/sql')) return dbSql;
     if (path.includes('/db/tables')) return dbTables;
     if (path.includes('/storage') && !path.includes('/connections/storage')) return storageBase;
+    if (path.includes('/realtime/logs')) return realtimeLogsBase;
     if (path.includes('/realtime')) return realtimeBase;
     if (path.includes('/queue/logs')) return queueLogsBase;
     if (path.includes('/queue')) return queueBase;
@@ -183,6 +190,7 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
     if (path.includes('/db/')) keys.push('db-group');
     if (path.includes('/pipe') || path.includes('/workflow')) keys.push('workflow-group');
     if (path.includes('/queue')) keys.push('queue-group');
+    if (path.includes('/realtime')) keys.push('realtime-group');
     if (path.includes('/task') || path.includes('/services')) keys.push('services-group');
     return keys;
   };
@@ -297,7 +305,20 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
           minHeight: '100vh',
         }}
       >
-        <Content style={{ background: colorBgContainer }}>{children}</Content>
+        <Content style={{ background: colorBgContainer }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              padding: '8px 16px',
+              borderBottom: '1px solid rgba(0,0,0,0.06)',
+            }}
+          >
+            <NotificationBell />
+          </div>
+          {children}
+        </Content>
       </Layout>
     </Layout>
   );

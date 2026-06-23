@@ -1,6 +1,4 @@
-'use client';
-
-import RealtimePage from '@/features/baas-prototype/RealtimePage';
+import RealtimePage from '@/features/notifications/RealtimePage';
 
 export default function ProjectRealtimePage() {
   return <RealtimePage />;
