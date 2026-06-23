@@ -5,6 +5,7 @@ import {
   Breadcrumb,
   Button,
   Card,
+  Empty,
   Space,
   Spin,
   Table,
@@ -15,6 +16,7 @@ import {
 } from 'antd';
 import {
   CloudUploadOutlined,
+  DatabaseOutlined,
   DeleteOutlined,
   FileOutlined,
   FolderOutlined,
@@ -27,6 +29,7 @@ import {
   deleteStorageObject,
   getWorkspaceStorage,
   listStorageObjects,
+  provisionWorkspaceStorage,
   uploadStorageObject,
 } from '@/services/storage.service';
 import { getApiErrorMessage } from '@/lib/formatApiError';
@@ -46,12 +49,21 @@ function formatModified(value?: string | null): string {
   }
 }
 
+function isStorageReady(status: WorkspaceStorageStatus | null): boolean {
+  return status?.status === 'ready';
+}
+
+function needsProvisioning(status: WorkspaceStorageStatus | null): boolean {
+  return !status || status.status === 'not_provisioned' || status.status === 'error';
+}
+
 export default function StorageBrowserPage({ workspaceId }: Props) {
   const [storage, setStorage] = useState<WorkspaceStorageStatus | null>(null);
   const [objects, setObjects] = useState<StorageObjectItem[]>([]);
   const [currentPrefix, setCurrentPrefix] = useState('');
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [provisioning, setProvisioning] = useState(false);
 
   const loadStorage = useCallback(async () => {
     const status = await getWorkspaceStorage(workspaceId);
@@ -71,8 +83,12 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      await loadStorage();
-      await loadObjects(currentPrefix);
+      const status = await loadStorage();
+      if (isStorageReady(status)) {
+        await loadObjects(currentPrefix);
+      } else {
+        setObjects([]);
+      }
     } catch (err) {
       notification.error({ message: getApiErrorMessage(err, 'Failed to load storage') });
     } finally {
@@ -80,9 +96,68 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
     }
   }, [loadStorage, loadObjects, currentPrefix]);
 
+  const handleProvision = useCallback(async () => {
+    setProvisioning(true);
+    try {
+      const status = await provisionWorkspaceStorage(workspaceId);
+      setStorage(status);
+      if (isStorageReady(status)) {
+        notification.success({ message: 'Storage bucket is ready' });
+        await loadObjects('');
+      } else {
+        notification.error({
+          message: status.error ?? 'Storage provisioning failed',
+        });
+      }
+    } catch (err) {
+      notification.error({ message: getApiErrorMessage(err, 'Failed to provision storage') });
+    } finally {
+      setProvisioning(false);
+    }
+  }, [workspaceId, loadObjects]);
+
   useEffect(() => {
     refresh();
   }, [workspaceId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (loading && !storage) {
+    return (
+      <div style={{ padding: 24 }}>
+        <Spin />
+      </div>
+    );
+  }
+
+  if (needsProvisioning(storage)) {
+    const isError = storage?.status === 'error';
+    return (
+      <div style={{ padding: 24 }}>
+        <Title level={3} style={{ marginTop: 0 }}>
+          Storage
+        </Title>
+        <Text type="secondary">Managed MinIO object storage for this project.</Text>
+        <Card style={{ marginTop: 16 }}>
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              isError
+                ? storage?.error ?? 'Storage provisioning failed'
+                : 'Storage has not been set up for this project yet.'
+            }
+          >
+            <Button
+              type="primary"
+              icon={<DatabaseOutlined />}
+              loading={provisioning}
+              onClick={() => handleProvision()}
+            >
+              {isError ? 'Retry provisioning' : 'Enable storage'}
+            </Button>
+          </Empty>
+        </Card>
+      </div>
+    );
+  }
 
   const modeLabel = storage?.mode === 'dedicated' ? 'Dedicated' : 'Shared';
   const modeColor = storage?.mode === 'dedicated' ? 'gold' : 'blue';
@@ -158,15 +233,6 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
       : [{ title: '/' }]),
   ];
 
-  if (storage?.status === 'error') {
-    return (
-      <div style={{ padding: 24 }}>
-        <Title level={3}>Storage</Title>
-        <Text type="danger">{storage.error ?? 'Storage provisioning failed'}</Text>
-      </div>
-    );
-  }
-
   return (
     <div style={{ padding: 24 }}>
       <Title level={3} style={{ marginTop: 0 }}>
@@ -221,6 +287,7 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
             rowKey="key"
             pagination={false}
             size="middle"
+            locale={{ emptyText: 'No objects in this folder' }}
           />
         </Spin>
       </Card>

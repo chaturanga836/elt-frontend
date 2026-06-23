@@ -32,6 +32,13 @@ export async function getWorkspaceStorage(workspaceId: number): Promise<Workspac
   return data;
 }
 
+export async function provisionWorkspaceStorage(
+  workspaceId: number,
+): Promise<WorkspaceStorageStatus> {
+  const { data } = await api.post<WorkspaceStorageStatus>(`/workspaces/${workspaceId}/storage`);
+  return data;
+}
+
 export async function listStorageObjects(
   workspaceId: number,
   prefix = '',
