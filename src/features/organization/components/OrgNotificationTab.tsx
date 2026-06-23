@@ -63,7 +63,7 @@ export default function OrgNotificationTab() {
       const updated = await NotificationService.updateOrgSettings({ enabled });
       setSettings(updated);
       notification.success({
-        message: enabled ? 'Notifications enabled' : 'Notifications disabled',
+        message: enabled ? 'Provisioning realtime notifications' : 'Notifications disabled',
       });
       await load();
     } catch (err) {

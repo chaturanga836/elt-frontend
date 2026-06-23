@@ -5,11 +5,13 @@ export type NotificationSettings = {
   provisioned_at?: string | null;
   broker_instance_ref?: string | null;
   ws_url?: string | null;
+  provisioning_status?: 'idle' | 'provisioning' | 'ready' | 'failed';
 };
 
 export type WorkspaceNotificationStatus = {
   enabled: boolean;
   ws_url?: string | null;
+  provisioning_status?: 'idle' | 'provisioning' | 'ready' | 'failed';
 };
 
 export type NotificationLogItem = {

@@ -20,9 +20,15 @@ type Props = {
   workspaceId: number;
   status: WorkspaceNotificationStatus;
   onEnabled?: () => void;
+  failed?: boolean;
 };
 
-export default function NotificationSetupGate({ workspaceId, status, onEnabled }: Props) {
+export default function NotificationSetupGate({
+  workspaceId,
+  status,
+  onEnabled,
+  failed = false,
+}: Props) {
   const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
   const [canManage, setCanManage] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(true);
@@ -55,7 +61,7 @@ export default function NotificationSetupGate({ workspaceId, status, onEnabled }
     setEnabling(true);
     try {
       await NotificationService.updateOrgSettingsFromProject(workspaceId, { enabled: true });
-      notification.success({ message: 'Notifications enabled for this account' });
+      notification.success({ message: 'Provisioning realtime notifications' });
       onEnabled?.();
     } catch (err) {
       notification.error({
@@ -67,9 +73,11 @@ export default function NotificationSetupGate({ workspaceId, status, onEnabled }
     }
   };
 
-  const subtitle = canManage
-    ? 'Realtime notifications are turned off for this account. Enable to use channels, inbox, and SDK publish.'
-    : 'An account owner or admin must enable notifications in account settings.';
+  const subtitle = failed
+    ? 'Centrifugo could not be started. Try again or check server logs for infra-service and elt-worker.'
+    : canManage
+      ? 'Realtime notifications are turned off for this account. Enable to use channels, inbox, and SDK publish.'
+      : 'An account owner or admin must enable notifications in account settings.';
 
   return (
     <div style={{ padding: 24, maxWidth: 560 }}>
@@ -79,8 +87,8 @@ export default function NotificationSetupGate({ workspaceId, status, onEnabled }
       </Title>
       <Card>
         <Result
-          status="info"
-          title="Notifications are not enabled"
+          status={failed ? 'error' : 'info'}
+          title={failed ? 'Notification provisioning failed' : 'Notifications are not enabled'}
           subTitle={subtitle}
           extra={
             canManage ? (
@@ -91,7 +99,7 @@ export default function NotificationSetupGate({ workspaceId, status, onEnabled }
                   disabled={checkingAccess}
                   onClick={() => void enableNotifications()}
                 >
-                  Enable notifications
+                  {failed ? 'Retry provisioning' : 'Enable notifications'}
                 </Button>
                 <Link href={organizationSettingsPath()}>
                   <Button type="link" style={{ padding: 0 }}>
