@@ -52,7 +52,9 @@ export const NotificationService = {
   },
 
   updateOrgSettings: async (body: { enabled: boolean }): Promise<NotificationSettings> => {
-    const res = await api.put<NotificationSettings>('/organization/settings/notification', body);
+    const res = await api.put<NotificationSettings>('/organization/settings/notification', body, {
+      timeout: 180_000,
+    });
     return res.data;
   },
 
@@ -77,6 +79,7 @@ export const NotificationService = {
     const res = await api.put<NotificationSettings>(
       `/workspaces/${workspaceId}/notification-settings`,
       body,
+      { timeout: 180_000 },
     );
     return res.data;
   },
