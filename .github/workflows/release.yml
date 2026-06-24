@@ -1,0 +1,65 @@
+name: Release frontend image
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: dt-orch-frontend
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern=v{{version}}
+            type=raw,value=latest
+
+      - name: Resolve Next.js public env
+        id: nextenv
+        env:
+          V_API: ${{ vars.NEXT_PUBLIC_API_URL }}
+          V_KC: ${{ vars.NEXT_PUBLIC_KC_URL }}
+          V_REALM: ${{ vars.NEXT_PUBLIC_KC_REALM }}
+          V_CLIENT: ${{ vars.NEXT_PUBLIC_KC_CLIENT_ID }}
+        run: |
+          echo "api_url=${V_API:-http://localhost/api/v1}" >> "$GITHUB_OUTPUT"
+          echo "kc_url=${V_KC:-http://localhost:8081}" >> "$GITHUB_OUTPUT"
+          echo "kc_realm=${V_REALM:-workspace-realm}" >> "$GITHUB_OUTPUT"
+          echo "kc_client=${V_CLIENT:-workspace-web}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ steps.nextenv.outputs.api_url }}
+            NEXT_PUBLIC_BUILD_ID=${{ github.ref_name }}
+            NEXT_PUBLIC_KC_URL=${{ steps.nextenv.outputs.kc_url }}
+            NEXT_PUBLIC_KC_REALM=${{ steps.nextenv.outputs.kc_realm }}
+            NEXT_PUBLIC_KC_CLIENT_ID=${{ steps.nextenv.outputs.kc_client }}
