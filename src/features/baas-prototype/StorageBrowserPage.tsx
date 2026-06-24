@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
   Breadcrumb,
   Button,
   Card,
@@ -16,9 +17,9 @@ import {
 } from 'antd';
 import {
   CloudUploadOutlined,
-  DatabaseOutlined,
   DeleteOutlined,
   FileOutlined,
+  FolderAddOutlined,
   FolderOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
@@ -53,8 +54,10 @@ function isStorageReady(status: WorkspaceStorageStatus | null): boolean {
   return status?.status === 'ready';
 }
 
-function needsProvisioning(status: WorkspaceStorageStatus | null): boolean {
-  return !status || status.status === 'not_provisioned' || status.status === 'error';
+function canCreateBucket(status: WorkspaceStorageStatus | null): boolean {
+  if (!status) return true;
+  if (status.can_provision) return true;
+  return ['not_provisioned', 'error', 'unknown'].includes(status.status);
 }
 
 export default function StorageBrowserPage({ workspaceId }: Props) {
@@ -64,6 +67,7 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [provisioning, setProvisioning] = useState(false);
+  const [objectsUnavailable, setObjectsUnavailable] = useState(false);
 
   const loadStorage = useCallback(async () => {
     const status = await getWorkspaceStorage(workspaceId);
@@ -76,6 +80,7 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
       const result = await listStorageObjects(workspaceId, prefix);
       setObjects(result.items);
       setCurrentPrefix(result.prefix);
+      setObjectsUnavailable(false);
     },
     [workspaceId, currentPrefix],
   );
@@ -85,9 +90,20 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
     try {
       const status = await loadStorage();
       if (isStorageReady(status)) {
-        await loadObjects(currentPrefix);
+        try {
+          await loadObjects(currentPrefix);
+        } catch (err) {
+          const message = getApiErrorMessage(err, 'Failed to load objects');
+          if (message.toLowerCase().includes('not ready')) {
+            setObjectsUnavailable(true);
+            setObjects([]);
+          } else {
+            notification.error({ message });
+          }
+        }
       } else {
         setObjects([]);
+        setObjectsUnavailable(false);
       }
     } catch (err) {
       notification.error({ message: getApiErrorMessage(err, 'Failed to load storage') });
@@ -96,21 +112,22 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
     }
   }, [loadStorage, loadObjects, currentPrefix]);
 
-  const handleProvision = useCallback(async () => {
+  const handleCreateBucket = useCallback(async () => {
     setProvisioning(true);
     try {
       const status = await provisionWorkspaceStorage(workspaceId);
       setStorage(status);
+      setObjectsUnavailable(false);
       if (isStorageReady(status)) {
-        notification.success({ message: 'Storage bucket is ready' });
+        notification.success({ message: 'Bucket created successfully' });
         await loadObjects('');
       } else {
         notification.error({
-          message: status.error ?? 'Storage provisioning failed',
+          message: status.error ?? 'Bucket creation failed',
         });
       }
     } catch (err) {
-      notification.error({ message: getApiErrorMessage(err, 'Failed to provision storage') });
+      notification.error({ message: getApiErrorMessage(err, 'Failed to create bucket') });
     } finally {
       setProvisioning(false);
     }
@@ -120,6 +137,19 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
     refresh();
   }, [workspaceId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const showCreateBucket = canCreateBucket(storage) || objectsUnavailable;
+
+  const createBucketButton = (
+    <Button
+      type="primary"
+      icon={<FolderAddOutlined />}
+      loading={provisioning}
+      onClick={() => handleCreateBucket()}
+    >
+      {storage?.status === 'error' ? 'Retry create bucket' : 'Create bucket'}
+    </Button>
+  );
+
   if (loading && !storage) {
     return (
       <div style={{ padding: 24 }}>
@@ -128,7 +158,7 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
     );
   }
 
-  if (needsProvisioning(storage)) {
+  if (showCreateBucket && !isStorageReady(storage)) {
     const isError = storage?.status === 'error';
     return (
       <div style={{ padding: 24 }}>
@@ -141,18 +171,11 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
               isError
-                ? storage?.error ?? 'Storage provisioning failed'
-                : 'Storage has not been set up for this project yet.'
+                ? storage?.error ?? 'Bucket provisioning failed'
+                : 'No storage bucket exists for this project yet.'
             }
           >
-            <Button
-              type="primary"
-              icon={<DatabaseOutlined />}
-              loading={provisioning}
-              onClick={() => handleProvision()}
-            >
-              {isError ? 'Retry provisioning' : 'Enable storage'}
-            </Button>
+            {createBucketButton}
           </Empty>
         </Card>
       </div>
@@ -240,6 +263,17 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
       </Title>
       <Text type="secondary">Managed MinIO object storage for this project.</Text>
 
+      {objectsUnavailable ? (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginTop: 16 }}
+          message="Storage bucket is not ready"
+          description="Create a bucket to start uploading files."
+          action={createBucketButton}
+        />
+      ) : null}
+
       <Card style={{ marginTop: 16 }}>
         <Space wrap style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
           <Space>
@@ -252,11 +286,13 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
             ) : null}
           </Space>
           <Space>
+            {showCreateBucket ? createBucketButton : null}
             <Button icon={<ReloadOutlined />} onClick={() => refresh()}>
               Refresh
             </Button>
             <Upload
               showUploadList={false}
+              disabled={showCreateBucket}
               beforeUpload={(file) => {
                 setUploading(true);
                 uploadStorageObject(workspaceId, file)
@@ -271,7 +307,7 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
                 return false;
               }}
             >
-              <Button icon={<CloudUploadOutlined />} loading={uploading}>
+              <Button icon={<CloudUploadOutlined />} loading={uploading} disabled={showCreateBucket}>
                 Upload
               </Button>
             </Upload>
@@ -281,14 +317,24 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
         <Breadcrumb items={breadcrumbItems} style={{ marginBottom: 12 }} />
 
         <Spin spinning={loading}>
-          <Table
-            columns={columns}
-            dataSource={objects}
-            rowKey="key"
-            pagination={false}
-            size="middle"
-            locale={{ emptyText: 'No objects in this folder' }}
-          />
+          {showCreateBucket && objects.length === 0 ? (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="Bucket not provisioned yet"
+              style={{ margin: '32px 0' }}
+            >
+              {createBucketButton}
+            </Empty>
+          ) : (
+            <Table
+              columns={columns}
+              dataSource={objects}
+              rowKey="key"
+              pagination={false}
+              size="middle"
+              locale={{ emptyText: 'No objects in this folder' }}
+            />
+          )}
         </Spin>
       </Card>
     </div>

@@ -11,6 +11,7 @@ export type WorkspaceStorageStatus = {
   s3_uri?: string | null;
   provisioned_at?: string | null;
   error?: string | null;
+  can_provision?: boolean;
 };
 
 export type StorageObjectItem = {
