@@ -1,0 +1,27 @@
+---
+description: Frontend service layer conventions for API calls and request handling
+globs: "src/services/**/*.ts"
+alwaysApply: false
+---
+
+# Frontend Service Conventions
+
+- Keep HTTP access in `src/services/`. Components, pages, and stores should call service functions instead of using `axios` directly.
+- Reuse the shared `api` client from `src/services/api.ts` so auth headers, token refresh, and global error handling stay centralized.
+- Export small typed functions per resource (`getWorkspace`, `createTask`, `updatePipe`) rather than large stateful service classes.
+- Accept explicit IDs and typed payloads; avoid `any`, loosely shaped objects, and hidden dependencies on `window` unless the file is the shared API layer.
+- Normalize response handling close to the request so UI code receives predictable data shapes.
+
+```ts
+import api from "@/services/api";
+
+export async function getWorkspace(workspaceId: number) {
+  const { data } = await api.get(`/workspaces/${workspaceId}`);
+  return data;
+}
+```
+
+```ts
+// Avoid in components/pages:
+await axios.get("/api/...");
+```

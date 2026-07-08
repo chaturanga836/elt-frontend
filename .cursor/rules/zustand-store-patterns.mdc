@@ -1,0 +1,25 @@
+---
+description: Zustand store conventions for shared frontend state
+globs: "src/store/**/*.ts"
+alwaysApply: false
+---
+
+# Zustand Store Patterns
+
+- Keep stores focused on shared client state and state transitions. Put API requests, routing, and heavy data shaping in hooks or `src/services/` / `src/lib/`.
+- Define an explicit state interface and typed action signatures for every store.
+- Prefer immutable `set` updates and small action methods over one large catch-all updater.
+- Derive or compute values in selectors/helpers when possible instead of storing duplicated data.
+- When a store grows complex, extract pure helpers to `src/lib/` and keep the store responsible for orchestration only.
+
+```ts
+interface WorkspaceState {
+  workspaceId: number | null;
+  setWorkspaceId: (workspaceId: number | null) => void;
+}
+```
+
+```ts
+// Prefer focused actions
+setWorkspaceId: (workspaceId) => set({ workspaceId })
+```

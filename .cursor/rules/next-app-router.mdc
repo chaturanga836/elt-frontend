@@ -1,0 +1,26 @@
+---
+description: Next.js App Router conventions for pages, layouts, and route UI
+globs: "src/app/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Next App Router Patterns
+
+- Prefer Server Components by default. Add `"use client"` only for browser APIs, local interactive state, effects, or client-only providers.
+- Keep `page.tsx`, `layout.tsx`, and modal route files thin. Move reusable UI into `src/components/` or `src/features/`.
+- Read route params/search params at the route boundary, then pass typed props downward instead of re-reading them deep in the tree.
+- Use `@/` imports for app code and keep imports grouped: React/Next, third-party, internal.
+- Reuse shared guards/providers already present in the app shell instead of duplicating auth or layout wiring in feature pages.
+
+```tsx
+// Good: thin route component
+export default function Page() {
+  return <PipelineListPage />;
+}
+```
+
+```tsx
+// Add "use client" only when needed
+"use client";
+import { useState } from "react";
+```
