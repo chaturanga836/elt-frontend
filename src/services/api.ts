@@ -3,6 +3,7 @@ import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { notification } from '@/lib/antd/static'; // Using the bridge we set up
 import { formatErrorDetail, getApiErrorMessage } from '@/lib/formatApiError';
 import { refreshManualAccessToken, resolveAccessToken } from '@/lib/keycloak';
+import { resolvePublicApiBaseUrl } from '@/lib/publicUrls';
 
 // Helper to prevent duplicate notifications in a short window
 let lastNotificationTime = 0;
@@ -15,7 +16,6 @@ function isAuthFlowPage(): boolean {
 }
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://144.24.127.112:8000/api/v1',
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -25,6 +25,7 @@ function setAuthorizationHeader(config: InternalAxiosRequestConfig, token: strin
 
 // Request Interceptor — attach a fresh access token before each API call
 api.interceptors.request.use(async (config) => {
+  config.baseURL = resolvePublicApiBaseUrl();
   const token = await resolveAccessToken();
   if (token) {
     setAuthorizationHeader(config, token);

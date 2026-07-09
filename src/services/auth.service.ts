@@ -1,8 +1,13 @@
 import axios from 'axios';
+import { resolvePublicApiBaseUrl } from '@/lib/publicUrls';
 
 const publicApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://144.24.127.112:8000/api/v1',
   headers: { 'Content-Type': 'application/json' },
+});
+
+publicApi.interceptors.request.use((config) => {
+  config.baseURL = resolvePublicApiBaseUrl();
+  return config;
 });
 
 export type SignupRequest = {

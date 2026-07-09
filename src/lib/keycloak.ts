@@ -2,6 +2,7 @@
 
 import Keycloak, { type KeycloakInitOptions, type KeycloakProfile } from 'keycloak-js';
 import { isAccessTokenExpiringSoon, parseJwtPayload } from '@/lib/jwt';
+import { resolvePublicKeycloakBaseUrl } from '@/lib/publicUrls';
 
 const CONFIGURED_KC_URL = (process.env.NEXT_PUBLIC_KC_URL || 'http://localhost:8081').replace(
   /\/$/,
@@ -23,29 +24,14 @@ let keycloak: Keycloak | null = null;
 let refreshInFlight: Promise<string | null> | null = null;
 let oauthCallbackInFlight: Promise<boolean> | null = null;
 
-function configuredHostname(): string {
-  try {
-    return new URL(CONFIGURED_KC_URL).hostname.toLowerCase();
-  } catch {
-    return '';
-  }
-}
-
-/** Browser origin when Keycloak is on the same host (HTTPS :443 behind nginx). */
+/** Keycloak base URL — hostname from the browser, port from build config (e.g. :8081). */
 export function getKeycloakBaseUrl(): string {
-  if (typeof window === 'undefined') return CONFIGURED_KC_URL;
-  const pageHost = window.location.hostname.toLowerCase();
-  const cfgHost = configuredHostname();
-  if (!cfgHost || cfgHost === pageHost) {
-    return window.location.origin;
-  }
-  return CONFIGURED_KC_URL;
+  return resolvePublicKeycloakBaseUrl();
 }
 
 function isSameOriginKeycloak(): boolean {
   if (typeof window === 'undefined') return false;
-  const cfgHost = configuredHostname();
-  return !cfgHost || cfgHost === window.location.hostname.toLowerCase();
+  return getKeycloakBaseUrl() === window.location.origin;
 }
 
 /** Web Crypto subtle is only available in secure contexts (HTTPS or localhost). */
