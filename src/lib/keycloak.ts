@@ -77,15 +77,31 @@ export function getKeycloakBaseUrl(): string {
   if (typeof window === 'undefined') {
     return CONFIGURED_KC_URL;
   }
+
+  const pageOrigin = window.location.origin;
+  const pageHost = window.location.hostname;
+  const localHosts = ['localhost', '127.0.0.1', '::1'];
+  const pageIsLocal = localHosts.includes(pageHost.toLowerCase());
+
+  // Remote installs: nginx proxies Keycloak at /realms/ on the same host as the UI.
+  // Never use baked localhost:8081 from release images on a customer EC2 host.
+  if (!pageIsLocal) {
+    emitKeycloakDebug('getKeycloakBaseUrl', {
+      configured: CONFIGURED_KC_URL,
+      resolved: pageOrigin,
+      pageOrigin,
+      pageHost,
+      strategy: 'same-origin-proxy',
+    });
+    return pageOrigin;
+  }
+
   let resolved = CONFIGURED_KC_URL;
   try {
     const cfg = new URL(CONFIGURED_KC_URL);
-    const pageHost = window.location.hostname;
-    const localHosts = ['localhost', '127.0.0.1', '::1'];
     const cfgIsLocal = localHosts.includes(cfg.hostname.toLowerCase());
-    const pageIsLocal = localHosts.includes(pageHost.toLowerCase());
-    if (!pageIsLocal && (cfgIsLocal || cfg.port === '8081')) {
-      resolved = window.location.origin;
+    if (cfgIsLocal || cfg.port === '8081') {
+      resolved = pageOrigin;
     }
   } catch {
     resolved = resolvePublicKeycloakBaseUrl();
@@ -93,8 +109,9 @@ export function getKeycloakBaseUrl(): string {
   emitKeycloakDebug('getKeycloakBaseUrl', {
     configured: CONFIGURED_KC_URL,
     resolved,
-    pageOrigin: window.location.origin,
-    pageHost: window.location.hostname,
+    pageOrigin,
+    pageHost,
+    strategy: 'local-dev',
   });
   return resolved;
 }
