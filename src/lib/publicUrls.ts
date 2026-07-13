@@ -32,9 +32,22 @@ export function resolvePublicUrlFromLocalhostDefault(
 }
 
 export function resolvePublicKeycloakBaseUrl(): string {
-  const resolved = resolvePublicUrlFromLocalhostDefault(
-    process.env.NEXT_PUBLIC_KC_URL || 'http://localhost:8081',
-  );
+  const configured = process.env.NEXT_PUBLIC_KC_URL || 'http://localhost:8081';
+  if (typeof window !== 'undefined') {
+    try {
+      const parsed = new URL(configured);
+      const pageHost = window.location.hostname;
+      const localHosts = ['localhost', '127.0.0.1', '::1'];
+      const cfgIsLocal = localHosts.includes(parsed.hostname.toLowerCase());
+      const pageIsLocal = localHosts.includes(pageHost.toLowerCase());
+      if ((cfgIsLocal && !pageIsLocal) || (parsed.port === '8081' && !pageIsLocal)) {
+        return window.location.origin;
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  const resolved = resolvePublicUrlFromLocalhostDefault(configured);
   try {
     return new URL(resolved).origin;
   } catch {

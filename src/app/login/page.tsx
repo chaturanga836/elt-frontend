@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import AuthShell from '@/components/auth/AuthShell';
 import LoginMarketingPanel from '@/components/marketing/LoginMarketingPanel';
 import { AUTH_ERROR_KEY } from '@/components/auth/AuthProvider';
-import { loginWithKeycloak } from '@/lib/keycloak';
+import { loginWithKeycloak, getKeycloakAuthDiagnostics } from '@/lib/keycloak';
 import { useAuthStore } from '@/store/useAuthStore';
 import { palette } from '@/constants/theme';
 import styles from './login.module.css';
@@ -20,15 +20,22 @@ export default function LoginPage() {
   const initialized = useAuthStore((s) => s.initialized);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [kcDebug, setKcDebug] = useState<ReturnType<typeof getKeycloakAuthDiagnostics> | null>(
+    null,
+  );
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('kc_debug')) {
+      setKcDebug(getKeycloakAuthDiagnostics());
+    }
+
     const stored = sessionStorage.getItem(AUTH_ERROR_KEY);
     if (stored) {
       setAuthError(stored);
       sessionStorage.removeItem(AUTH_ERROR_KEY);
     }
 
-    const params = new URLSearchParams(window.location.search);
     const oauthError = params.get('error_description') || params.get('error');
     if (oauthError) {
       setAuthError(oauthError);
@@ -58,6 +65,20 @@ export default function LoginPage() {
         </div>
       }
     >
+      {kcDebug ? (
+        <Alert
+          type="info"
+          title="Keycloak URL diagnostics (?kc_debug=1)"
+          description={
+            <pre style={{ margin: 0, fontSize: 12, whiteSpace: 'pre-wrap' }}>
+              {JSON.stringify(kcDebug, null, 2)}
+            </pre>
+          }
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      ) : null}
+
       {authError ? (
         <Alert
           type="error"

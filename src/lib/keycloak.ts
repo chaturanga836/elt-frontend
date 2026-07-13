@@ -14,6 +14,54 @@ const OIDC_SCOPES = 'openid profile email';
 const AUTH_STATE_KEY = 'kc_manual_auth_state';
 const TOKEN_ISSUED_AT_KEY = 'token_issued_at';
 const REFRESH_GRACE_MS = 60_000;
+const KC_DEBUG_KEY = 'kc_auth_debug';
+
+export type KeycloakAuthDiagnostics = {
+  configuredKcUrl: string;
+  resolvedBaseUrl: string;
+  authEndpoint: string;
+  pageOrigin: string;
+  useManualFlow: boolean;
+  sameOriginKeycloak: boolean;
+};
+
+function emitKeycloakDebug(event: string, data: Record<string, unknown>): void {
+  const payload = { event, ...data, at: new Date().toISOString() };
+  // Visible in browser DevTools on any host (remote EC2 installs included).
+  console.info('[KC-DEBUG]', payload);
+  if (typeof window !== 'undefined') {
+    try {
+      sessionStorage.setItem(KC_DEBUG_KEY, JSON.stringify(payload));
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }
+  // #region agent log
+  fetch('http://127.0.0.1:7374/ingest/7236c4a4-2c67-4e6d-9829-8b8c4f1ddb6a',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'82f026'},body:JSON.stringify({sessionId:'82f026',location:`keycloak.ts:${event}`,message:event,data,timestamp:Date.now(),hypothesisId:'A-E'})}).catch(()=>{});
+  // #endregion
+}
+
+export function getKeycloakAuthDiagnostics(): KeycloakAuthDiagnostics {
+  const resolvedBaseUrl = typeof window === 'undefined' ? CONFIGURED_KC_URL : getKeycloakBaseUrl();
+  return {
+    configuredKcUrl: CONFIGURED_KC_URL,
+    resolvedBaseUrl,
+    authEndpoint: `${resolvedBaseUrl}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth`,
+    pageOrigin: typeof window !== 'undefined' ? window.location.origin : '',
+    useManualFlow: typeof window !== 'undefined' ? shouldUseManualAuthFlow() : false,
+    sameOriginKeycloak: typeof window !== 'undefined' ? isSameOriginKeycloak() : false,
+  };
+}
+
+export function readLastKeycloakDebug(): KeycloakAuthDiagnostics | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(KC_DEBUG_KEY);
+    return raw ? (JSON.parse(raw) as KeycloakAuthDiagnostics) : null;
+  } catch {
+    return null;
+  }
+}
 
 type ManualAuthState = {
   state: string;
@@ -24,9 +72,31 @@ let keycloak: Keycloak | null = null;
 let refreshInFlight: Promise<string | null> | null = null;
 let oauthCallbackInFlight: Promise<boolean> | null = null;
 
-/** Keycloak base URL — hostname from the browser, port from build config (e.g. :8081). */
+/** Keycloak base URL — same origin via nginx /realms/ on customer hosts. */
 export function getKeycloakBaseUrl(): string {
-  return resolvePublicKeycloakBaseUrl();
+  if (typeof window === 'undefined') {
+    return CONFIGURED_KC_URL;
+  }
+  let resolved = CONFIGURED_KC_URL;
+  try {
+    const cfg = new URL(CONFIGURED_KC_URL);
+    const pageHost = window.location.hostname;
+    const localHosts = ['localhost', '127.0.0.1', '::1'];
+    const cfgIsLocal = localHosts.includes(cfg.hostname.toLowerCase());
+    const pageIsLocal = localHosts.includes(pageHost.toLowerCase());
+    if (!pageIsLocal && (cfgIsLocal || cfg.port === '8081')) {
+      resolved = window.location.origin;
+    }
+  } catch {
+    resolved = resolvePublicKeycloakBaseUrl();
+  }
+  emitKeycloakDebug('getKeycloakBaseUrl', {
+    configured: CONFIGURED_KC_URL,
+    resolved,
+    pageOrigin: window.location.origin,
+    pageHost: window.location.hostname,
+  });
+  return resolved;
 }
 
 function isSameOriginKeycloak(): boolean {
@@ -138,7 +208,15 @@ export function loginWithoutPkce(redirectUri?: string): void {
     response_mode: 'query',
   });
 
-  window.location.href = `${authEndpoint()}?${params}`;
+  const authUrl = `${authEndpoint()}?${params}`;
+  emitKeycloakDebug('loginWithoutPkce', {
+    authUrl,
+    configuredKcUrl: CONFIGURED_KC_URL,
+    resolvedBase: getKeycloakBaseUrl(),
+    redirect,
+    useManualFlow: shouldUseManualAuthFlow(),
+  });
+  window.location.href = authUrl;
 }
 
 export function getKeycloakForgotPasswordUrl(redirectUri?: string): string {
