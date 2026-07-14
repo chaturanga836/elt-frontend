@@ -94,7 +94,8 @@ export default function WorkspaceDatabaseSetup({
             No database yet
           </Title>
           <Paragraph type="secondary" style={{ textAlign: 'center', maxWidth: 420, margin: 0 }}>
-            Create a database for this project to use the SQL editor and table builder.
+            Create a PostgreSQL schema on the shared platform database for this project (SQL editor and
+            table builder).
           </Paragraph>
           <Button type="primary" size="large" onClick={() => setStep('engine')}>
             Create database
@@ -137,7 +138,7 @@ export default function WorkspaceDatabaseSetup({
             <Text type="secondary">
               {mode === 'add' && existingNames.length > 0
                 ? `Existing: ${existingNames.join(', ')}. Pick the engine for the new schema.`
-                : 'One engine type per database. You can create multiple databases (schemas) per engine.'}
+                : 'PostgreSQL schemas on the shared platform database. You can create multiple schemas per project.'}
             </Text>
           </div>
           <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
@@ -191,8 +192,8 @@ export default function WorkspaceDatabaseSetup({
           </Title>
           <Text type="secondary">
             {mode === 'add'
-              ? 'Stored as a schema in your project PostgreSQL container. Names must be unique.'
-              : 'One service container per engine per project. Additional PostgreSQL databases are schemas inside that container.'}
+              ? 'Stored as a schema on the shared platform Postgres. Names must be unique within this project.'
+              : 'Creates a schema on the shared platform Postgres — no per-project database container.'}
           </Text>
         </div>
         <Form form={form} layout="vertical" onFinish={onSubmitName}>

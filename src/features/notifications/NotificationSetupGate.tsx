@@ -61,7 +61,7 @@ export default function NotificationSetupGate({
     setEnabling(true);
     try {
       await NotificationService.updateOrgSettingsFromProject(workspaceId, { enabled: true });
-      notification.success({ message: 'Provisioning realtime notifications' });
+      notification.success({ message: 'Realtime notifications enabled' });
       onEnabled?.();
     } catch (err) {
       notification.error({
@@ -75,9 +75,9 @@ export default function NotificationSetupGate({
 
   const subtitle = failed
     ? status.provisioning_error ||
-      'Centrifugo could not be started. Try again or check server logs for infra-service and elt-api.'
+      'Could not connect to platform Centrifugo. Check that the shared realtime broker is running, then retry.'
     : canManage
-      ? 'Realtime notifications are turned off for this account. Enable to use channels, inbox, and SDK publish.'
+      ? 'Realtime notifications are turned off for this account. Enable to use channels, inbox, and SDK publish on the shared Centrifugo broker.'
       : 'An account owner or admin must enable notifications in account settings.';
 
   return (

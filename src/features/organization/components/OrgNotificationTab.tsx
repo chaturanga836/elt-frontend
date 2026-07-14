@@ -82,7 +82,8 @@ export default function OrgNotificationTab() {
         Realtime notifications
       </Title>
       <Paragraph type="secondary">
-        Enable Centrifugo for org-wide realtime messaging, inbox delivery, and SDK publish/subscribe.
+        Connect this account to the shared platform Centrifugo for realtime messaging, inbox, and SDK
+        publish/subscribe. Projects are isolated by channel (org / workspace).
       </Paragraph>
 
       <Card loading={loading} style={{ marginBottom: 16 }}>

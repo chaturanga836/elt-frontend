@@ -165,13 +165,15 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
         <Title level={3} style={{ marginTop: 0 }}>
           Storage
         </Title>
-        <Text type="secondary">Managed MinIO object storage for this project.</Text>
+        <Text type="secondary">
+          Object storage for this project on the shared platform MinIO (one bucket per project).
+        </Text>
         <Card style={{ marginTop: 16 }}>
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
               isError
-                ? storage?.error ?? 'Bucket provisioning failed'
+                ? storage?.error ?? 'Could not create the project bucket'
                 : 'No storage bucket exists for this project yet.'
             }
           >
@@ -182,8 +184,8 @@ export default function StorageBrowserPage({ workspaceId }: Props) {
     );
   }
 
-  const modeLabel = storage?.mode === 'dedicated' ? 'Dedicated' : 'Shared';
-  const modeColor = storage?.mode === 'dedicated' ? 'gold' : 'blue';
+  const modeLabel = 'Shared';
+  const modeColor = 'blue';
   const bucket = storage?.bucket ?? '—';
 
   const columns = [
