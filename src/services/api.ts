@@ -41,12 +41,6 @@ api.interceptors.response.use(
     const now = Date.now();
 
     // 1. Specific Business Logic Redirects
-    if (status === 402) {
-      // Trial Expired / Connection Limit (from your instructions)
-      window.location.href = '/upgrade';
-      return Promise.reject(error);
-    }
-
     if (status === 401) {
       const config = error.config as typeof error.config & { _retriedAfterRefresh?: boolean };
       if (config && !config._retriedAfterRefresh) {
