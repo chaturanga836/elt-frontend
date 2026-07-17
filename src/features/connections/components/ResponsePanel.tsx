@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Tag, Tabs, Typography, Tooltip } from 'antd';
 import { Copy, Check, Clock, Database } from 'lucide-react';
+import { copyToClipboard } from '@/lib/copyToClipboard';
 
 const { Text } = Typography;
 
@@ -26,9 +27,10 @@ function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    void copyToClipboard(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   return (

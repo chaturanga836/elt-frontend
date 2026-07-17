@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
 import { formatJsonBlock } from './runDetailUtils';
+import { copyToClipboard } from '@/lib/copyToClipboard';
 
 const { Text } = Typography;
 
@@ -45,7 +46,7 @@ export default function RunPayloadJsonBlock({
   const copyText = async () => {
     if (isEmpty) return;
     try {
-      await navigator.clipboard.writeText(text);
+      await copyToClipboard(text);
       notification.success({ message: 'Copied to clipboard' });
     } catch {
       notification.error({ message: 'Copy failed' });

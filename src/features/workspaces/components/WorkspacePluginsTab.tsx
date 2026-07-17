@@ -17,6 +17,7 @@ import {
 import { CopyOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useWorkspacePlugins } from '@/hooks/useWorkspacePlugins';
 import { PluginService } from '@/services/plugin.service';
+import { copyToClipboard } from '@/lib/copyToClipboard';
 
 const { Text, Paragraph } = Typography;
 
@@ -34,7 +35,7 @@ export default function WorkspacePluginsTab({ workspaceId }: Props) {
 
   const copyScraperKey = async (key: string) => {
     try {
-      await navigator.clipboard.writeText(key);
+      await copyToClipboard(key);
       message.success('API key copied to clipboard');
     } catch {
       message.error('Could not copy to clipboard');

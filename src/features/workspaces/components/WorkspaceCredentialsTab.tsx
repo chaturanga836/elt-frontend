@@ -19,6 +19,7 @@ import {
   StudioService,
 } from '@/services/studio.service';
 import { getApiErrorMessage } from '@/lib/formatApiError';
+import { copyToClipboard } from '@/lib/copyToClipboard';
 
 const { Text, Paragraph } = Typography;
 
@@ -57,7 +58,7 @@ export default function WorkspaceCredentialsTab({ workspaceId }: Props) {
 
   const copyText = async (label: string, value: string) => {
     try {
-      await navigator.clipboard.writeText(value);
+      await copyToClipboard(value);
       message.success(`${label} copied`);
     } catch {
       message.error('Could not copy to clipboard');

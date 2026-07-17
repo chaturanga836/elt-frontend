@@ -10,6 +10,7 @@ import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { StudioService } from '@/services/studio.service';
 import { projectPath } from '@/lib/paths';
 import { getApiErrorMessage } from '@/lib/formatApiError';
+import { copyToClipboard } from '@/lib/copyToClipboard';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -52,7 +53,7 @@ export default function NewWorkspacePage() {
 
   const copyValue = async (label: string, value: string) => {
     try {
-      await navigator.clipboard.writeText(value);
+      await copyToClipboard(value);
       notification.success({ message: `${label} copied` });
     } catch {
       notification.error({ message: 'Could not copy to clipboard' });
