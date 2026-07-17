@@ -72,7 +72,7 @@ export default function PipelineBackfillModal({
       onOk={() => void handleSubmit()}
       okText="Start backfill"
       confirmLoading={submitting}
-      destroyOnClose
+      destroyOnHidden
     >
       <Alert
         type="info"

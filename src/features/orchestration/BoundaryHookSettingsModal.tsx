@@ -86,7 +86,7 @@ export default function BoundaryHookSettingsModal({
         okText="Apply"
         cancelText="Cancel"
         width={480}
-        destroyOnClose
+        destroyOnHidden
       >
         <Flex vertical gap={16}>
           <Text type="secondary" style={{ fontSize: 12 }}>

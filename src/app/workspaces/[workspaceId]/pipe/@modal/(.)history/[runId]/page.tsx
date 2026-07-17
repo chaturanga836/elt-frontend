@@ -41,7 +41,7 @@ export default function PipelineRunDetailDrawerPage() {
             open
             onClose={handleClose}
             width={720}
-            destroyOnClose
+            destroyOnHidden
         >
             <RunDetailView runId={runId} />
         </Drawer>

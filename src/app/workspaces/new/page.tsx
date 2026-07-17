@@ -55,7 +55,8 @@ export default function NewWorkspacePage() {
     try {
       await copyToClipboard(value);
       notification.success({ message: `${label} copied` });
-    } catch {
+    } catch (e) {
+      console.error(e)
       notification.error({ message: 'Could not copy to clipboard' });
     }
   };
@@ -170,7 +171,7 @@ export default function NewWorkspacePage() {
             I saved them — continue
           </Button>,
         ]}
-        maskClosable={false}
+        mask={{ closable: false }}
       >
         <Paragraph type="secondary">
           These credentials authenticate your apps and CLI against the platform database API.

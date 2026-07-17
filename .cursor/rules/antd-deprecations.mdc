@@ -1,0 +1,44 @@
+---
+description: Avoid deprecated Ant Design (antd v6) props in React components
+globs: **/*.tsx
+alwaysApply: false
+---
+
+# Ant Design v6 — no deprecated props
+
+Before writing or editing antd components, check the prop against its type
+definition in `node_modules/antd/es/<component>/*.d.ts` and avoid anything marked
+`@deprecated`. Prefer the replacement API.
+
+## Known replacements (this project uses antd v6)
+
+| Deprecated | Use instead | Components |
+|------------|-------------|-----------|
+| `maskClosable={false}` | `mask={{ closable: false }}` | Modal, Drawer |
+| `destroyOnClose` | `destroyOnHidden` | Modal, Drawer, Tabs (`destroyInactiveTabPane`) |
+| `bordered` / `bordered={false}` | `variant="outlined"` / `variant="borderless"` | Card, Select |
+| `bodyStyle` / `headStyle` / `maskStyle` | `styles.body` / `styles.header` / `styles.mask` | Card, Modal, Drawer |
+| `dropdownRender` | `popupRender` | Select |
+| `dropdownClassName` / `dropdownStyle` | `classNames.popup.root` / `styles.popup` | Select |
+| `onDropdownVisibleChange` | `onOpenChange` | Select |
+| `dropdownMatchSelectWidth` | `popupMatchSelectWidth` | Select |
+| `showArrow` | `suffixIcon` (`null` to hide) | Select |
+
+Note: `bordered` is NOT deprecated on `List`, `Table`, or `Descriptions` — leave those.
+
+## Examples
+
+```tsx
+// BAD
+<Modal maskClosable={false} destroyOnClose bodyStyle={{ padding: 0 }} />
+<Card bordered={false} />
+<Select dropdownRender={render} onDropdownVisibleChange={fn} />
+
+// GOOD
+<Modal mask={{ closable: false }} destroyOnHidden styles={{ body: { padding: 0 } }} />
+<Card variant="borderless" />
+<Select popupRender={render} onOpenChange={fn} />
+```
+
+When unsure, grep the component's `.d.ts` for `@deprecated` and confirm the
+suggested replacement rather than guessing.

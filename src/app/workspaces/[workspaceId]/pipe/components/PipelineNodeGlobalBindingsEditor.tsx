@@ -82,7 +82,7 @@ export default function PipelineNodeGlobalBindingsEditor({
                     ),
                   )
                 }
-                dropdownRender={(menu) => (
+                popupRender={(menu) => (
                   <>
                     {menu}
                     <div style={{ padding: 8 }}>

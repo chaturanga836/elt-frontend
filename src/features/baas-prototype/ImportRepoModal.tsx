@@ -138,7 +138,7 @@ export default function ImportRepoModal({
       onOk={() => void handleSubmit()}
       okText="Import"
       confirmLoading={submitting}
-      destroyOnClose
+      destroyOnHidden
     >
       {connection ? (
         <Text type="secondary">

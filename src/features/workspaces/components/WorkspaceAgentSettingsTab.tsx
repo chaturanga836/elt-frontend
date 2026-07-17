@@ -150,7 +150,7 @@ export default function WorkspaceAgentSettingsTab({ workspaceId }: Props) {
   const isMongo = dbType === 'mongodb';
 
   return (
-    <Card loading={loading} bordered={false}>
+    <Card loading={loading} variant="borderless">
       <Paragraph type="secondary">
         Configure AI and customer databases (PostgreSQL, MySQL, MongoDB) for agent workflows.
         Platform deployment only needs <Text code>ETL_API_URL</Text> on the agent service.

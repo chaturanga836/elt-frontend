@@ -66,7 +66,7 @@ export default function PipelinePickerModal({
       onCancel={onClose}
       footer={null}
       width={480}
-      destroyOnClose
+      destroyOnHidden
     >
       {loading ? (
         <div style={{ textAlign: 'center', padding: 24 }}>
