@@ -94,8 +94,8 @@ export default function WorkspaceDatabaseSetup({
             No database yet
           </Title>
           <Paragraph type="secondary" style={{ textAlign: 'center', maxWidth: 420, margin: 0 }}>
-            Create a PostgreSQL schema on the shared platform database for this project (SQL editor and
-            table builder).
+            Create a project database on the shared platform SQL engine. Only databases you create
+            for this project are visible here — platform system schemas are never shown.
           </Paragraph>
           <Button type="primary" size="large" onClick={() => setStep('engine')}>
             Create database
@@ -111,6 +111,15 @@ export default function WorkspaceDatabaseSetup({
     {
       pattern: NAME_PATTERN,
       message: 'Use lowercase letters, digits, underscores; start with a letter',
+    },
+    {
+      validator: (_: unknown, value: string) => {
+        const normalized = (value || '').trim().toLowerCase();
+        if (/^ws_\d+$/.test(normalized)) {
+          return Promise.reject(new Error('That name is reserved for platform use'));
+        }
+        return Promise.resolve();
+      },
     },
     ...(existingNames.length > 0
       ? [
@@ -137,8 +146,8 @@ export default function WorkspaceDatabaseSetup({
             </Title>
             <Text type="secondary">
               {mode === 'add' && existingNames.length > 0
-                ? `Existing: ${existingNames.join(', ')}. Pick the engine for the new schema.`
-                : 'PostgreSQL schemas on the shared platform database. You can create multiple schemas per project.'}
+                ? `Existing in this project: ${existingNames.join(', ')}. Only this project can see them.`
+                : 'Engines marked available match what was installed on this platform. Project databases are private to this project.'}
             </Text>
           </div>
           <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
@@ -162,7 +171,7 @@ export default function WorkspaceDatabaseSetup({
                     <Text strong>{engine.label}</Text>
                     {!engine.available && (
                       <div>
-                        <Text type="secondary">Coming soon</Text>
+                        <Text type="secondary">Not installed on this platform</Text>
                       </div>
                     )}
                   </div>
@@ -192,8 +201,8 @@ export default function WorkspaceDatabaseSetup({
           </Title>
           <Text type="secondary">
             {mode === 'add'
-              ? 'Stored as a schema on the shared platform Postgres. Names must be unique within this project.'
-              : 'Creates a schema on the shared platform Postgres — no per-project database container.'}
+              ? 'Stored on the shared platform SQL engine. Names must be unique within this project and are not visible to other projects.'
+              : 'Creates a project-scoped database on shared platform SQL — not a per-project container. System schemas stay hidden.'}
           </Text>
         </div>
         <Form form={form} layout="vertical" onFinish={onSubmitName}>
