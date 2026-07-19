@@ -59,7 +59,7 @@ export default function NewWorkspacePage() {
       console.error(e)
       notification.error({ message: 'Could not copy to clipboard' });
     }
-  };
+  }
 
   const continueToProject = () => {
     if (createdProjectId) {
