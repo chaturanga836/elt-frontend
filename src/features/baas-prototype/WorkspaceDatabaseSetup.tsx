@@ -33,7 +33,7 @@ export default function WorkspaceDatabaseSetup({
   existingNames = [],
   onCancel,
 }: Props) {
-  const [step, setStep] = useState<Step>(mode === 'add' ? 'engine' : 'intro');
+  const [step, setStep] = useState<Step>(mode === 'add' ? 'name' : 'intro');
   const [engines, setEngines] = useState<WorkspaceDatabaseEngineInfo[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [selectedEngine, setSelectedEngine] = useState<WorkspaceDatabaseEngine | null>(null);
@@ -45,7 +45,16 @@ export default function WorkspaceDatabaseSetup({
     (async () => {
       try {
         const catalog = await WorkspaceDatabaseService.getCatalog();
-        if (!cancelled) setEngines(catalog.engines);
+        if (cancelled) return;
+        setEngines(catalog.engines);
+        const available = catalog.engines.filter((e) => e.available);
+        // Platform installer already chose the SQL engine — only one is available.
+        if (available.length === 1) {
+          setSelectedEngine(available[0].key);
+          if (mode === 'add') setStep('name');
+        } else if (mode === 'add') {
+          setStep('engine');
+        }
       } catch (err) {
         if (!cancelled) {
           notification.error({ message: 'Failed to load database options', description: getApiErrorMessage(err) });
@@ -57,7 +66,33 @@ export default function WorkspaceDatabaseSetup({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [mode]);
+
+  const availableEngines = engines.filter((e) => e.available);
+  const engineLocked = availableEngines.length === 1;
+  const selectedEngineLabel =
+    engines.find((e) => e.key === selectedEngine)?.label ?? selectedEngine ?? '';
+
+  const goCreate = () => {
+    if (engineLocked && availableEngines[0]) {
+      setSelectedEngine(availableEngines[0].key);
+      setStep('name');
+      return;
+    }
+    setStep('engine');
+  };
+
+  const goBackFromName = () => {
+    if (mode === 'add') {
+      onCancel?.();
+      return;
+    }
+    if (engineLocked) {
+      setStep('intro');
+      return;
+    }
+    setStep('engine');
+  };
 
   const onSubmitName = async (values: { name: string }) => {
     if (!selectedEngine) return;
@@ -97,7 +132,7 @@ export default function WorkspaceDatabaseSetup({
             Create a project database on the shared platform SQL engine. Only databases you create
             for this project are visible here — platform system schemas are never shown.
           </Paragraph>
-          <Button type="primary" size="large" onClick={() => setStep('engine')}>
+          <Button type="primary" size="large" onClick={goCreate}>
             Create database
           </Button>
         </Space>
@@ -200,9 +235,11 @@ export default function WorkspaceDatabaseSetup({
             Name your database
           </Title>
           <Text type="secondary">
-            {mode === 'add'
-              ? 'Stored on the shared platform SQL engine. Names must be unique within this project and are not visible to other projects.'
-              : 'Creates a project-scoped database on shared platform SQL — not a per-project container. System schemas stay hidden.'}
+            {engineLocked
+              ? `Creates a project-scoped database on the platform ${selectedEngineLabel} engine. Names must be unique within this project.`
+              : mode === 'add'
+                ? 'Stored on the shared platform SQL engine. Names must be unique within this project and are not visible to other projects.'
+                : 'Creates a project-scoped database on shared platform SQL — not a per-project container. System schemas stay hidden.'}
           </Text>
         </div>
         <Form form={form} layout="vertical" onFinish={onSubmitName}>
@@ -210,9 +247,9 @@ export default function WorkspaceDatabaseSetup({
             <Input placeholder={mode === 'add' ? 'billing' : 'myapp'} autoFocus />
           </Form.Item>
           <Flex justify="space-between">
-            <Button onClick={() => setStep('engine')}>Back</Button>
+            <Button onClick={goBackFromName}>{mode === 'add' ? 'Cancel' : 'Back'}</Button>
             <Button type="primary" htmlType="submit" loading={submitting}>
-              {mode === 'add' ? 'Create' : 'Next'}
+              Create
             </Button>
           </Flex>
         </Form>
