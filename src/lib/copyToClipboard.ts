@@ -34,7 +34,12 @@ export async function copyToClipboard(text: string): Promise<void> {
 
   let ok = false;
   try {
-    ok = document.execCommand('copy');
+    // Document.execCommand is deprecated in lib.dom typings (TS6385) but remains
+    // the only reliable clipboard fallback outside secure contexts.
+    const legacyCopy = (
+      document as unknown as { execCommand: (commandId: string) => boolean }
+    ).execCommand.bind(document);
+    ok = legacyCopy('copy');
   } finally {
     document.body.removeChild(textarea);
   }
