@@ -26,8 +26,9 @@ ENV NEXT_PUBLIC_KC_URL=$NEXT_PUBLIC_KC_URL
 ENV NEXT_PUBLIC_KC_REALM=$NEXT_PUBLIC_KC_REALM
 ENV NEXT_PUBLIC_KC_CLIENT_ID=$NEXT_PUBLIC_KC_CLIENT_ID
 
-# MOVED: The build must happen here so the .next folder exists for the next stage
-RUN npm run build
+# Build, then drop webpack cache — it is large and unused at runtime (and can
+# blow disk on small EC2 hosts when copying layers into the runner image).
+RUN npm run build && rm -rf .next/cache
 
 # 4. Runner - This is the "Service" stage (very lightweight)
 FROM base AS runner
