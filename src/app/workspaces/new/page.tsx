@@ -188,6 +188,7 @@ export default function NewWorkspacePage() {
                   type="text"
                   size="small"
                   icon={<CopyOutlined />}
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => copyValue('Project key', clientKey)}
                 />
               }
@@ -204,6 +205,7 @@ export default function NewWorkspacePage() {
                   type="text"
                   size="small"
                   icon={<CopyOutlined />}
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => copyValue('Project secret', clientSecret)}
                 />
               }

@@ -125,6 +125,7 @@ export default function WorkspaceCredentialsTab({ workspaceId }: Props) {
                 type="text"
                 size="small"
                 icon={<CopyOutlined />}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => copyText('Project key', keyToShow)}
               />
             ) : null
@@ -158,6 +159,7 @@ export default function WorkspaceCredentialsTab({ workspaceId }: Props) {
                 type="text"
                 size="small"
                 icon={<CopyOutlined />}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => copyText('Project secret', secretToShow)}
               />
             }
