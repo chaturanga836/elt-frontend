@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Button, Card, Spin, Tabs, Typography, notification } from 'antd';
+import { Button, Card, Empty, Spin, Tabs, Typography, notification } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -9,9 +9,7 @@ import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { WorkspaceItem, WorkspaceService } from '@/services/workspace.service';
 import WorkspaceGeneralTab from '@/features/workspaces/components/WorkspaceGeneralTab';
 import WorkspaceMembersTab from '@/features/workspaces/components/WorkspaceMembersTab';
-import WorkspacePluginsTab from '@/features/workspaces/components/WorkspacePluginsTab';
 import WorkspaceCredentialsTab from '@/features/workspaces/components/WorkspaceCredentialsTab';
-import WorkspaceAgentSettingsTab from '@/features/workspaces/components/WorkspaceAgentSettingsTab';
 import { workspacePath } from '@/lib/paths';
 
 const { Title, Text } = Typography;
@@ -91,14 +89,15 @@ export default function WorkspaceSettingsPage() {
               children: <WorkspaceCredentialsTab workspaceId={workspace.id} />,
             },
             {
-              key: 'plugins',
-              label: 'Plugins',
-              children: <WorkspacePluginsTab workspaceId={workspace.id} />,
-            },
-            {
               key: 'agent',
-              label: 'AI & Agent',
-              children: <WorkspaceAgentSettingsTab workspaceId={workspace.id} />,
+              label: 'AI Agent',
+              children: (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="Coming soon"
+                  style={{ padding: '48px 0' }}
+                />
+              ),
             },
           ]}
         />
