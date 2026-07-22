@@ -6,6 +6,7 @@ import {
   Card,
   Empty,
   Flex,
+  Modal,
   Space,
   Spin,
   Table,
@@ -135,6 +136,10 @@ export default function WorkspaceDatabaseExplorer({
   const openCreateMode = useCallback((databaseId: number, schemaName: string) => {
     setActiveDatabaseId(databaseId);
     setActiveSchemaName(schemaName);
+    setExpandedKeys((prev) => {
+      const key = schemaKey(databaseId);
+      return prev.includes(key) ? prev : [...prev, key];
+    });
     setPanelMode('create');
     onSelectTable(null);
     setSelectedKeys([]);
@@ -222,9 +227,17 @@ export default function WorkspaceDatabaseExplorer({
   const onEditorSaved = useCallback(
     async (tableName: string) => {
       if (activeDatabaseId === null || !activeSchemaName) return;
+      const schemaNodeKey = schemaKey(activeDatabaseId);
       await loadTables(activeDatabaseId, activeSchemaName);
+      setExpandedKeys((prev) =>
+        prev.includes(schemaNodeKey) ? prev : [...prev, schemaNodeKey],
+      );
       setPanelMode('browse');
       await selectTable(activeDatabaseId, tableName);
+      notification.success({
+        message: 'Table saved',
+        description: `"${tableName}" is now available in the schema browser.`,
+      });
     },
     [activeDatabaseId, activeSchemaName, loadTables, selectTable],
   );
@@ -252,35 +265,6 @@ export default function WorkspaceDatabaseExplorer({
     activeDatabaseId !== null ? (tablesForSchema[activeDatabaseId] ?? []) : [];
 
   const renderRightPanel = () => {
-    if (panelMode === 'create' && activeDatabaseId !== null && activeSchemaName) {
-      return (
-        <TableSchemaEditor
-          mode="create"
-          workspaceId={workspaceId}
-          databaseId={activeDatabaseId}
-          schemaName={activeSchemaName}
-          availableTables={availableTablesForEditor}
-          onCancel={closeEditor}
-          onSaved={onEditorSaved}
-        />
-      );
-    }
-
-    if (panelMode === 'edit' && activeDatabaseId !== null && activeSchemaName && selectedTable) {
-      return (
-        <TableSchemaEditor
-          mode="edit"
-          workspaceId={workspaceId}
-          databaseId={activeDatabaseId}
-          schemaName={activeSchemaName}
-          initialTable={selectedTable}
-          availableTables={availableTablesForEditor}
-          onCancel={closeEditor}
-          onSaved={onEditorSaved}
-        />
-      );
-    }
-
     if (detailLoading) {
       return (
         <Flex align="center" justify="center" style={{ minHeight: 240 }}>
@@ -445,6 +429,8 @@ export default function WorkspaceDatabaseExplorer({
     );
   };
 
+  const editorOpen = panelMode === 'create' || panelMode === 'edit';
+
   return (
     <Flex style={{ minHeight: 480, borderTop: `1px solid ${palette.borderSubtle}` }}>
       <Card
@@ -492,9 +478,53 @@ export default function WorkspaceDatabaseExplorer({
         )}
       </Card>
 
-      <div style={{ flex: 1, padding: panelMode === 'browse' ? 16 : 0, overflow: 'auto' }}>
+      <div style={{ flex: 1, padding: 16, overflow: 'auto' }}>
         {renderRightPanel()}
       </div>
+
+      <Modal
+        title={panelMode === 'edit' ? 'Edit table' : 'Create table'}
+        open={editorOpen}
+        onCancel={closeEditor}
+        footer={null}
+        destroyOnHidden
+        width="92%"
+        style={{ top: 24 }}
+        styles={{
+          body: {
+            maxHeight: 'calc(100vh - 140px)',
+            overflow: 'auto',
+            paddingTop: 8,
+          },
+        }}
+      >
+        {panelMode === 'create' && activeDatabaseId !== null && activeSchemaName ? (
+          <TableSchemaEditor
+            mode="create"
+            workspaceId={workspaceId}
+            databaseId={activeDatabaseId}
+            schemaName={activeSchemaName}
+            availableTables={availableTablesForEditor}
+            onCancel={closeEditor}
+            onSaved={onEditorSaved}
+          />
+        ) : null}
+        {panelMode === 'edit' &&
+        activeDatabaseId !== null &&
+        activeSchemaName &&
+        selectedTable ? (
+          <TableSchemaEditor
+            mode="edit"
+            workspaceId={workspaceId}
+            databaseId={activeDatabaseId}
+            schemaName={activeSchemaName}
+            initialTable={selectedTable}
+            availableTables={availableTablesForEditor}
+            onCancel={closeEditor}
+            onSaved={onEditorSaved}
+          />
+        ) : null}
+      </Modal>
     </Flex>
   );
 }

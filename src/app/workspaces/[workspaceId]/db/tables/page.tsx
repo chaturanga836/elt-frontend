@@ -1,7 +1,9 @@
 'use client';
 
-import TableBuilderPage from '@/features/baas-prototype/TableBuilderPage';
-
+/**
+ * Tables route: schema browser lives in WorkspaceDatabaseShell (db layout).
+ * Create/edit table opens as a modal from WorkspaceDatabaseExplorer.
+ */
 export default function DbTablesPage() {
-  return <TableBuilderPage />;
+  return null;
 }
