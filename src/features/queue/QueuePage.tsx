@@ -106,7 +106,19 @@ export default function QueuePage() {
   };
 
   const columns = [
-    { title: 'Queue', dataIndex: 'name', key: 'name' },
+    {
+      title: 'Queue ID',
+      dataIndex: 'name',
+      key: 'name',
+      render: (name: string) => <Text code copyable={{ text: name, tooltips: ['Copy queue ID', 'Copied'] }}>{name}</Text>,
+    },
+    {
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+      ellipsis: true,
+      render: (v: string | null | undefined) => v || '—',
+    },
     { title: 'Depth', dataIndex: 'depth', key: 'depth', width: 90 },
     { title: 'Max depth', dataIndex: 'max_depth', key: 'max_depth', width: 110 },
     {
@@ -144,7 +156,10 @@ export default function QueuePage() {
           <Title level={3} style={{ marginTop: 0, marginBottom: 4 }}>
             Queues
           </Title>
-          <Text type="secondary">Project-scoped message queues. Use the SDK to push and pop messages.</Text>
+          <Text type="secondary">
+            Project-scoped message queues. Use the queue ID (name) with the SDK:{' '}
+            <Text code>queuePush(&apos;test_queue&apos;, …)</Text>
+          </Text>
         </div>
         <Space>
           <Button icon={<ReloadOutlined />} onClick={() => void load()}>

@@ -140,7 +140,16 @@ export default function OrgQueueTab() {
               key: 'workspace_id',
               width: 100,
             },
-            { title: 'Queue', dataIndex: 'queue_name', key: 'queue_name' },
+            {
+              title: 'Queue ID',
+              dataIndex: 'queue_name',
+              key: 'queue_name',
+              render: (name: string) => (
+                <Text code copyable={{ text: name, tooltips: ['Copy queue ID', 'Copied'] }}>
+                  {name}
+                </Text>
+              ),
+            },
             {
               title: 'Depth',
               dataIndex: 'depth',
