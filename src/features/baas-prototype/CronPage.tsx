@@ -7,6 +7,7 @@ import {
   Empty,
   Form,
   Input,
+  Modal,
   Select,
   Space,
   Switch,
@@ -45,6 +46,8 @@ export default function CronPage() {
   const [logsTotal, setLogsTotal] = useState(0);
   const [historyEnabled, setHistoryEnabled] = useState(false);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [form] = Form.useForm();
 
   const selected = jobs.find((j) => j.name === selectedName) ?? null;
@@ -111,6 +114,7 @@ export default function CronPage() {
     target: string;
     history_log: boolean;
   }) => {
+    setCreating(true);
     try {
       await CronService.create(workspaceId, {
         name: values.name.trim().toLowerCase(),
@@ -121,12 +125,15 @@ export default function CronPage() {
       });
       notification.success({ message: 'Cron job created' });
       form.resetFields();
+      setCreateOpen(false);
       void loadJobs();
     } catch (err) {
       notification.error({
         message: 'Could not create cron job',
         description: getApiErrorMessage(err),
       });
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -247,6 +254,18 @@ export default function CronPage() {
         Schedule definitions and SDK-pushed history. Platform Beat scheduling is not wired yet —
         customer apps push logs via <Text code>runtime.cronPushLogs</Text>.
       </Text>
+      <div style={{ marginTop: 12 }}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => {
+            form.resetFields();
+            setCreateOpen(true);
+          }}
+        >
+          New cron job
+        </Button>
+      </div>
 
       <Card
         title="Jobs"
@@ -268,12 +287,17 @@ export default function CronPage() {
         />
       </Card>
 
-      <Card title="New cron job" style={{ marginTop: 16 }}>
+      <Modal
+        title="New cron job"
+        open={createOpen}
+        onCancel={() => setCreateOpen(false)}
+        destroyOnHidden
+        footer={null}
+      >
         <Form
           form={form}
           layout="vertical"
           onFinish={(values) => void onCreate(values)}
-          style={{ maxWidth: 480 }}
           initialValues={{ history_log: false }}
         >
           <Form.Item
@@ -303,11 +327,11 @@ export default function CronPage() {
           >
             <Switch />
           </Form.Item>
-          <Button type="primary" htmlType="submit" icon={<PlusOutlined />}>
+          <Button type="primary" htmlType="submit" icon={<PlusOutlined />} loading={creating} block>
             Create job
           </Button>
         </Form>
-      </Card>
+      </Modal>
 
       <Card
         title={selected ? `Monitor — ${selected.name}` : 'Monitor'}
