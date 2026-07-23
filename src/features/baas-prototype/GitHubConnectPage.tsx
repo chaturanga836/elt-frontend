@@ -17,6 +17,7 @@ import {
 } from '@/services/git-connection.service';
 import { useWorkspaceId } from '@/hooks/useWorkspaceId';
 import { getApiErrorMessage } from '@/lib/formatApiError';
+import { resolvePublicApiBaseUrl } from '@/lib/publicUrls';
 import ImportRepoModal from '@/features/baas-prototype/ImportRepoModal';
 
 const { Title, Text } = Typography;
@@ -24,8 +25,7 @@ const { Title, Text } = Typography;
 const GITHUB_OAUTH_MESSAGE_TYPE = 'github-oauth';
 
 function apiOrigin(): string {
-  const base = process.env.NEXT_PUBLIC_API_URL || 'http://144.24.127.112:8000/api/v1';
-  return new URL(base).origin;
+  return new URL(resolvePublicApiBaseUrl()).origin;
 }
 
 export default function GitHubConnectPage() {

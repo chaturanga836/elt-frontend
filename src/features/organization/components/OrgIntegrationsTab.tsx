@@ -13,14 +13,14 @@ import {
 import { GithubOutlined, LinkOutlined } from '@ant-design/icons';
 import { GitConnection } from '@/services/git-connection.service';
 import { OrganizationSettingsService } from '@/services/organization-settings.service';
+import { resolvePublicApiBaseUrl } from '@/lib/publicUrls';
 
 const { Text, Paragraph } = Typography;
 
 const GITHUB_OAUTH_MESSAGE_TYPE = 'github-oauth';
 
 function apiOrigin(): string {
-  const base = process.env.NEXT_PUBLIC_API_URL || 'http://144.24.127.112:8000/api/v1';
-  return new URL(base).origin;
+  return new URL(resolvePublicApiBaseUrl()).origin;
 }
 
 export default function OrgIntegrationsTab() {
