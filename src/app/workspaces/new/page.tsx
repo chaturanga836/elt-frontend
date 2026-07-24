@@ -63,7 +63,7 @@ export default function NewWorkspacePage() {
 
   const continueToProject = () => {
     if (createdProjectId) {
-      router.push(projectPath(createdProjectId, 'workflow'));
+      router.push(projectPath(createdProjectId, 'db/tables'));
     }
     setCredentialsModalOpen(false);
   };
