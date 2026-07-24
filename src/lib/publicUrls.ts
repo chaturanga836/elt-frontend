@@ -61,3 +61,16 @@ export function resolvePublicApiBaseUrl(): string {
     '/api/v1',
   );
 }
+
+/** Grafana URL for Studio Monitor embed. Empty when monitoring was skipped at install. */
+export function resolvePublicGrafanaUrl(): string | null {
+  const configured = (process.env.NEXT_PUBLIC_GRAFANA_URL || '').trim();
+  if (configured) {
+    return resolvePublicUrlFromLocalhostDefault(configured);
+  }
+  // Local/dev convenience when the monitoring profile runs on the default port.
+  if (typeof window !== 'undefined' && isLocalHostname(window.location.hostname)) {
+    return `${window.location.protocol}//${window.location.hostname}:3002`;
+  }
+  return null;
+}

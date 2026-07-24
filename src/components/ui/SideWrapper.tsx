@@ -22,6 +22,8 @@ import {
   LockOutlined,
   AppstoreOutlined,
   KeyOutlined,
+  DashboardOutlined,
+  LineChartOutlined,
 } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -64,6 +66,7 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
   const authKeycloak = projectPath(workspaceId, 'services/auth/keycloak');
   const authGithub = projectPath(workspaceId, 'services/auth/github');
   const authGoogle = projectPath(workspaceId, 'services/auth/google');
+  const monitorGrafana = projectPath(workspaceId, 'monitor/grafana');
 
   const {
     token: { colorBgContainer },
@@ -131,6 +134,14 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
       label: 'Cron',
     },
     {
+      key: 'monitor-group',
+      icon: <DashboardOutlined />,
+      label: 'Monitor',
+      children: [
+        { key: monitorGrafana, icon: <LineChartOutlined />, label: 'Grafana' },
+      ],
+    },
+    {
       key: 'services-group',
       icon: <AppstoreOutlined />,
       label: 'Services',
@@ -182,6 +193,7 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
     if (path.includes('/queue/logs')) return queueLogsBase;
     if (path.includes('/queue')) return queueBase;
     if (path.includes('/cron')) return cronBase;
+    if (path.includes('/monitor/grafana') || path.includes('/monitor')) return monitorGrafana;
     if (path.includes('/services/auth/oauth2')) return authOAuth2;
     if (path.includes('/services/auth/keycloak')) return authKeycloak;
     if (path.includes('/services/auth/github')) return authGithub;
@@ -201,6 +213,7 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
     if (path.includes('/db/')) keys.push('db-group');
     if (path.includes('/queue')) keys.push('queue-group');
     if (path.includes('/realtime')) keys.push('realtime-group');
+    if (path.includes('/monitor')) keys.push('monitor-group');
     if (path.includes('/services/')) {
       keys.push('services-group');
       if (path.includes('/services/auth')) keys.push('auth-group');
