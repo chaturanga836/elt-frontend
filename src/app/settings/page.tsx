@@ -21,7 +21,7 @@ export default function SettingsPage() {
     <div className="p-8 max-w-2xl">
       {currentWorkspaceId ? (
         <div className="mb-4">
-          <Link href={projectPath(currentWorkspaceId, 'workflow')}>
+          <Link href={projectPath(currentWorkspaceId, 'db/tables')}>
             <Button type="link" style={{ paddingLeft: 0 }}>
               Back to project
             </Button>

@@ -46,7 +46,7 @@ export default function WorkspacesPage() {
   const openWorkspace = useCallback(
     (id: number) => {
       setCurrentWorkspaceId(id);
-      router.push(projectPath(id, 'workflow'));
+      router.push(projectPath(id, 'db/tables'));
     },
     [router, setCurrentWorkspaceId],
   );
@@ -208,7 +208,7 @@ export default function WorkspacesPage() {
           <Title level={2} style={{ margin: 0 }}>
             Projects
           </Title>
-          <Text type="secondary">Select a project to manage API, database, storage, and workflows.</Text>
+          <Text type="secondary">Select a project to manage API, database, storage, and integrations.</Text>
         </div>
         <div className="flex gap-2">
           {canOpenOrgSettings && (

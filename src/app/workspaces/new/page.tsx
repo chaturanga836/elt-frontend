@@ -116,7 +116,7 @@ export default function NewWorkspacePage() {
         setCredentialsModalOpen(true);
       } else {
         notification.success({ message: 'Project created' });
-        router.push(projectPath(project.project_id, 'workflow'));
+        router.push(projectPath(project.project_id, 'db/tables'));
       }
     } catch (err: unknown) {
       notification.error({

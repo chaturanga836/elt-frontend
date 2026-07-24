@@ -7,7 +7,6 @@ import {
   DatabaseOutlined,
   CloudOutlined,
   ThunderboltOutlined,
-  NodeIndexOutlined,
   UnorderedListOutlined,
   HistoryOutlined,
   InboxOutlined,
@@ -52,11 +51,9 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
   const storageBase = projectPath(workspaceId, 'storage');
   const realtimeBase = projectPath(workspaceId, 'realtime');
   const realtimeLogsBase = projectPath(workspaceId, 'realtime/logs');
-  const workflowBase = projectPath(workspaceId, 'workflow');
   const queueBase = projectPath(workspaceId, 'queue');
   const queueLogsBase = projectPath(workspaceId, 'queue/logs');
   const cronBase = projectPath(workspaceId, 'cron');
-  const servicesBase = projectPath(workspaceId, 'services');
   const servicesGithub = projectPath(workspaceId, 'services/github');
 
   const {
@@ -111,15 +108,6 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
       ],
     },
     {
-      key: 'workflow-group',
-      icon: <NodeIndexOutlined />,
-      label: 'Workflow',
-      children: [
-        { key: workflowBase, icon: <UnorderedListOutlined />, label: 'All Workflows' },
-        { key: `${workflowBase}/history`, icon: <HistoryOutlined />, label: 'Run History' },
-      ],
-    },
-    {
       key: 'queue-group',
       icon: <InboxOutlined />,
       label: 'Queue',
@@ -134,13 +122,9 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
       label: 'Cron',
     },
     {
-      key: 'services-group',
-      icon: <CodeOutlined />,
-      label: 'Services & Functions',
-      children: [
-        { key: servicesBase, icon: <UnorderedListOutlined />, label: 'All Functions' },
-        { key: servicesGithub, icon: <GithubOutlined />, label: 'GitHub' },
-      ],
+      key: servicesGithub,
+      icon: <GithubOutlined />,
+      label: 'Git Connection',
     },
     {
       key: projectPath(workspaceId, 'settings'),
@@ -157,9 +141,6 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
   const path = pathname.replace(/\/workspaces\//, '/projects/');
 
   const getSelectedMenuKey = () => {
-    if (path.includes('/pipe/history') || path.includes('/workflow/history')) {
-      return `${workflowBase}/history`;
-    }
     if (path.includes('/api/rest/groups')) {
       return apiGroups;
     }
@@ -174,13 +155,13 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
     if (path.includes('/queue/logs')) return queueLogsBase;
     if (path.includes('/queue')) return queueBase;
     if (path.includes('/cron')) return cronBase;
-    if (path.includes('/services/github')) return servicesGithub;
-    if (path.includes('/task') || path.includes('/services')) return servicesBase;
+    if (path.includes('/services/github') || path.includes('/services') || path.includes('/task')) {
+      return servicesGithub;
+    }
     if (path.includes('/settings') && path.startsWith(`${base}/`)) {
       return projectPath(workspaceId, 'settings');
     }
     if (path === '/settings') return '/settings';
-    if (path.includes('/pipe') || path.includes('/workflow')) return workflowBase;
     return path;
   };
 
@@ -188,10 +169,8 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
     const keys: string[] = [];
     if (path.includes('/api/rest') || path.includes('/connections')) keys.push('api-group');
     if (path.includes('/db/')) keys.push('db-group');
-    if (path.includes('/pipe') || path.includes('/workflow')) keys.push('workflow-group');
     if (path.includes('/queue')) keys.push('queue-group');
     if (path.includes('/realtime')) keys.push('realtime-group');
-    if (path.includes('/task') || path.includes('/services')) keys.push('services-group');
     return keys;
   };
 

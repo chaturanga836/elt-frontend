@@ -171,7 +171,7 @@ export default function GitHubConnectPage() {
   return (
     <div style={{ padding: 24 }}>
       <Title level={3} style={{ marginTop: 0 }}>
-        GitHub
+        Git Connection
       </Title>
       <Text type="secondary">
         Authorize GitHub in the popup to link your account to this workspace.
