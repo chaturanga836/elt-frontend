@@ -45,6 +45,10 @@ const nextConfig: NextConfig = {
         destination: '/workspaces/:id/services/github',
       },
       {
+        source: '/projects/:id/services/auth/:path*',
+        destination: '/workspaces/:id/services/auth/:path*',
+      },
+      {
         source: '/projects/:id/services/:path*',
         destination: '/workspaces/:id/task/:path*',
       },

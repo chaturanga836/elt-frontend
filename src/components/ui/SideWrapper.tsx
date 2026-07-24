@@ -13,10 +13,15 @@ import {
   ClockCircleOutlined,
   CodeOutlined,
   GithubOutlined,
+  GoogleOutlined,
   SettingOutlined,
   SwapOutlined,
   GroupOutlined,
   TableOutlined,
+  SafetyCertificateOutlined,
+  LockOutlined,
+  AppstoreOutlined,
+  KeyOutlined,
 } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -55,6 +60,10 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
   const queueLogsBase = projectPath(workspaceId, 'queue/logs');
   const cronBase = projectPath(workspaceId, 'cron');
   const servicesGithub = projectPath(workspaceId, 'services/github');
+  const authOAuth2 = projectPath(workspaceId, 'services/auth/oauth2');
+  const authKeycloak = projectPath(workspaceId, 'services/auth/keycloak');
+  const authGithub = projectPath(workspaceId, 'services/auth/github');
+  const authGoogle = projectPath(workspaceId, 'services/auth/google');
 
   const {
     token: { colorBgContainer },
@@ -122,9 +131,27 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
       label: 'Cron',
     },
     {
-      key: servicesGithub,
-      icon: <GithubOutlined />,
-      label: 'Git Connection',
+      key: 'services-group',
+      icon: <AppstoreOutlined />,
+      label: 'Services',
+      children: [
+        {
+          key: 'auth-group',
+          icon: <SafetyCertificateOutlined />,
+          label: 'Auth',
+          children: [
+            { key: authOAuth2, icon: <LockOutlined />, label: 'OAuth 2' },
+            { key: authKeycloak, icon: <KeyOutlined />, label: 'Keycloak' },
+            { key: authGithub, icon: <GithubOutlined />, label: 'GitHub' },
+            { key: authGoogle, icon: <GoogleOutlined />, label: 'Google' },
+          ],
+        },
+        {
+          key: servicesGithub,
+          icon: <GithubOutlined />,
+          label: 'Git Connection',
+        },
+      ],
     },
     {
       key: projectPath(workspaceId, 'settings'),
@@ -155,9 +182,12 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
     if (path.includes('/queue/logs')) return queueLogsBase;
     if (path.includes('/queue')) return queueBase;
     if (path.includes('/cron')) return cronBase;
-    if (path.includes('/services/github') || path.includes('/services') || path.includes('/task')) {
-      return servicesGithub;
-    }
+    if (path.includes('/services/auth/oauth2')) return authOAuth2;
+    if (path.includes('/services/auth/keycloak')) return authKeycloak;
+    if (path.includes('/services/auth/github')) return authGithub;
+    if (path.includes('/services/auth/google')) return authGoogle;
+    if (path.includes('/services/github')) return servicesGithub;
+    if (path.includes('/task')) return servicesGithub;
     if (path.includes('/settings') && path.startsWith(`${base}/`)) {
       return projectPath(workspaceId, 'settings');
     }
@@ -171,6 +201,10 @@ export default function SideWrapper({ workspaceId, children }: SideWrapperProps)
     if (path.includes('/db/')) keys.push('db-group');
     if (path.includes('/queue')) keys.push('queue-group');
     if (path.includes('/realtime')) keys.push('realtime-group');
+    if (path.includes('/services/')) {
+      keys.push('services-group');
+      if (path.includes('/services/auth')) keys.push('auth-group');
+    }
     return keys;
   };
 
