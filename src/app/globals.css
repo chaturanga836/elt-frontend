@@ -57,6 +57,20 @@ body {
   background-attachment: fixed;
 }
 
+/* Nested Typography / code inside Alerts still inherit dark-theme white text otherwise. */
+.ant-alert .ant-alert-title,
+.ant-alert .ant-alert-description,
+.ant-alert .ant-alert-description .ant-typography,
+.ant-alert .ant-typography {
+  color: rgba(0, 0, 0, 0.88) !important;
+}
+
+.ant-alert .ant-typography code,
+.ant-alert code {
+  color: rgba(0, 0, 0, 0.88) !important;
+  background: rgba(0, 0, 0, 0.06);
+}
+
 /* --- FULLSCREEN INTERCEPTOR STYLES --- */
 
 .fullscreen-modal-container.ant-modal-wrap {

@@ -68,6 +68,21 @@ const theme: ThemeConfig = {
     Badge: {
       colorPrimary: palette.primary,
     },
+    // Alerts keep light semantic backgrounds; darkAlgorithm text tokens are white and unreadable on them.
+    Alert: {
+      colorText: 'rgba(0, 0, 0, 0.88)',
+      colorTextHeading: 'rgba(0, 0, 0, 0.88)',
+      colorIcon: 'rgba(0, 0, 0, 0.45)',
+      colorIconHover: 'rgba(0, 0, 0, 0.88)',
+      colorInfoBg: '#e6f4ff',
+      colorInfoBorder: '#91caff',
+      colorSuccessBg: '#f6ffed',
+      colorSuccessBorder: '#b7eb8f',
+      colorWarningBg: '#fffbe6',
+      colorWarningBorder: '#ffe58f',
+      colorErrorBg: '#fff2f0',
+      colorErrorBorder: '#ffccc7',
+    },
   },
 };
 
