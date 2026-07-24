@@ -61,6 +61,19 @@ export const StudioService = {
     return res.data;
   },
 
+  getMonitoringConfig: async (): Promise<{
+    enabled: boolean;
+    source: 'bundled' | 'external' | 'skip';
+    grafana_url: string | null;
+  }> => {
+    const res = await api.get<{
+      enabled: boolean;
+      source: 'bundled' | 'external' | 'skip';
+      grafana_url: string | null;
+    }>('/studio/monitoring');
+    return res.data;
+  },
+
   createProject: async (
     body: { name: string; description?: string; slug?: string; region?: string },
     orgId?: number,

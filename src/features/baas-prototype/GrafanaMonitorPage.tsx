@@ -1,14 +1,69 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { Alert, Button, Empty, Space, Typography } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Alert, Button, Empty, Space, Spin, Typography } from 'antd';
 import { LinkOutlined } from '@ant-design/icons';
-import { resolvePublicGrafanaUrl } from '@/lib/publicUrls';
+import { StudioService } from '@/services/studio.service';
+import {
+  resolvePublicGrafanaUrl,
+  resolvePublicUrlFromLocalhostDefault,
+} from '@/lib/publicUrls';
+import { getApiErrorMessage } from '@/lib/formatApiError';
 
 const { Title, Text, Paragraph } = Typography;
 
+function resolveEmbedUrl(apiUrl: string | null | undefined): string | null {
+  const fromApi = (apiUrl || '').trim();
+  if (fromApi) {
+    return resolvePublicUrlFromLocalhostDefault(fromApi);
+  }
+  return resolvePublicGrafanaUrl();
+}
+
 export default function GrafanaMonitorPage() {
-  const grafanaUrl = useMemo(() => resolvePublicGrafanaUrl(), []);
+  const [loading, setLoading] = useState(true);
+  const [grafanaUrl, setGrafanaUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const config = await StudioService.getMonitoringConfig();
+        if (cancelled) return;
+        if (config.enabled && config.grafana_url) {
+          setGrafanaUrl(resolveEmbedUrl(config.grafana_url));
+        } else {
+          setGrafanaUrl(resolvePublicGrafanaUrl());
+        }
+      } catch (err) {
+        if (cancelled) return;
+        // Fall back to build-time / local default if the API is older or unreachable.
+        setGrafanaUrl(resolvePublicGrafanaUrl());
+        if (!resolvePublicGrafanaUrl()) {
+          setError(getApiErrorMessage(err, 'Could not load monitoring configuration'));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ padding: 48, textAlign: 'center' }}>
+        <Spin size="large" />
+        <Paragraph type="secondary" style={{ marginTop: 16 }}>
+          Loading Grafana…
+        </Paragraph>
+      </div>
+    );
+  }
 
   if (!grafanaUrl) {
     return (
@@ -16,13 +71,16 @@ export default function GrafanaMonitorPage() {
         <Title level={3} style={{ marginTop: 0 }}>
           Grafana
         </Title>
+        {error ? (
+          <Alert type="error" showIcon style={{ marginBottom: 16 }} title={error} />
+        ) : null}
         <Empty
           description={
             <Space orientation="vertical" size={4}>
               <Text>Monitoring is not configured for this platform.</Text>
               <Text type="secondary">
-                Enable Grafana in the installer (bundled or external), or set{' '}
-                <Text code>NEXT_PUBLIC_GRAFANA_URL</Text> and rebuild Studio.
+                Enable Grafana in the installer (Install for me or Connect existing), then reopen
+                this page. The API must have <Text code>GRAFANA_URL</Text> set from install.
               </Text>
             </Space>
           }
