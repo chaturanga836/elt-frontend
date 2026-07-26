@@ -65,6 +65,27 @@ const theme: ThemeConfig = {
       activeBorderColor: palette.accentCyan,
       hoverBorderColor: palette.border,
     },
+    // Popup colors are pinned so the selected option never renders light-on-light.
+    Select: {
+      colorBgElevated: palette.bgElevated,
+      optionSelectedBg: palette.selectedBg,
+      optionSelectedColor: palette.text,
+      optionActiveBg: palette.hoverOverlay,
+      colorText: palette.text,
+    },
+    TreeSelect: {
+      nodeSelectedBg: palette.selectedBg,
+      nodeHoverBg: palette.hoverOverlay,
+    },
+    Cascader: {
+      optionSelectedBg: palette.selectedBg,
+      optionSelectedColor: palette.text,
+    },
+    Dropdown: {
+      colorBgElevated: palette.bgElevated,
+      controlItemBgHover: palette.hoverOverlay,
+      controlItemBgActive: palette.selectedBg,
+    },
     Badge: {
       colorPrimary: palette.primary,
     },
